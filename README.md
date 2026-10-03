@@ -8,3 +8,38 @@ Desktop-Anwendung zum Programmieren von Schlagzeug-Patterns (JUCE/C++), mit Echt
 - [Pflichtenheft](docs/Pflichtenheft_Drum_Programmer.md) – Arbeitspakete in Kapitel 8, Meilensteine in Kapitel 9
 - [GUI-Entwurf v0.1](docs/GUI-Entwurf_v0.1.png)
 - Fortschritt: Issues und Meilensteine in diesem Repository
+
+## Bauen
+
+Voraussetzungen: CMake ≥ 3.22, Ninja, ein C++20-Compiler (GCC/Clang unter Linux, MSVC 2022 unter Windows). Unter Linux zusätzlich die JUCE-Abhängigkeiten:
+
+```sh
+sudo apt install libasound2-dev libjack-jackd2-dev libfreetype-dev libfontconfig1-dev \
+  libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev \
+  libxrandr-dev libxrender-dev libgl1-mesa-dev
+```
+
+JUCE und GoogleTest liegen als Git-Submodule unter `external/`:
+
+```sh
+git clone --recurse-submodules https://github.com/ladych/DrumProgrammer.git
+# bei bestehendem Klon: git submodule update --init --recursive
+cmake --preset debug
+cmake --build --preset debug
+ctest --preset debug
+```
+
+CLion liest `CMakePresets.json` direkt; die Presets `coverage`, `asan` und `tsan` bauen nur die Tests.
+
+## Qualitätsregeln
+
+- Tests mit GoogleTest/GoogleMock, Testnamen mit Anforderungs-ID (E-01, E-09)
+- 100 % Zeilen- und Branch-Abdeckung für `src/`, Ausnahmen mit Begründung in `coverage-exclusions.txt` (E-02, E-03); lokal: `cmake --preset coverage && cmake --build --preset coverage && ctest --preset coverage && tools/check-coverage.py build/coverage`
+- `clang-format` und `tools/run-clang-tidy.sh <build-dir>` ohne Befund, Warnungen sind Fehler (E-08)
+- Composition Root in `src/app/AppComposition.cpp` (E-05)
+
+Die CI (GitHub Actions) prüft all das bei jedem Push: Linux- und Windows-Build mit Tests, Coverage-Gate, Address/UB- und Thread-Sanitizer, clang-format und clang-tidy.
+
+## Lizenz
+
+GNU Affero General Public License v3.0, siehe [LICENSE](LICENSE). Die Lizenz folgt aus der Open-Source-Lizenz von JUCE.
