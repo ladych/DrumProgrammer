@@ -5,6 +5,7 @@ add_library(drumprog_core STATIC
     io/StdFileSystem.cpp
 )
 target_include_directories(drumprog_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(drumprog_core PUBLIC drumprog_juce)
 drumprog_enable_warnings(drumprog_core)
 
 if(NOT DRUMPROG_BUILD_APP)
@@ -28,20 +29,9 @@ target_sources(DrumProgrammer PRIVATE ${DRUMPROG_APP_SOURCES})
 drumprog_enable_warnings_for_sources(${DRUMPROG_APP_SOURCES})
 
 target_compile_definitions(DrumProgrammer PRIVATE
-    JUCE_WEB_BROWSER=0
-    JUCE_USE_CURL=0
     JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:DrumProgrammer,JUCE_PRODUCT_NAME>"
     JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:DrumProgrammer,JUCE_VERSION>"
-    $<$<PLATFORM_ID:Linux>:JUCE_JACK=1>
-    $<$<PLATFORM_ID:Linux>:JUCE_ALSA=1>
 )
 
-target_link_libraries(DrumProgrammer
-    PRIVATE
-        drumprog_core
-        juce::juce_audio_utils
-        juce::juce_gui_basics
-    PUBLIC
-        juce::juce_recommended_config_flags
-        juce::juce_recommended_warning_flags
-)
+# JUCE itself comes compiled from drumprog_juce through drumprog_core (cmake/DrumProgrammerJuce.cmake).
+target_link_libraries(DrumProgrammer PRIVATE drumprog_core)
