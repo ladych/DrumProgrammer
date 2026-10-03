@@ -43,7 +43,8 @@ namespace
 
 std::unique_ptr<EngineKit> makeKit()
 {
-    auto sample = std::make_shared<const SampleBuffer>(SampleBuffer{48000.0, {std::vector<float>(5000, 0.1F)}});
+    auto sample =
+        std::make_shared<const SampleBuffer>(SampleBuffer{48000.0, {std::vector<float>(5000, 0.1F)}});
     return std::make_unique<EngineKit>(
         std::vector<EngineSlot>{EngineSlot{.slotIndex = 0, .midiNote = 42, .sample = sample, .chokeGroup = 1},
                                 EngineSlot{.slotIndex = 1, .midiNote = 46, .sample = sample, .chokeGroup = 1},

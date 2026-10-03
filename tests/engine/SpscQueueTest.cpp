@@ -11,7 +11,7 @@ namespace
 
 TEST(SpscQueueTest, Q04_PopsItemsInOrder)
 {
-    SpscQueue<int, 4> queue;
+    SpscQueue<int, 2> queue;
     EXPECT_TRUE(queue.push(1));
     EXPECT_TRUE(queue.push(2));
     int item = 0;
@@ -36,12 +36,14 @@ TEST(SpscQueueTest, Q04_RejectsPushWhenFull)
 TEST(SpscQueueTest, Q04_TransfersItemsBetweenThreads)
 {
     constexpr int kCount = 10000;
-    SpscQueue<int, 16> queue;
-    std::thread producer([&queue] {
-        for (int i = 0; i < kCount; ++i)
-            while (!queue.push(i))
-                std::this_thread::yield();
-    });
+    SpscQueue<int, 2> queue;
+    std::thread producer(
+        [&queue]
+        {
+            for (int i = 0; i < kCount; ++i)
+                while (!queue.push(i))
+                    std::this_thread::yield();
+        });
     int expected = 0;
     while (expected < kCount)
     {
@@ -53,6 +55,8 @@ TEST(SpscQueueTest, Q04_TransfersItemsBetweenThreads)
         }
     }
     producer.join();
+    int item = 0;
+    EXPECT_FALSE(queue.pop(item));
 }
 
 } // namespace

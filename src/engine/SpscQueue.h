@@ -19,7 +19,7 @@ public:
         const auto next = increment(tail);
         if (next == head_.load(std::memory_order_acquire))
             return false;
-        items_[tail] = item;
+        items_.at(tail) = item;
         tail_.store(next, std::memory_order_release);
         return true;
     }
@@ -30,7 +30,7 @@ public:
         const auto head = head_.load(std::memory_order_relaxed);
         if (head == tail_.load(std::memory_order_acquire))
             return false;
-        item = items_[head];
+        item = items_.at(head);
         head_.store(increment(head), std::memory_order_release);
         return true;
     }

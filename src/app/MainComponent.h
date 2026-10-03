@@ -1,6 +1,8 @@
 #pragma once
 
+#include "app/KitPanel.h"
 #include "engine/TestToneSource.h"
+#include "ui/KitPresenter.h"
 
 #include <juce_audio_utils/juce_audio_utils.h>
 
@@ -12,7 +14,10 @@ namespace drumprog::app
 class MainComponent final : public juce::Component
 {
 public:
-    MainComponent(engine::TestToneSource& testTone, juce::AudioDeviceManager& deviceManager);
+    MainComponent(engine::TestToneSource& testTone,
+                  juce::AudioDeviceManager& deviceManager,
+                  ui::KitPresenter& kitPresenter,
+                  const juce::String& sampleWildcard);
     ~MainComponent() override = default;
 
     MainComponent(const MainComponent&) = delete;
@@ -30,6 +35,7 @@ private:
     juce::AudioDeviceManager& deviceManager_;
     juce::ToggleButton testToneButton_{"Testton 440 Hz"};
     juce::TextButton settingsButton_{"Audio/MIDI-Einstellungen..."};
+    KitPanel kitPanel_;
 
     JUCE_LEAK_DETECTOR(MainComponent)
 };

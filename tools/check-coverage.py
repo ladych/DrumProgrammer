@@ -50,6 +50,8 @@ def run_gcovr(build_dir, exclusions):
         "--object-directory", str(build_dir),
         "--filter", str(REPO_ROOT / "src") + "/",
         "--exclude-throw-branches",
+        # GCC attributes exception cleanup of returned locals to the closing brace.
+        "--exclude-noncode-lines",
         "--exclude-unreachable-branches",
         "--print-summary",
         "--txt", "-",

@@ -5,8 +5,11 @@
 namespace drumprog::app
 {
 
-MainComponent::MainComponent(engine::TestToneSource& testTone, juce::AudioDeviceManager& deviceManager)
-    : testTone_(testTone), deviceManager_(deviceManager)
+MainComponent::MainComponent(engine::TestToneSource& testTone,
+                             juce::AudioDeviceManager& deviceManager,
+                             ui::KitPresenter& kitPresenter,
+                             const juce::String& sampleWildcard)
+    : testTone_(testTone), deviceManager_(deviceManager), kitPanel_(kitPresenter, sampleWildcard)
 {
     testToneButton_.setToggleState(testTone_.isEnabled(), juce::dontSendNotification);
     testToneButton_.onClick = [this] { testTone_.setEnabled(testToneButton_.getToggleState()); };
@@ -14,7 +17,8 @@ MainComponent::MainComponent(engine::TestToneSource& testTone, juce::AudioDevice
 
     addAndMakeVisible(testToneButton_);
     addAndMakeVisible(settingsButton_);
-    setSize(640, 400);
+    addAndMakeVisible(kitPanel_);
+    setSize(900, 560);
 }
 
 void MainComponent::paint(juce::Graphics& g)
@@ -28,6 +32,8 @@ void MainComponent::resized()
     auto row = area.removeFromTop(32);
     testToneButton_.setBounds(row.removeFromLeft(200));
     settingsButton_.setBounds(row.removeFromRight(240));
+    area.removeFromTop(12);
+    kitPanel_.setBounds(area);
 }
 
 void MainComponent::showSettingsDialog()

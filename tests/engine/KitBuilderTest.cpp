@@ -84,7 +84,8 @@ TEST_F(KitBuilderTest, FPJ03_RetriesMissingSampleOnNextBuild)
 
 TEST_F(KitBuilderTest, FSE06_FSE07_FSE08_CopiesGainPitchAndChokeGroup)
 {
-    KitDescription kit{KitSlotDescription{.midiNote = 46, .gain = 0.5F, .pitchSemitones = 12, .chokeGroup = 1}};
+    KitDescription kit{
+        KitSlotDescription{.midiNote = 46, .gain = 0.5F, .pitchSemitones = 12, .chokeGroup = 1}};
     const auto result = builder.build(kit, 48000.0);
     const auto* slot = result.kit->slotForNote(46);
     EXPECT_FLOAT_EQ(slot->gain, 0.5F);

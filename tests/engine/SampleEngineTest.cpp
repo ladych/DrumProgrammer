@@ -22,14 +22,16 @@ std::shared_ptr<const SampleBuffer> constantSample(float value, int frames)
         SampleBuffer{kRate, {std::vector<float>(static_cast<size_t>(frames), value)}});
 }
 
-std::unique_ptr<EngineKit> makeKit(std::shared_ptr<const SampleBuffer> sample, float gain = 1.0F,
-                                   int chokeGroup = 0)
+std::unique_ptr<EngineKit>
+makeKit(std::shared_ptr<const SampleBuffer> sample, float gain = 1.0F, int chokeGroup = 0)
 {
     return std::make_unique<EngineKit>(std::vector<EngineSlot>{
         EngineSlot{.slotIndex = 0, .midiNote = 36, .sample = std::move(sample), .gain = gain},
         EngineSlot{.slotIndex = 1, .midiNote = 38},
-        EngineSlot{.slotIndex = 2, .midiNote = 42, .sample = constantSample(1.0F, 1000), .chokeGroup = chokeGroup},
-        EngineSlot{.slotIndex = 3, .midiNote = 46, .sample = constantSample(1.0F, 1000), .chokeGroup = chokeGroup}});
+        EngineSlot{
+            .slotIndex = 2, .midiNote = 42, .sample = constantSample(1.0F, 1000), .chokeGroup = chokeGroup},
+        EngineSlot{
+            .slotIndex = 3, .midiNote = 46, .sample = constantSample(1.0F, 1000), .chokeGroup = chokeGroup}});
 }
 
 class SampleEngineTest : public ::testing::Test
@@ -208,14 +210,16 @@ TEST_F(SampleEngineTest, Q04_ReplacedKitWaitsUntilPreviousGarbageIsCollected)
 TEST_F(SampleEngineTest, Q04_PublishingKitsWhileRenderingIsThreadSafe)
 {
     std::atomic<bool> running{true};
-    std::thread audio([this, &running] {
-        StereoOutput out(64);
-        while (running.load())
+    std::thread audio(
+        [this, &running]
         {
-            engine.trigger(36, 100, 0);
-            engine.render(out.channels.data(), 2, 64);
-        }
-    });
+            StereoOutput out(64);
+            while (running.load())
+            {
+                engine.trigger(36, 100, 0);
+                engine.render(out.channels.data(), 2, 64);
+            }
+        });
     for (int i = 0; i < 200; ++i)
     {
         engine.setKit(makeKit(constantSample(0.1F, 200)));

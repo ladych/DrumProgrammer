@@ -65,8 +65,8 @@ TEST(ResamplerTest, FSE02_ResampledSineMatchesSineAtTargetRate)
     const auto expected = sine(48000.0, 441.0, result.numFrames());
     // Skip the last frames, where the interpolation runs past the end of the source.
     for (int i = 0; i < result.numFrames() - 4; ++i)
-        EXPECT_NEAR(result.channels[0][static_cast<size_t>(i)], expected.channels[0][static_cast<size_t>(i)],
-                    1.0e-3)
+        EXPECT_NEAR(
+            result.channels[0][static_cast<size_t>(i)], expected.channels[0][static_cast<size_t>(i)], 1.0e-3)
             << "frame " << i;
 }
 

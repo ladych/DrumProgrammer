@@ -72,6 +72,7 @@ TEST_F(KitPresenterTest, FSE04_LabelsSampleFileOrNoSample)
     EXPECT_EQ(presenter.sampleLabel(0), "kick.wav");
     EXPECT_EQ(presenter.sampleLabel(1), "kein Sample");
     EXPECT_EQ(presenter.sampleLabel(7), "");
+    EXPECT_EQ(presenter.sampleLabel(-1), "");
 }
 
 TEST_F(KitPresenterTest, FSE05_NoteLabelShowsGmDefaultUntilOverridden)
@@ -81,6 +82,7 @@ TEST_F(KitPresenterTest, FSE05_NoteLabelShowsGmDefaultUntilOverridden)
     presenter.setMidiNote(40);
     EXPECT_EQ(presenter.noteLabel(1), "40");
     EXPECT_EQ(presenter.noteLabel(-1), "");
+    EXPECT_EQ(presenter.noteLabel(3), "");
 }
 
 TEST_F(KitPresenterTest, FSE05_OverriddenNoteTriggersSlot)
@@ -131,6 +133,14 @@ TEST_F(KitPresenterTest, FSE01_LoadsSampleIntoSelectedSlot)
     EXPECT_FLOAT_EQ(renderFrame(), engine::velocityToGain(engine::SampleEngine::kPreviewVelocity));
 }
 
+TEST_F(KitPresenterTest, FSE10_PreviewReportsFullTriggerQueue)
+{
+    presenter.select(1);
+    for (std::size_t i = 0; i < engine::SampleEngine::kTriggerQueueSize; ++i)
+        ASSERT_TRUE(presenter.previewSelected());
+    EXPECT_FALSE(presenter.previewSelected());
+}
+
 TEST_F(KitPresenterTest, FPJ03_FailedLoadKeepsPreviousSample)
 {
     presenter.select(1);
@@ -138,7 +148,8 @@ TEST_F(KitPresenterTest, FPJ03_FailedLoadKeepsPreviousSample)
     EXPECT_FALSE(presenter.loadSample("/kits/broken.wav"));
     EXPECT_EQ(presenter.sampleLabel(1), "snare.wav");
     EXPECT_TRUE(presenter.missingSamples().empty() ||
-                std::find(presenter.missingSamples().begin(), presenter.missingSamples().end(),
+                std::find(presenter.missingSamples().begin(),
+                          presenter.missingSamples().end(),
                           std::filesystem::path{"/kits/broken.wav"}) == presenter.missingSamples().end());
 }
 

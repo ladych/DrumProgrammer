@@ -36,7 +36,7 @@ public:
     [[nodiscard]] int fadeSamples() const noexcept;
 
 private:
-    [[nodiscard]] Voice* oldestVoice(bool releasing) noexcept;
+    [[nodiscard]] Voice& oldestPlayingVoice() noexcept;
     [[nodiscard]] Voice& freeVoice() noexcept;
 
     std::array<Voice, kMaxVoices + kReserveVoices> voices_{};

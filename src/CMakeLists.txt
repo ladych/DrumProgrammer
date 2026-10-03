@@ -26,6 +26,8 @@ endif()
 set(DRUMPROG_APP_SOURCES
     app/Main.cpp
     app/AppComposition.cpp
+    app/JuceSampleLoader.cpp
+    app/KitPanel.cpp
     app/MainComponent.cpp
 )
 
@@ -50,6 +52,7 @@ target_compile_definitions(DrumProgrammer PRIVATE
 target_link_libraries(DrumProgrammer
     PRIVATE
         drumprog_core
+        juce::juce_audio_formats
         juce::juce_audio_utils
         juce::juce_gui_basics
     PUBLIC

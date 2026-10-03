@@ -41,7 +41,8 @@ TEST(KitDescriptionTest, FSE04_DefaultKitUsesGmNames)
 TEST(KitDescriptionTest, FSE04_CoreSlotsAreTheMainDrumKitPieces)
 {
     const auto kit = makeGmDefaultKit();
-    const auto coreCount = std::count_if(kit.begin(), kit.end(), [](const auto& slot) { return slot.coreSlot; });
+    const auto coreCount =
+        std::count_if(kit.begin(), kit.end(), [](const auto& slot) { return slot.coreSlot; });
     EXPECT_GE(coreCount, 16);
     EXPECT_LE(coreCount, 20);
     EXPECT_TRUE(slotWithNote(kit, 36).coreSlot);

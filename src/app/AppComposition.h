@@ -1,9 +1,13 @@
 #pragma once
 
-#include "app/ToneAudioCallback.h"
+#include "app/AudioCallback.h"
+#include "app/JuceSampleLoader.h"
+#include "engine/KitBuilder.h"
+#include "engine/SampleEngine.h"
 #include "engine/TestToneSource.h"
 #include "io/DeviceSettingsStore.h"
 #include "io/StdFileSystem.h"
+#include "ui/KitPresenter.h"
 
 #include <juce_audio_utils/juce_audio_utils.h>
 
@@ -32,11 +36,16 @@ private:
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
     void restoreDeviceSettings();
     void saveDeviceSettings();
+    void updateSampleRate();
 
     io::StdFileSystem fileSystem_;
     io::DeviceSettingsStore deviceSettings_;
     engine::TestToneSource testTone_;
-    ToneAudioCallback audioCallback_;
+    JuceSampleLoader sampleLoader_;
+    engine::KitBuilder kitBuilder_;
+    engine::SampleEngine sampleEngine_;
+    ui::KitPresenter kitPresenter_;
+    AudioCallback audioCallback_;
     juce::AudioDeviceManager deviceManager_;
 };
 

@@ -8,4 +8,8 @@ src/app/AppComposition.h        # composition root (E-05), wiring only
 src/app/AppComposition.cpp      # composition root (E-05), wiring only
 src/app/MainComponent.h         # JUCE component layout, no logic
 src/app/MainComponent.cpp       # JUCE component layout and dialog launch, no logic
-src/app/ToneAudioCallback.h     # driver callback forwarding to engine::TestToneSource
+src/app/AudioCallback.h         # driver callback forwarding to engine::TestToneSource and engine::SampleEngine
+src/app/JuceSampleLoader.h      # ISampleLoader on top of juce::AudioFormatManager
+src/app/JuceSampleLoader.cpp    # ISampleLoader on top of juce::AudioFormatManager, decoding only
+src/app/KitPanel.h              # JUCE kit list and inspector widgets, logic in ui::KitPresenter
+src/app/KitPanel.cpp            # JUCE kit list and inspector widgets, logic in ui::KitPresenter

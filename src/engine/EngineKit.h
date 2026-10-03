@@ -14,7 +14,7 @@ namespace drumprog::engine
 struct EngineSlot
 {
     int slotIndex = 0;
-    int midiNote = -1; ///< -1: not playable
+    int midiNote = -1;                          ///< -1: not playable
     std::shared_ptr<const SampleBuffer> sample; ///< null: no sample, trigger only lights the LED
     float gain = 1.0F;
     double playbackRate = 1.0;
