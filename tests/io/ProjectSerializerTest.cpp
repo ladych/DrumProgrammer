@@ -1,4 +1,5 @@
 #include "io/ProjectSerializer.h"
+#include "TestComparisons.h"
 #include "model/FakeIdGenerator.h"
 #include "model/ModelIds.h"
 #include "model/Project.h"

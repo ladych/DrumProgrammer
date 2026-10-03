@@ -2,13 +2,14 @@
 
 #include <juce_data_structures/juce_data_structures.h>
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 
 namespace drumprog::io
 {
 
-enum class ProjectFileError
+enum class ProjectFileError : std::uint8_t
 {
     none,
     unreadable,
@@ -39,12 +40,10 @@ public:
                                                const std::filesystem::path& projectDirectory);
 
 private:
-    static void convertPaths(juce::ValueTree& project,
-                             const std::filesystem::path& projectDirectory,
-                             bool toRelative);
-    static void convertPath(juce::ValueTree& tree,
-                            const std::filesystem::path& projectDirectory,
-                            bool toRelative);
+    static void
+    convertPaths(juce::ValueTree& project, const std::filesystem::path& projectDirectory, bool toRelative);
+    static void
+    convertPath(juce::ValueTree& tree, const std::filesystem::path& projectDirectory, bool toRelative);
     static void addMissingSections(juce::ValueTree& project);
 };
 

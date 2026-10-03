@@ -22,7 +22,8 @@ public:
 
     void setWindowTitle(const std::string& title) override { windowTitle = title; }
 
-    void askToSaveChanges(const std::string& projectName, std::function<void(SaveChangesChoice)> onChoice) override
+    void askToSaveChanges(const std::string& projectName,
+                          std::function<void(SaveChangesChoice)> onChoice) override
     {
         askedToSave.push_back(projectName);
         onChoice(saveChangesAnswer);

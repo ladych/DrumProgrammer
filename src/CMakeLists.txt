@@ -2,7 +2,17 @@
 add_library(drumprog_core STATIC
     engine/TestToneSource.cpp
     io/DeviceSettingsStore.cpp
+    io/ProjectRepository.cpp
+    io/ProjectSerializer.cpp
     io/StdFileSystem.cpp
+    model/Project.cpp
+    model/ProjectFactory.cpp
+    model/SnapshotBuilder.cpp
+    model/SnapshotPublisher.cpp
+    model/TreeChangeListener.cpp
+    model/TreeNode.cpp
+    model/UuidGenerator.cpp
+    ui/DocumentController.cpp
 )
 target_include_directories(drumprog_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(drumprog_core PUBLIC drumprog_juce)
@@ -16,7 +26,9 @@ endif()
 set(DRUMPROG_APP_SOURCES
     app/Main.cpp
     app/AppComposition.cpp
+    app/JuceDocumentView.cpp
     app/MainComponent.cpp
+    app/MainMenu.cpp
 )
 
 juce_add_gui_app(DrumProgrammer

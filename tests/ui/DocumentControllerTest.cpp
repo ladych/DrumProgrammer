@@ -1,8 +1,8 @@
+#include "ui/DocumentController.h"
 #include "io/MockProjectRepository.h"
 #include "model/FakeIdGenerator.h"
 #include "model/Project.h"
 #include "model/ProjectFactory.h"
-#include "ui/DocumentController.h"
 #include "ui/FakeDocumentView.h"
 
 #include <gmock/gmock.h>
@@ -28,10 +28,7 @@ using ::testing::Return;
 class DocumentControllerTest : public ::testing::Test
 {
 protected:
-    void SetUp() override
-    {
-        ON_CALL(repository, save(_, _)).WillByDefault(Return(ProjectFileError::none));
-    }
+    void SetUp() override { ON_CALL(repository, save(_, _)).WillByDefault(Return(ProjectFileError::none)); }
 
     LoadResult loadableProject(const std::string& name, double bpm)
     {
@@ -330,7 +327,8 @@ TEST_F(DocumentControllerTest, FPJ03_ListsMissingSamplesAfterOpening)
 {
     view.fileToOpen = rockFile;
     auto result = loadableProject("Rock-Demo", 120.0);
-    result.missingSamples = {{"Acoustic Snare", "/samples/snare.wav"}, {"Crash Cymbal 1", "/samples/crash.wav"}};
+    result.missingSamples = {{"Acoustic Snare", "/samples/snare.wav"},
+                             {"Crash Cymbal 1", "/samples/crash.wav"}};
     EXPECT_CALL(repository, load(_)).WillOnce(Return(result));
 
     controller.open();

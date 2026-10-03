@@ -1,7 +1,7 @@
+#include "model/SnapshotPublisher.h"
 #include "model/FakeIdGenerator.h"
 #include "model/Project.h"
 #include "model/ProjectFactory.h"
-#include "model/SnapshotPublisher.h"
 
 #include <gtest/gtest.h>
 

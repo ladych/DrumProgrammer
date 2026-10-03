@@ -1,7 +1,8 @@
+#include "model/SnapshotBuilder.h"
+#include "TestComparisons.h"
 #include "model/FakeIdGenerator.h"
 #include "model/Project.h"
 #include "model/ProjectFactory.h"
-#include "model/SnapshotBuilder.h"
 
 #include <gtest/gtest.h>
 

@@ -16,12 +16,10 @@ struct TimeSignature
 {
     int numerator = 4;
     int denominator = 4;
-
-    bool operator==(const TimeSignature&) const = default;
 };
 
 /// grid = drawn on the grid (orange), live = played in unquantised (violet).
-enum class NoteOrigin
+enum class NoteOrigin : std::uint8_t
 {
     grid,
     live
@@ -34,8 +32,6 @@ struct NoteData
     std::int64_t lengthTicks = 0;
     int velocity = 100; ///< 1-127
     NoteOrigin origin = NoteOrigin::grid;
-
-    bool operator==(const NoteData&) const = default;
 };
 
 class Note : public TreeNode

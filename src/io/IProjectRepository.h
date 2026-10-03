@@ -15,8 +15,6 @@ struct MissingSample
 {
     std::string slotName;
     std::string filePath;
-
-    bool operator==(const MissingSample&) const = default;
 };
 
 struct LoadResult

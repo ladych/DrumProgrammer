@@ -16,8 +16,6 @@ struct SlotSnapshot
     double gain = 1.0;
     double pitch = 0.0;
     int chokeGroup = 0;
-
-    bool operator==(const SlotSnapshot&) const = default;
 };
 
 struct NoteSnapshot
@@ -26,24 +24,18 @@ struct NoteSnapshot
     std::int64_t startTick = 0;
     std::int64_t lengthTicks = 0;
     int velocity = 0;
-
-    bool operator==(const NoteSnapshot&) const = default;
 };
 
 struct PatternSnapshot
 {
     std::int64_t lengthTicks = 0;
     std::vector<NoteSnapshot> notes; ///< sorted by startTick
-
-    bool operator==(const PatternSnapshot&) const = default;
 };
 
 struct SongEntrySnapshot
 {
     int patternIndex = 0;
     std::int64_t startTick = 0;
-
-    bool operator==(const SongEntrySnapshot&) const = default;
 };
 
 struct MixSnapshot
@@ -51,8 +43,6 @@ struct MixSnapshot
     double backingGain = 1.0;
     double drumsGain = 1.0;
     double masterGain = 1.0;
-
-    bool operator==(const MixSnapshot&) const = default;
 };
 
 struct ProjectSnapshot

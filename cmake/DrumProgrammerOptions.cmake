@@ -1,6 +1,8 @@
 # Compiler settings shared by all of our own targets (E-08, E-09).
 
 if(MSVC)
+    # Sources are UTF-8 (German UI texts); without /utf-8 MSVC reads them in the ANSI code page.
+    add_compile_options(/utf-8)
     set(DRUMPROG_WARNING_FLAGS /W4 /WX /permissive-)
 else()
     set(DRUMPROG_WARNING_FLAGS -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Werror)

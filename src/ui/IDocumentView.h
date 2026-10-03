@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <optional>
@@ -8,7 +9,7 @@
 namespace drumprog::ui
 {
 
-enum class SaveChangesChoice
+enum class SaveChangesChoice : std::uint8_t
 {
     save,
     discard,

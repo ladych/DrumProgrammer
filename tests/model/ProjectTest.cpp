@@ -1,6 +1,7 @@
+#include "model/Project.h"
+#include "TestComparisons.h"
 #include "model/FakeIdGenerator.h"
 #include "model/ModelIds.h"
-#include "model/Project.h"
 #include "model/ProjectFactory.h"
 
 #include <gtest/gtest.h>

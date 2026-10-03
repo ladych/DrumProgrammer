@@ -1,5 +1,6 @@
-#include "io/MockFileSystem.h"
 #include "io/ProjectRepository.h"
+#include "TestComparisons.h"
+#include "io/MockFileSystem.h"
 #include "model/FakeIdGenerator.h"
 #include "model/Project.h"
 #include "model/ProjectFactory.h"
@@ -120,7 +121,8 @@ TEST_F(ProjectRepositoryTest, FPJ03_ReportsAndMarksMissingSamplesInsteadOfFailin
 
 TEST_F(ProjectRepositoryTest, FPJ03_SlotsWithoutFileAreNotChecked)
 {
-    ON_CALL(fileSystem, readText(projectFile)).WillByDefault(Return(ProjectSerializer::toXml(tree, projectDir)));
+    ON_CALL(fileSystem, readText(projectFile))
+        .WillByDefault(Return(ProjectSerializer::toXml(tree, projectDir)));
     EXPECT_CALL(fileSystem, exists(_)).Times(0);
 
     EXPECT_TRUE(repository.load(projectFile).missingSamples.empty());

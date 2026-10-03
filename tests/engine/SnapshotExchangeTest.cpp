@@ -17,7 +17,10 @@ namespace
 
 struct Snapshot
 {
-    explicit Snapshot(int value, int* destroyed = nullptr) : value(value), destroyed(destroyed) {}
+    explicit Snapshot(int initialValue, int* destroyedCounter = nullptr)
+        : value(initialValue), destroyed(destroyedCounter)
+    {
+    }
     ~Snapshot()
     {
         if (destroyed != nullptr)
@@ -132,15 +135,16 @@ TEST(SnapshotExchangeTest, Q04_AudioThreadReadsConsistentSnapshotsWhileGuiPublis
     std::atomic<bool> done{false};
     std::atomic<int> inconsistent{0};
 
-    std::thread audio{[&]
-                      {
-                          while (!done.load())
-                          {
-                              const auto* notes = exchange.acquire();
-                              if (std::accumulate(notes->values.begin(), notes->values.end(), 0) != notes->sum)
-                                  ++inconsistent;
-                          }
-                      }};
+    std::thread audio{
+        [&]
+        {
+            while (!done.load())
+            {
+                const auto* notes = exchange.acquire();
+                if (std::accumulate(notes->values.begin(), notes->values.end(), 0) != notes->sum)
+                    ++inconsistent;
+            }
+        }};
 
     for (int i = 1; i <= kPublishes; ++i)
     {

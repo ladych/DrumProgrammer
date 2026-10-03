@@ -18,9 +18,8 @@ public:
 
 private:
     [[nodiscard]] static std::vector<engine::SlotSnapshot> buildSlots(const Kit& kit);
-    [[nodiscard]] static engine::PatternSnapshot buildPattern(const Pattern& pattern,
-                                                              const Kit& kit,
-                                                              std::int64_t ticksPerBar);
+    [[nodiscard]] static engine::PatternSnapshot
+    buildPattern(const Pattern& pattern, const Kit& kit, std::int64_t ticksPerBar);
     [[nodiscard]] static std::vector<engine::SongEntrySnapshot> buildSong(const Project& project);
 };
 
