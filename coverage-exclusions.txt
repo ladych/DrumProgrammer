@@ -1,0 +1,11 @@
+# Files excluded from the 100 % coverage gate (E-02, E-03).
+# Each entry: <path relative to repository root>  # reason
+# Only humble objects belong here: JUCE glue, driver callbacks and main without logic.
+# tools/check-coverage.py fails if a file under src/ is neither covered nor listed here.
+
+src/app/Main.cpp                # JUCE application entry point and window, no logic
+src/app/AppComposition.h        # composition root (E-05), wiring only
+src/app/AppComposition.cpp      # composition root (E-05), wiring only
+src/app/MainComponent.h         # JUCE component layout, no logic
+src/app/MainComponent.cpp       # JUCE component layout and dialog launch, no logic
+src/app/ToneAudioCallback.h     # driver callback forwarding to engine::TestToneSource
