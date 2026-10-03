@@ -84,10 +84,9 @@ Voice& VoicePool::oldestPlayingVoice() noexcept
 
 Voice& VoicePool::freeVoice() noexcept
 {
-    auto* const idle =
-        std::find_if(voices_.begin(), voices_.end(), [](const Voice& voice) { return !voice.isActive(); });
-    if (idle != voices_.end())
-        return *idle;
+    for (auto& voice : voices_)
+        if (!voice.isActive())
+            return voice;
     // All voices sound: cut the oldest fading voice. At most kMaxVoices play, so one is fading.
     auto& oldest = *std::min_element(
         voices_.begin(),
