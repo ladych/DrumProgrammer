@@ -11,7 +11,7 @@ Desktop-Anwendung zum Programmieren von Schlagzeug-Patterns (JUCE/C++), mit Echt
 
 ## Bauen
 
-Voraussetzungen: CMake ≥ 3.22, Ninja, ein C++20-Compiler (GCC/Clang unter Linux, MSVC 2022 unter Windows). Unter Linux zusätzlich die JUCE-Abhängigkeiten:
+Voraussetzungen: CMake ≥ 3.22, Ninja, ein C++20-Compiler (GCC/Clang unter Linux, Visual Studio (MSVC) unter Windows). Unter Linux zusätzlich die JUCE-Abhängigkeiten:
 
 ```sh
 sudo apt install libasound2-dev libjack-jackd2-dev libfreetype-dev libfontconfig1-dev \
