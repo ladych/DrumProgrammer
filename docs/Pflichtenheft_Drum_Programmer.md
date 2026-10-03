@@ -391,7 +391,7 @@ Das größte Risiko ist der Piano-Roll-Aufwand (AP5); das zweitgrößte ist Thre
 
 ## 12 Klärungsbedarf
 
-Der GUI-Entwurf deckt das Lastenheft ab, zeigt aber einige Funktionen, die dort fehlen oder anders stehen. Alle neun Punkte sind am 30.09.2026 entschieden und eingearbeitet; das Lastenheft ist entsprechend angepasst. Einzige Nacharbeit: die Beispielwerte im GUI-Entwurf (K6).
+Der GUI-Entwurf deckt das Lastenheft ab, zeigt aber einige Funktionen, die dort fehlen oder anders stehen. Alle neun Punkte sind am 30.09.2026 entschieden und eingearbeitet; das Lastenheft ist entsprechend angepasst. Die Beispielwerte im GUI-Entwurf (K6) sind am 03.10.2026 auf 960 PPQ angepasst.
 
 | Nr. | Thema | Befund | Vorschlag in diesem Pflichtenheft |
 | --- | --- | --- | --- |
@@ -400,7 +400,7 @@ Der GUI-Entwurf deckt das Lastenheft ab, zeigt aber einige Funktionen, die dort 
 | K3 | Pitch-Regler | Entwurf hat Pitch je Sample-Slot; Lastenheft schließt Effekte aus | Entschieden 30.09.2026: einfache Tonhöhenänderung per Abspielgeschwindigkeit, Priorität Soll (F-SE-07); gilt nicht als Effekt; im Lastenheft 3.1 ergänzt |
 | K4 | Undo/Redo | Menü „Bearbeiten“ im Entwurf, im Lastenheft nicht erwähnt | Entschieden 30.09.2026: Muss (MVP) (F-PJ-05), nötig zum Verwerfen von Aufnahmen; fast gratis durch ValueTree/UndoManager; im Lastenheft 3.8 ergänzt |
 | K5 | Taste „Z“ für High Tom | auf QWERTZ liegt Z dort, wo auf QWERTY Y liegt | Entschieden 30.09.2026: Mapping per Scancode (6.3), im GUI frei einstellbar (F-IN-02, MVP) |
-| K6 | Positionswerte im Inspector | „002.2.01 · 3840 Ticks“ und „1/16 · 120 Ticks“ passen nicht zu 960 PPQ (Takt 2, Schlag 2 = 4800 Ticks; 1/16 = 240 Ticks) | Entschieden 30.09.2026: Beispielwerte bei der nächsten Überarbeitung des GUI-Entwurfs auf 960 PPQ anpassen; Anzeige rechnet aus dem Modell |
+| K6 | Positionswerte im Inspector | „002.2.01 · 3840 Ticks“ und „1/16 · 120 Ticks“ passen nicht zu 960 PPQ (Takt 2, Schlag 2 = 4800 Ticks; 1/16 = 240 Ticks) | Entschieden 30.09.2026: Beispielwerte im GUI-Entwurf auf 960 PPQ anpassen; Anzeige rechnet aus dem Modell. Erledigt 03.10.2026: beide Entwürfe zeigen „4800 Ticks“ und „240 Ticks“ |
 | K7 | Latenz-Angabe | Lastenheft nennt 220–240 Samples Puffer für 5 ms Round-Trip; 5 ms entsprechen 240 Samples insgesamt, also ca. 2 × 128 Samples Puffer | Entschieden 30.09.2026: Zielkonfiguration Buffer 128 bei 48 kHz (Q-01); Lastenheft Abschnitt 4 angepasst |
 | K8 | Zeitschätzung | Lastenheft-Phasen summieren sich auf 13,5–21,5 Wochen, genannt werden 5,5–8 Monate für die Vollversion und 8–10 Wochen für den MVP | neue Schätzung: MVP ca. 16 Wochen, v1.0 ca. 28 Wochen (Kapitel 8 und 9) |
 | K9 | Tempoänderungen im Song | weder Entwurf noch Lastenheft nennen Tempowechsel | Entschieden 30.09.2026: v1.0 mit einem festen Tempo und einer Taktart je Projekt; Tempowechsel als Kann-Kriterium (1.4); im Lastenheft 3.4 ergänzt |
