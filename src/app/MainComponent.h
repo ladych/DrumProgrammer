@@ -1,6 +1,10 @@
 #pragma once
 
 #include "app/KitPanel.h"
+#include "app/NoteInspector.h"
+#include "app/PatternListPanel.h"
+#include "app/PianoRollToolbar.h"
+#include "app/PianoRollView.h"
 #include "app/TransportBar.h"
 #include "engine/TestToneSource.h"
 #include "ui/InputLedPresenter.h"
@@ -12,9 +16,10 @@
 namespace drumprog::app
 {
 
-/// Humble object (E-03): main window content with the transport bar (F-TR-01 to 09), the test tone
-/// switch, the input LEDs "MIDI In" and "Tastatur" (F-IN-05), the kit panel and a status line with
-/// device and latency (Q-02).
+/// Humble object (E-03): main window content (Pflichtenheft 6.1) with the transport bar (F-TR-01 to 09),
+/// the piano roll tools, the test tone switch, the input LEDs "MIDI In" and "Tastatur" (F-IN-05), the
+/// pattern list (F-SO-01), the piano roll with velocity lane (F-PR-01 to 11), the note inspector, the
+/// kit panel and a status line with device and latency (Q-02) and, on the right, snap and selection.
 class MainComponent final : public juce::Component, private juce::ChangeListener, private juce::Timer
 {
 public:
@@ -23,6 +28,9 @@ public:
                   ui::TransportPresenter& transport,
                   ui::TempoPresenter& tempo,
                   ui::KitPresenter& kitPresenter,
+                  ui::PatternListPresenter& patterns,
+                  PatternDialogs patternDialogs,
+                  ui::PianoRollPresenter& pianoRoll,
                   ui::KeymapPresenter& keymapPresenter,
                   ui::InputLedPresenter& inputLeds,
                   const juce::String& sampleWildcard);
@@ -47,10 +55,16 @@ private:
     ui::InputLedPresenter& inputLeds_;
     juce::ToggleButton testToneButton_{"Testton 440 Hz"};
     juce::TextButton settingsButton_{"Audio/MIDI-Einstellungen..."};
+    ui::PianoRollPresenter& pianoRoll_;
     juce::Rectangle<int> ledArea_;
     TransportBar transportBar_;
+    PianoRollToolbar pianoRollToolbar_;
+    PatternListPanel patternList_;
+    PianoRollView pianoRollView_;
+    NoteInspector noteInspector_;
     KitPanel kitPanel_;
     juce::Label status_;
+    juce::Label editStatus_;
 
     JUCE_LEAK_DETECTOR(MainComponent)
 };

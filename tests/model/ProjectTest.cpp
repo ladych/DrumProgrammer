@@ -101,6 +101,32 @@ TEST_F(ProjectTest, FSO05_RemovingAPatternRemovesItsSongBlocks)
     EXPECT_EQ(song.entry(0).patternId(), "p-2");
 }
 
+TEST_F(ProjectTest, FSO01_DuplicatesAPatternWithItsNotesRightAfterIt)
+{
+    project.addPattern("p-2", "Chorus", 4);
+    auto original = firstPattern();
+    original.setColour("#3B82F6");
+    original.addNote({38, 960, 240, 90, NoteOrigin::live});
+    undoManager.beginNewTransaction();
+
+    auto copy = project.duplicatePattern(0, "p-3", "Pattern 1 Kopie");
+
+    ASSERT_EQ(project.numPatterns(), 3);
+    EXPECT_EQ(project.pattern(1).id(), "p-3");
+    EXPECT_EQ(project.pattern(2).id(), "p-2");
+    EXPECT_EQ(copy.name(), "Pattern 1 Kopie");
+    EXPECT_EQ(copy.colour(), "#3B82F6");
+    EXPECT_EQ(copy.lengthBars(), original.lengthBars());
+    ASSERT_EQ(copy.numNotes(), 1);
+    EXPECT_EQ(copy.note(0).data(), (NoteData{38, 960, 240, 90, NoteOrigin::live}));
+
+    copy.note(0).setVelocity(10);
+    EXPECT_EQ(original.note(0).velocity(), 90);
+
+    undoManager.undo();
+    EXPECT_EQ(project.numPatterns(), 2);
+}
+
 TEST_F(ProjectTest, FPR03_AddsChangesAndRemovesNotes)
 {
     auto pattern = firstPattern();

@@ -461,6 +461,15 @@ Pattern Project::addPattern(const std::string& id, const std::string& name, int 
     return {patternTree, undoManager()};
 }
 
+Pattern Project::duplicatePattern(int index, const std::string& newId, const std::string& newName)
+{
+    auto copy = pattern(index).tree().createCopy();
+    copy.setProperty(ids::id, toUtf8String(newId), nullptr);
+    copy.setProperty(ids::name, toUtf8String(newName), nullptr);
+    child(ids::patterns).addChild(copy, index + 1, undoManager());
+    return {copy, undoManager()};
+}
+
 void Project::removePattern(int index)
 {
     song().removeEntriesFor(pattern(index).id());

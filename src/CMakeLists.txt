@@ -38,6 +38,7 @@ add_library(drumprog_core STATIC
     model/TreeChangeListener.cpp
     model/TreeNode.cpp
     model/UuidGenerator.cpp
+    ui/ActivePattern.cpp
     ui/ActivityLed.cpp
     ui/AudioStatus.cpp
     ui/DocumentController.cpp
@@ -45,6 +46,11 @@ add_library(drumprog_core STATIC
     ui/KeymapPresenter.cpp
     ui/KeyRouter.cpp
     ui/KitPresenter.cpp
+    ui/MusicalTime.cpp
+    ui/PatternListPresenter.cpp
+    ui/PianoRollGeometry.cpp
+    ui/PianoRollPresenter.cpp
+    ui/SnapGrid.cpp
     ui/TempoPresenter.cpp
     ui/TransportPresenter.cpp
 )
@@ -67,6 +73,10 @@ set(DRUMPROG_APP_SOURCES
     app/KitPanel.cpp
     app/MainComponent.cpp
     app/MainMenu.cpp
+    app/NoteInspector.cpp
+    app/PatternListPanel.cpp
+    app/PianoRollToolbar.cpp
+    app/PianoRollView.cpp
     app/TransportBar.cpp
 )
 

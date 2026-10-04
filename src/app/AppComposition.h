@@ -26,11 +26,14 @@
 #include "model/SnapshotPublisher.h"
 #include "model/TakeRecorder.h"
 #include "model/UuidGenerator.h"
+#include "ui/ActivePattern.h"
 #include "ui/DocumentController.h"
 #include "ui/InputLedPresenter.h"
 #include "ui/KeyRouter.h"
 #include "ui/KeymapPresenter.h"
 #include "ui/KitPresenter.h"
+#include "ui/PatternListPresenter.h"
+#include "ui/PianoRollPresenter.h"
 #include "ui/TempoPresenter.h"
 #include "ui/TransportPresenter.h"
 
@@ -72,6 +75,10 @@ private:
     void saveDeviceSettings();
     void updateSampleRate();
     void updateOutputLatency();
+    void renamePattern(int index);
+    void askPatternLength(int index);
+    [[nodiscard]] EditActions editActions();
+    [[nodiscard]] PatternActions patternActions();
 
     io::StdFileSystem fileSystem_;
     io::SettingsStore deviceSettings_;
@@ -118,6 +125,11 @@ private:
     input::MidiInputHandler midiInputHandler_;
     MidiInputCallback midiInputCallback_;
     ui::InputLedPresenter inputLeds_;
+
+    // Editing (AP5): the active pattern is shown in the piano roll and played by the transport.
+    ui::ActivePattern activePattern_;
+    ui::PatternListPresenter patternListPresenter_;
+    ui::PianoRollPresenter pianoRollPresenter_;
 
     io::ProjectRepository projectRepository_;
     JuceDocumentView documentView_;

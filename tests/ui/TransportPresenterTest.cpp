@@ -102,6 +102,50 @@ TEST_F(TransportPresenterTest, FTR04_PositionIsBarBeatTick)
     EXPECT_EQ(transport.positionText(), "002.5.090");
 }
 
+TEST_F(TransportPresenterTest, FPR11_PlayheadFollowsThePositionWhilePlaying)
+{
+    EXPECT_FALSE(transport.playheadTick().has_value());
+    transport.play();
+    audioBlock(1000 * kTick);
+    EXPECT_EQ(transport.playheadTick(), 1000);
+    transport.stop();
+    audioBlock();
+    EXPECT_FALSE(transport.playheadTick().has_value());
+}
+
+TEST_F(TransportPresenterTest, FSO01_ChoosingAnotherPatternSwitchesTheRunningPlayback)
+{
+    model::Project{tree, nullptr}.addPattern("p-2", "Fill", 1);
+    transport.play();
+    audioBlock((3840 + 1920) * kTick);
+
+    transport.setActivePattern(1);
+    audioBlock(0);
+
+    EXPECT_TRUE(transport.isPlaying());
+    EXPECT_EQ(transport.positionText(), "001.3.000"); // wrapped into the one-bar pattern
+    transport.setActivePattern(1);
+    audioBlock(0);
+    EXPECT_EQ(transport.positionText(), "001.3.000");
+}
+
+TEST_F(TransportPresenterTest, FSO01_ChoosingAnotherPatternKeepsARunningRecording)
+{
+    model::Project{tree, nullptr}.addPattern("p-2", "Fill", 1);
+    transport.setCountInBars(0);
+    transport.toggleRecordArmed();
+    transport.play();
+    audioBlock(1000 * kTick);
+
+    transport.setActivePattern(1);
+    audioBlock(0);
+
+    EXPECT_EQ(transport.activePattern(), 1);
+    EXPECT_TRUE(transport.isRecording());
+    EXPECT_EQ(transport.playheadTick(), 1000);
+    transport.stop();
+}
+
 TEST_F(TransportPresenterTest, FTR07_PlayWithoutRecArmedOnlyPlays)
 {
     transport.play();
