@@ -28,12 +28,15 @@ std::filesystem::path deviceSettingsFile()
 
 AppComposition::AppComposition()
     : deviceSettings_(fileSystem_, deviceSettingsFile()), testTone_(kTestToneFrequencyHz, kTestToneGain),
-      audioCallback_(testTone_), projectFactory_(idGenerator_), project_(projectFactory_.createDefault()),
-      snapshotPublisher_(project_, snapshots_), projectRepository_(fileSystem_),
+      kitBuilder_(sampleLoader_), kitPresenter_(engine::makeGmDefaultKit(), kitBuilder_, sampleEngine_),
+      audioCallback_(testTone_, sampleEngine_), projectFactory_(idGenerator_),
+      project_(projectFactory_.createDefault()), snapshotPublisher_(project_, snapshots_),
+      projectRepository_(fileSystem_),
       documentController_(project_, undoManager_, projectRepository_, projectFactory_, documentView_),
       mainMenu_(documentController_, [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); })
 {
     restoreDeviceSettings();
+    updateSampleRate();
     deviceManager_.addAudioCallback(&audioCallback_);
     deviceManager_.addChangeListener(this);
 }
@@ -47,12 +50,14 @@ AppComposition::~AppComposition()
 
 std::unique_ptr<juce::Component> AppComposition::createMainComponent()
 {
-    return std::make_unique<MainComponent>(testTone_, deviceManager_);
+    return std::make_unique<MainComponent>(
+        testTone_, deviceManager_, kitPresenter_, sampleLoader_.wildcardPattern());
 }
 
 void AppComposition::changeListenerCallback(juce::ChangeBroadcaster* /*source*/)
 {
     saveDeviceSettings();
+    updateSampleRate();
 }
 
 void AppComposition::restoreDeviceSettings()
@@ -68,6 +73,13 @@ void AppComposition::saveDeviceSettings()
 {
     if (const auto xml = deviceManager_.createStateXml())
         deviceSettings_.save(xml->toString().toStdString());
+}
+
+void AppComposition::updateSampleRate()
+{
+    // Samples are resampled to the device rate when the kit is built (F-SE-02).
+    if (auto* device = deviceManager_.getCurrentAudioDevice())
+        kitPresenter_.setDeviceSampleRate(device->getCurrentSampleRate());
 }
 
 } // namespace drumprog::app

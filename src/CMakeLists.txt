@@ -1,6 +1,17 @@
 # Testable logic (E-02): everything in this library is measured by the coverage gate.
 add_library(drumprog_core STATIC
+    engine/Downmix.cpp
+    engine/EngineKit.cpp
+    engine/KitBuilder.cpp
+    engine/KitDescription.cpp
+    engine/Resampler.cpp
+    engine/SampleBuffer.cpp
+    engine/SampleEngine.cpp
     engine/TestToneSource.cpp
+    engine/TriggerIndicators.cpp
+    engine/VelocityCurve.cpp
+    engine/Voice.cpp
+    engine/VoicePool.cpp
     io/DeviceSettingsStore.cpp
     io/ProjectRepository.cpp
     io/ProjectSerializer.cpp
@@ -13,6 +24,7 @@ add_library(drumprog_core STATIC
     model/TreeNode.cpp
     model/UuidGenerator.cpp
     ui/DocumentController.cpp
+    ui/KitPresenter.cpp
 )
 target_include_directories(drumprog_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(drumprog_core PUBLIC drumprog_juce)
@@ -27,6 +39,8 @@ set(DRUMPROG_APP_SOURCES
     app/Main.cpp
     app/AppComposition.cpp
     app/JuceDocumentView.cpp
+    app/JuceSampleLoader.cpp
+    app/KitPanel.cpp
     app/MainComponent.cpp
     app/MainMenu.cpp
 )

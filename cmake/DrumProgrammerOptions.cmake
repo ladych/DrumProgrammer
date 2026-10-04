@@ -5,7 +5,8 @@ if(MSVC)
     add_compile_options(/utf-8)
     set(DRUMPROG_WARNING_FLAGS /W4 /WX /permissive-)
 else()
-    set(DRUMPROG_WARNING_FLAGS -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Werror)
+    # Designated initializers deliberately leave members at their defaults; GCC would flag that.
+    set(DRUMPROG_WARNING_FLAGS -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wno-missing-field-initializers -Werror)
 endif()
 
 # Applies warnings-as-errors to a target made only of our own sources.

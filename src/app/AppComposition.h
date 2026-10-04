@@ -1,8 +1,11 @@
 #pragma once
 
+#include "app/AudioCallback.h"
 #include "app/JuceDocumentView.h"
+#include "app/JuceSampleLoader.h"
 #include "app/MainMenu.h"
-#include "app/ToneAudioCallback.h"
+#include "engine/KitBuilder.h"
+#include "engine/SampleEngine.h"
 #include "engine/TestToneSource.h"
 #include "io/DeviceSettingsStore.h"
 #include "io/ProjectRepository.h"
@@ -11,6 +14,7 @@
 #include "model/SnapshotPublisher.h"
 #include "model/UuidGenerator.h"
 #include "ui/DocumentController.h"
+#include "ui/KitPresenter.h"
 
 #include <juce_audio_utils/juce_audio_utils.h>
 
@@ -42,11 +46,16 @@ private:
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
     void restoreDeviceSettings();
     void saveDeviceSettings();
+    void updateSampleRate();
 
     io::StdFileSystem fileSystem_;
     io::DeviceSettingsStore deviceSettings_;
     engine::TestToneSource testTone_;
-    ToneAudioCallback audioCallback_;
+    JuceSampleLoader sampleLoader_;
+    engine::KitBuilder kitBuilder_;
+    engine::SampleEngine sampleEngine_;
+    ui::KitPresenter kitPresenter_;
+    AudioCallback audioCallback_;
     juce::AudioDeviceManager deviceManager_;
 
     // Project model (AP1). The audio thread will read snapshots_ from the sequencer on (AP4).
