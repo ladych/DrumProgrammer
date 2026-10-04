@@ -22,6 +22,9 @@ class SnapshotBuilderTest : public ::testing::Test
 protected:
     FakeIdGenerator ids;
     Project project{ProjectFactory{ids}.createDefault(), nullptr};
+    juce::ValueTree globalKit = ProjectFactory::createDefaultKit();
+
+    [[nodiscard]] Kit activeKit() const { return project.activeKit(globalKit); }
 
     static constexpr int kKickIndex = 1;  // GM 36
     static constexpr int kSnareIndex = 3; // GM 38
@@ -35,7 +38,7 @@ TEST_F(SnapshotBuilderTest, FPJ02_CopiesTempoTimeSignatureAndMix)
     project.mix().setDrumsGain(0.5);
     project.mix().setMasterGain(0.75);
 
-    const auto snapshot = SnapshotBuilder::build(project);
+    const auto snapshot = SnapshotBuilder::build(project, activeKit());
 
     EXPECT_DOUBLE_EQ(snapshot->bpm, 98.25);
     EXPECT_EQ(snapshot->timeSigNumerator, 6);
@@ -46,7 +49,7 @@ TEST_F(SnapshotBuilderTest, FPJ02_CopiesTempoTimeSignatureAndMix)
 
 TEST_F(SnapshotBuilderTest, FSE04_KitDescriptionEqualsTheGmDefaultKitForANewProject)
 {
-    const auto kit = SnapshotBuilder::buildKit(project.kit());
+    const auto kit = SnapshotBuilder::buildKit(activeKit());
     const auto gm = engine::makeGmDefaultKit();
 
     ASSERT_EQ(kit.size(), gm.size());
@@ -65,13 +68,13 @@ TEST_F(SnapshotBuilderTest, FSE04_KitDescriptionEqualsTheGmDefaultKitForANewProj
 
 TEST_F(SnapshotBuilderTest, FSE05_KitDescriptionCopiesEditedSlotsInKitOrder)
 {
-    auto snare = *project.kit().findSlot(38);
+    auto snare = *activeKit().findSlot(38);
     snare.setMidiNote(40);
     snare.setGain(0.5);
     snare.setPitch(2.4);
     snare.setFilePath("/kits/snäre.wav");
 
-    const auto kit = SnapshotBuilder::buildKit(project.kit());
+    const auto kit = SnapshotBuilder::buildKit(activeKit());
 
     const auto& built = kit[kSnareIndex];
     EXPECT_EQ(built.gmNote, 38);
@@ -83,11 +86,11 @@ TEST_F(SnapshotBuilderTest, FSE05_KitDescriptionCopiesEditedSlotsInKitOrder)
 
 TEST_F(SnapshotBuilderTest, FPJ03_KitDescriptionLeavesMissingSamplesEmpty)
 {
-    auto kick = *project.kit().findSlot(36);
+    auto kick = *activeKit().findSlot(36);
     kick.setFilePath("/kits/kick.wav");
     juce::ValueTree{kick.tree()}.setProperty(ids::sampleMissing, true, nullptr);
 
-    const auto kit = SnapshotBuilder::buildKit(project.kit());
+    const auto kit = SnapshotBuilder::buildKit(activeKit());
 
     EXPECT_TRUE(kit[kKickIndex].sampleFile.empty());
 }
@@ -99,7 +102,7 @@ TEST_F(SnapshotBuilderTest, FPJ02_NotesAreSortedByStartAndReferenceSlotsByIndex)
     pattern.addNote({36, 0, 240, 100, NoteOrigin::live});
     pattern.addNote({36, 1920, 120, 110, NoteOrigin::grid});
 
-    const auto snapshot = SnapshotBuilder::build(project);
+    const auto snapshot = SnapshotBuilder::build(project, activeKit());
 
     ASSERT_EQ(snapshot->patterns.size(), 1U);
     const auto& built = snapshot->patterns[0];
@@ -114,7 +117,7 @@ TEST_F(SnapshotBuilderTest, FPJ02_SkipsNotesOfUnknownSlots)
 {
     project.pattern(0).addNote({80, 0, 240, 100, NoteOrigin::grid});
 
-    const auto snapshot = SnapshotBuilder::build(project);
+    const auto snapshot = SnapshotBuilder::build(project, activeKit());
 
     EXPECT_TRUE(snapshot->patterns[0].notes.empty());
 }
@@ -127,7 +130,7 @@ TEST_F(SnapshotBuilderTest, FSO04_SongBlocksAreSortedAndResolvedToPatternIndex)
     song.addEntry("id-1", 0);
     song.addEntry("verse", 6);
 
-    const auto snapshot = SnapshotBuilder::build(project);
+    const auto snapshot = SnapshotBuilder::build(project, activeKit());
 
     ASSERT_EQ(snapshot->song.size(), 3U);
     EXPECT_EQ(snapshot->song[0], (SongEntrySnapshot{0, 0}));
@@ -139,7 +142,7 @@ TEST_F(SnapshotBuilderTest, FSO04_SkipsSongBlocksOfUnknownPatterns)
 {
     project.song().addEntry("deleted", 0);
 
-    const auto snapshot = SnapshotBuilder::build(project);
+    const auto snapshot = SnapshotBuilder::build(project, activeKit());
 
     EXPECT_TRUE(snapshot->song.empty());
 }

@@ -23,12 +23,12 @@ class TakeRecorder
 public:
     static constexpr const char* kUndoName = "Aufnahme";
 
-    TakeRecorder(juce::ValueTree project, juce::UndoManager& undoManager);
+    TakeRecorder(juce::ValueTree project, juce::ValueTree globalKit, juce::UndoManager& undoManager);
 
     /// Starts a run into the pattern at patternIndex; false if there is no such pattern.
     bool begin(int patternIndex, RecordMode mode);
-    /// Adds a note for the kit slot at slotIndex, 1/16 long and cut at the pattern end, at the tick
-    /// folded into the pattern. Ignored without a run, for unknown slots or a removed pattern.
+    /// Adds a note for the slot at slotIndex of the active kit, 1/16 long and cut at the pattern end, at the
+    /// tick folded into the pattern. Ignored without a run, for unknown slots or a removed pattern.
     void add(int slotIndex, int velocity, std::int64_t tick);
     /// Ends the run; later changes are separate undo steps.
     void end();
@@ -36,6 +36,7 @@ public:
 
 private:
     juce::ValueTree project_;
+    juce::ValueTree globalKit_;
     juce::UndoManager& undoManager_;
     std::optional<std::string> patternId_;
 };

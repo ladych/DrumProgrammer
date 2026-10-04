@@ -16,13 +16,22 @@ struct AudioMenuActions
     std::function<void()> showKeymap;
 };
 
+/// Actions of the menu "Kit": where the project's kit comes from.
+struct KitMenuActions
+{
+    std::function<void()> copyGlobalKitToProject;
+    std::function<void()> useGlobalKit;
+    std::function<void()> copyProjectKitToGlobal;
+    std::function<bool()> usesProjectKit;
+};
+
 /// Transport commands that only have a shortcut, no menu entry (F-TR-07).
 struct TransportActions
 {
     std::function<void()> toggleRecordArmed;
 };
 
-/// Humble object (E-03): menus "Datei", "Bearbeiten" and "Audio" with their shortcuts (Pflichtenheft
+/// Humble object (E-03): menus "Datei", "Bearbeiten", "Kit" and "Audio" with their shortcuts (Pflichtenheft
 /// 6.2), forwarding every command to the DocumentController or the actions. Shortcuts use Strg only,
 /// so letter keys stay free for drum triggers (6.4); the space bar for play/stop is handled by
 /// ui::KeyRouter.
@@ -31,6 +40,7 @@ class MainMenu final : public juce::MenuBarModel, public juce::ApplicationComman
 public:
     MainMenu(ui::DocumentController& document,
              std::function<void()> quit,
+             KitMenuActions kit,
              AudioMenuActions audio,
              TransportActions transport);
     ~MainMenu() override;
@@ -54,9 +64,11 @@ public:
 
 private:
     [[nodiscard]] std::function<void()> actionFor(juce::CommandID commandID);
+    [[nodiscard]] std::function<void()> kitActionFor(juce::CommandID commandID) const;
 
     ui::DocumentController& document_;
     std::function<void()> quit_;
+    KitMenuActions kit_;
     AudioMenuActions audio_;
     TransportActions transport_;
     juce::ApplicationCommandManager commands_;

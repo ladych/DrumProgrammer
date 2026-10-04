@@ -181,7 +181,16 @@ public:
     void setBpm(double bpm);
     void setTimeSignature(TimeSignature timeSignature);
 
+    /// The project's own kit; its tree is invalid (no slots) while the project uses the global kit.
     [[nodiscard]] Kit kit() const;
+    /// True if the project brings its own kit, which then overrides the global kit.
+    [[nodiscard]] bool hasOwnKit() const;
+    /// The kit the project plays with: its own kit, otherwise the global kit (program setting).
+    [[nodiscard]] Kit activeKit(const juce::ValueTree& globalKit) const;
+    /// Gives the project a copy of the kit as its own kit, replacing an own kit it had.
+    void setOwnKit(const juce::ValueTree& kit);
+    /// Removes the project's own kit, so it uses the global kit again.
+    void removeOwnKit();
     [[nodiscard]] Song song() const;
     [[nodiscard]] BackingTrack backingTrack() const;
     [[nodiscard]] Mix mix() const;

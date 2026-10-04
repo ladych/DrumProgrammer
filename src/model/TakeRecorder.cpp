@@ -15,8 +15,8 @@ constexpr int kSixteenthsPerQuarter = 4;
 
 } // namespace
 
-TakeRecorder::TakeRecorder(juce::ValueTree project, juce::UndoManager& undoManager)
-    : project_(std::move(project)), undoManager_(undoManager)
+TakeRecorder::TakeRecorder(juce::ValueTree project, juce::ValueTree globalKit, juce::UndoManager& undoManager)
+    : project_(std::move(project)), globalKit_(std::move(globalKit)), undoManager_(undoManager)
 {
 }
 
@@ -40,7 +40,7 @@ void TakeRecorder::add(int slotIndex, int velocity, std::int64_t tick)
         return;
     const Project project{project_, &undoManager_};
     auto pattern = project.findPattern(*patternId_);
-    const auto kit = project.kit();
+    const auto kit = project.activeKit(globalKit_);
     if (!pattern || slotIndex < 0 || slotIndex >= kit.numSlots())
         return;
     // Someone else's change in between (e.g. a kit edit) started its own undo step.

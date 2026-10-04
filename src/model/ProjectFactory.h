@@ -7,9 +7,9 @@
 namespace drumprog::model
 {
 
-/// Creates new projects (F-PJ-01): GM default kit with notes 35-59 (F-SE-04), 120 BPM, 4/4 and one
-/// empty pattern of two bars. The kit comes from engine::makeGmDefaultKit(), the program's only GM
-/// table.
+/// Creates new projects (F-PJ-01): 120 BPM, 4/4 and one empty pattern of two bars. New projects have
+/// no own kit and play with the global kit (program setting), which starts as the GM default kit with
+/// notes 35-59 (F-SE-04). The kit comes from engine::makeGmDefaultKit(), the program's only GM table.
 class ProjectFactory
 {
 public:
@@ -19,10 +19,9 @@ public:
     explicit ProjectFactory(IIdGenerator& idGenerator);
 
     [[nodiscard]] juce::ValueTree createDefault() const;
-
-private:
     [[nodiscard]] static juce::ValueTree createDefaultKit();
 
+private:
     IIdGenerator& idGenerator_;
 };
 

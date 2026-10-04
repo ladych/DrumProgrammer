@@ -41,6 +41,7 @@ protected:
 
     void givenProjectFileWithSamples()
     {
+        project.setOwnKit(model::ProjectFactory::createDefaultKit());
         project.kit().findSlot(36)->setFilePath(kickFile.string());
         project.kit().findSlot(38)->setFilePath(snareFile.string());
         ON_CALL(fileSystem, readText(projectFile))
@@ -121,6 +122,7 @@ TEST_F(ProjectRepositoryTest, FPJ03_ReportsAndMarksMissingSamplesInsteadOfFailin
 
 TEST_F(ProjectRepositoryTest, FPJ03_SlotsWithoutFileAreNotChecked)
 {
+    project.setOwnKit(model::ProjectFactory::createDefaultKit());
     ON_CALL(fileSystem, readText(projectFile))
         .WillByDefault(Return(ProjectSerializer::toXml(tree, projectDir)));
     EXPECT_CALL(fileSystem, exists(_)).Times(0);

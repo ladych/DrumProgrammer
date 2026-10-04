@@ -34,7 +34,8 @@ protected:
     /// Plays the role of the audio thread for one block.
     void audioBlock(int numSamples = 480)
     {
-        snapshot = model::SnapshotBuilder::build(model::Project{tree, nullptr});
+        const model::Project project{tree, nullptr};
+        snapshot = model::SnapshotBuilder::build(project, project.activeKit(globalKit));
         sequencer.process(snapshot.get(), numSamples, block);
     }
 
@@ -50,8 +51,9 @@ protected:
 
     model::FakeIdGenerator ids;
     juce::ValueTree tree = model::ProjectFactory{ids}.createDefault();
+    juce::ValueTree globalKit = model::ProjectFactory::createDefaultKit();
     juce::UndoManager undoManager;
-    model::TakeRecorder recorder{tree, undoManager};
+    model::TakeRecorder recorder{tree, globalKit, undoManager};
     NiceMock<io::MockFileSystem> fileSystem;
     io::SettingsStore offsetSettings{fileSystem, "recording-offset.txt"};
     engine::Sequencer sequencer;

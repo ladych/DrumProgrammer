@@ -24,7 +24,6 @@ juce::ValueTree ProjectFactory::createDefault() const
     tree.setProperty(ids::timeSigNumerator, 4, nullptr);
     tree.setProperty(ids::timeSigDenominator, 4, nullptr);
     tree.setProperty(ids::ppq, kTicksPerQuarter, nullptr);
-    tree.appendChild(createDefaultKit(), nullptr);
     tree.appendChild(juce::ValueTree{ids::patterns}, nullptr);
     tree.appendChild(juce::ValueTree{ids::song}, nullptr);
     tree.appendChild(juce::ValueTree{ids::backingTrack}, nullptr);

@@ -34,6 +34,9 @@ std::string generic(const fs::path& path)
 class ProjectSerializerTest : public ::testing::Test
 {
 protected:
+    // Most tests are about a project with its own kit, the only kit the file stores.
+    ProjectSerializerTest() { project.setOwnKit(model::ProjectFactory::createDefaultKit()); }
+
     ParsedProject roundTrip() const
     {
         return ProjectSerializer::fromXml(ProjectSerializer::toXml(tree, projectDir), projectDir);
@@ -118,6 +121,31 @@ TEST_F(ProjectSerializerTest, FPJ02_ResolvesRelativePathsAgainstTheNewLocation)
     EXPECT_EQ(fs::path{loaded.kit().findSlot(36)->filePath()}, movedDir / "samples" / "kick.wav");
 }
 
+TEST_F(ProjectSerializerTest, FPJ02_AProjectWithoutOwnKitIsSavedWithoutKit)
+{
+    project.removeOwnKit();
+
+    const auto xml = juce::parseXML(juce::String{ProjectSerializer::toXml(tree, projectDir)});
+    const auto parsed = roundTrip();
+
+    EXPECT_EQ(xml->getChildByName("KIT"), nullptr);
+    ASSERT_EQ(parsed.error, ProjectFileError::none);
+    EXPECT_FALSE(Project(parsed.project, nullptr).hasOwnKit());
+}
+
+TEST_F(ProjectSerializerTest, FPJ02_TheKitOfAnOlderFileBecomesTheProjectsOwnKit)
+{
+    // Written before the global kit existed: every file has a KIT.
+    const auto parsed = ProjectSerializer::fromXml(
+        R"(<PROJECT formatVersion="1" bpm="100"><KIT><SLOT gmNote="36" filePath="kick.wav"/></KIT></PROJECT>)",
+        projectDir);
+
+    ASSERT_EQ(parsed.error, ProjectFileError::none);
+    const Project loaded{parsed.project, nullptr};
+    EXPECT_TRUE(loaded.hasOwnKit());
+    EXPECT_EQ(fs::path{loaded.kit().findSlot(36)->filePath()}, projectDir / "kick.wav");
+}
+
 TEST_F(ProjectSerializerTest, FPJ02_EmptyPathsStayEmpty)
 {
     const auto parsed = roundTrip();
@@ -184,7 +212,7 @@ TEST_F(ProjectSerializerTest, FPJ02_FillsInMissingSectionsSoTheModelIsComplete)
     const auto parsed = ProjectSerializer::fromXml(R"(<PROJECT formatVersion="1" bpm="100"/>)", projectDir);
 
     ASSERT_EQ(parsed.error, ProjectFileError::none);
-    EXPECT_TRUE(parsed.project.getChildWithName(ids::kit).isValid());
+    EXPECT_FALSE(parsed.project.getChildWithName(ids::kit).isValid()); // uses the global kit
     EXPECT_TRUE(parsed.project.getChildWithName(ids::patterns).isValid());
     EXPECT_TRUE(parsed.project.getChildWithName(ids::song).isValid());
     EXPECT_TRUE(parsed.project.getChildWithName(ids::backingTrack).isValid());

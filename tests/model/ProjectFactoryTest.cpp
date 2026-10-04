@@ -49,9 +49,18 @@ TEST_F(ProjectFactoryTest, FPJ01_NewProjectHasEmptySongAndBackingTrackAndNeutral
     EXPECT_DOUBLE_EQ(project.mix().masterGain(), 1.0);
 }
 
+TEST_F(ProjectFactoryTest, FPJ01_NewProjectHasNoOwnKitAndUsesTheGlobalKit)
+{
+    const juce::ValueTree globalKit = ProjectFactory::createDefaultKit();
+
+    EXPECT_FALSE(project.hasOwnKit());
+    EXPECT_EQ(project.kit().numSlots(), 0);
+    EXPECT_EQ(project.activeKit(globalKit).tree(), globalKit);
+}
+
 TEST_F(ProjectFactoryTest, FSE04_DefaultKitCoversGmNotes35To59)
 {
-    const auto kit = project.kit();
+    const Kit kit{ProjectFactory::createDefaultKit(), nullptr};
 
     ASSERT_EQ(kit.numSlots(), 25);
     for (int index = 0; index < kit.numSlots(); ++index)
@@ -68,7 +77,7 @@ TEST_F(ProjectFactoryTest, FSE04_DefaultKitCoversGmNotes35To59)
 
 TEST_F(ProjectFactoryTest, FSE04_DefaultKitUsesGmNames)
 {
-    const auto kit = project.kit();
+    const Kit kit{ProjectFactory::createDefaultKit(), nullptr};
 
     EXPECT_EQ(kit.findSlot(36)->name(), "Bass Drum 1");
     EXPECT_EQ(kit.findSlot(38)->name(), "Acoustic Snare");
@@ -78,7 +87,7 @@ TEST_F(ProjectFactoryTest, FSE04_DefaultKitUsesGmNames)
 
 TEST_F(ProjectFactoryTest, FSE08_HiHatsShareOneChokeGroup)
 {
-    const auto kit = project.kit();
+    const Kit kit{ProjectFactory::createDefaultKit(), nullptr};
 
     EXPECT_EQ(kit.findSlot(42)->chokeGroup(), engine::kHiHatChokeGroup);
     EXPECT_EQ(kit.findSlot(44)->chokeGroup(), engine::kHiHatChokeGroup);

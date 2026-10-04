@@ -26,9 +26,10 @@ protected:
     FakeIdGenerator ids;
     juce::ValueTree tree = ProjectFactory{ids}.createDefault();
     Project project{tree, nullptr};
+    juce::ValueTree globalKit = ProjectFactory::createDefaultKit();
     ProjectSnapshotExchange exchange;
     FakeKitSink kitSink;
-    SnapshotPublisher publisher{tree, exchange, kitSink};
+    SnapshotPublisher publisher{tree, globalKit, exchange, kitSink};
 };
 
 TEST_F(SnapshotPublisherTest, Q04_PublishesTheProjectRightAway)
@@ -54,18 +55,34 @@ TEST_F(SnapshotPublisherTest, FSE04_HandsTheKitToTheEngineRightAway)
     EXPECT_EQ(kitSink.kits.back().size(), 25U);
 }
 
-TEST_F(SnapshotPublisherTest, FSE05_HandsTheKitOverAgainWhenASlotChanges)
+TEST_F(SnapshotPublisherTest, FSE05_HandsTheKitOverAgainWhenASlotOfTheGlobalKitChanges)
 {
-    project.kit().findSlot(38)->setMidiNote(40);
+    Kit{globalKit, nullptr}.findSlot(38)->setMidiNote(40);
 
     ASSERT_EQ(kitSink.kits.size(), 2U);
     EXPECT_EQ(kitSink.kits.back()[3].midiNote, 40);
 }
 
-TEST_F(SnapshotPublisherTest, FPJ02_ALoadedProjectReplacesTheKit)
+TEST_F(SnapshotPublisherTest, FSE05_TheProjectsOwnKitOverridesTheGlobalKit)
+{
+    auto ownKit = ProjectFactory::createDefaultKit();
+    Kit{ownKit, nullptr}.findSlot(36)->setFilePath("/kits/own-kick.wav");
+    project.setOwnKit(ownKit);
+    EXPECT_EQ(kitSink.kits.back()[1].sampleFile, std::filesystem::path{"/kits/own-kick.wav"});
+
+    project.kit().findSlot(38)->setMidiNote(40);
+    EXPECT_EQ(kitSink.kits.back()[3].midiNote, 40);
+
+    project.removeOwnKit();
+    EXPECT_TRUE(kitSink.kits.back()[1].sampleFile.empty());
+}
+
+TEST_F(SnapshotPublisherTest, FPJ02_ALoadedProjectWithItsOwnKitReplacesTheKit)
 {
     auto loaded = ProjectFactory{ids}.createDefault();
-    Project{loaded, nullptr}.kit().findSlot(36)->setFilePath("/kits/kick.wav");
+    Project loadedProject{loaded, nullptr};
+    loadedProject.setOwnKit(ProjectFactory::createDefaultKit());
+    loadedProject.kit().findSlot(36)->setFilePath("/kits/kick.wav");
 
     tree.copyPropertiesAndChildrenFrom(loaded, nullptr);
 

@@ -40,6 +40,9 @@ public:
     /// Calls onClose unless the user cancels the question for unsaved changes.
     void requestClose(std::function<void()> onClose);
 
+    /// Reports samples of the global kit that were missing at program start; nothing if none.
+    void reportMissingGlobalKitSamples(const std::vector<io::MissingSample>& missing);
+
     void undo();
     void redo();
     [[nodiscard]] bool canUndo() const;

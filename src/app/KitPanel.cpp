@@ -19,7 +19,8 @@ KitPanel::KitPanel(ui::KitPresenter& presenter, ui::KeymapPresenter& keymap, juc
       seenChangeCount_(presenter.changeCount())
 {
     setUpControls();
-    for (auto* component : std::initializer_list<juce::Component*>{&slotList_,
+    for (auto* component : std::initializer_list<juce::Component*>{&kitSource_,
+                                                                   &slotList_,
                                                                    &showAllButton_,
                                                                    &slotName_,
                                                                    &sampleName_,
@@ -74,6 +75,7 @@ void KitPanel::resized()
 {
     auto area = getLocalBounds();
     auto list = area.removeFromLeft(kListWidth);
+    kitSource_.setBounds(list.removeFromTop(24));
     showAllButton_.setBounds(list.removeFromBottom(28));
     slotList_.setBounds(list);
 
@@ -153,6 +155,8 @@ void KitPanel::timerCallback()
 
 void KitPanel::refreshRows()
 {
+    kitSource_.setText("Kit: " + juce::String::fromUTF8(presenter_.kitSourceLabel().c_str()),
+                       juce::dontSendNotification);
     rows_ = presenter_.visibleSlots(showAllButton_.getToggleState());
     slotList_.updateContent();
     slotList_.repaint();

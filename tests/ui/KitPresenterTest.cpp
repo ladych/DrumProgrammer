@@ -47,10 +47,13 @@ protected:
         return out.left[0];
     }
 
-    [[nodiscard]] model::SampleSlot slot(int index) const { return project.kit().slot(index); }
+    /// Slot of the active kit: the global kit unless the project has its own.
+    [[nodiscard]] model::SampleSlot slot(int index) const { return project.activeKit(globalKit).slot(index); }
+    [[nodiscard]] model::Kit global() const { return {globalKit, nullptr}; }
 
     model::FakeIdGenerator ids;
     juce::ValueTree tree = model::ProjectFactory{ids}.createDefault();
+    juce::ValueTree globalKit = model::ProjectFactory::createDefaultKit();
     model::Project project{tree, nullptr};
     juce::UndoManager undoManager;
     NiceMock<engine::MockSampleLoader> loader;
@@ -58,8 +61,8 @@ protected:
     engine::SampleEngine engine;
     engine::KitPublisher kits{builder, engine};
     model::ProjectSnapshotExchange snapshots;
-    model::SnapshotPublisher publisher{tree, snapshots, kits};
-    KitPresenter presenter{tree, undoManager, kits, engine};
+    model::SnapshotPublisher publisher{tree, globalKit, snapshots, kits};
+    KitPresenter presenter{tree, globalKit, undoManager, kits, engine};
 };
 
 TEST_F(KitPresenterTest, FSE04_ShowsCoreSlotsUnlessExpanded)
@@ -265,6 +268,100 @@ TEST_F(KitPresenterTest, FPJ02_ChangeCountFollowsEveryProjectChange)
     const auto before = presenter.changeCount();
     project.setBpm(90.0);
     EXPECT_NE(presenter.changeCount(), before);
+}
+
+TEST_F(KitPresenterTest, FPJ02_ChangeCountFollowsEveryGlobalKitChange)
+{
+    const auto before = presenter.changeCount();
+    global().slot(kSnare).setGain(0.5);
+    EXPECT_NE(presenter.changeCount(), before);
+}
+
+TEST_F(KitPresenterTest, FSE05_ANewProjectEditsTheGlobalKit)
+{
+    EXPECT_FALSE(presenter.usesProjectKit());
+    EXPECT_EQ(presenter.kitSourceLabel(), "Programm-Kit");
+
+    presenter.select(kSnare);
+    presenter.setPitch(3);
+
+    EXPECT_EQ(global().slot(kSnare).pitch(), 3.0);
+    EXPECT_FALSE(project.hasOwnKit());
+}
+
+TEST_F(KitPresenterTest, FSE05_CopyingTheKitIntoTheProjectDecouplesItFromTheGlobalKit)
+{
+    global().slot(kSnare).setPitch(2.0);
+
+    presenter.copyGlobalKitToProject();
+    presenter.select(kSnare);
+    presenter.setPitch(5);
+
+    EXPECT_TRUE(presenter.usesProjectKit());
+    EXPECT_EQ(presenter.kitSourceLabel(), "Projekt-Kit");
+    EXPECT_EQ(project.kit().slot(kSnare).pitch(), 5.0);
+    EXPECT_EQ(global().slot(kSnare).pitch(), 2.0);
+}
+
+TEST_F(KitPresenterTest, FSE05_TheProjectKitIsWhatTheEngineHears)
+{
+    presenter.copyGlobalKitToProject();
+    presenter.select(kSnare);
+    ASSERT_TRUE(presenter.loadSample("/kits/snare.wav"));
+
+    engine.queueTrigger(38, 127);
+    EXPECT_FLOAT_EQ(renderFrame(), 1.0F);
+    EXPECT_FALSE(global().slot(kSnare).hasSample());
+}
+
+TEST_F(KitPresenterTest, FSE05_UsingTheGlobalKitAgainRemovesTheProjectKit)
+{
+    presenter.copyGlobalKitToProject();
+    project.kit().slot(kSnare).setPitch(5.0);
+
+    presenter.useGlobalKit();
+
+    EXPECT_FALSE(presenter.usesProjectKit());
+    EXPECT_EQ(slot(kSnare).pitch(), 0.0);
+}
+
+TEST_F(KitPresenterTest, FSE05_TheProjectKitCanBecomeTheGlobalKit)
+{
+    presenter.copyGlobalKitToProject();
+    project.kit().slot(kSnare).setFilePath("/kits/snare.wav");
+
+    presenter.copyProjectKitToGlobal();
+
+    EXPECT_EQ(global().slot(kSnare).filePath(), "/kits/snare.wav");
+    EXPECT_TRUE(presenter.usesProjectKit());
+}
+
+TEST_F(KitPresenterTest, FSE05_KitSourceCommandsThatMakeNoSenseDoNothing)
+{
+    presenter.useGlobalKit();
+    presenter.copyProjectKitToGlobal();
+    EXPECT_FALSE(undoManager.canUndo());
+
+    presenter.copyGlobalKitToProject();
+    global().slot(kSnare).setPitch(2.0);
+    presenter.copyGlobalKitToProject();
+    EXPECT_EQ(project.kit().slot(kSnare).pitch(), 0.0);
+}
+
+TEST_F(KitPresenterTest, FPJ05_KitSourceChangesAreUndoSteps)
+{
+    presenter.copyGlobalKitToProject();
+    project.kit().slot(kSnare).setPitch(5.0);
+    presenter.copyProjectKitToGlobal();
+    presenter.useGlobalKit();
+
+    undoManager.undo();
+    EXPECT_TRUE(presenter.usesProjectKit());
+    EXPECT_EQ(global().slot(kSnare).pitch(), 5.0);
+    undoManager.undo();
+    EXPECT_EQ(global().slot(kSnare).pitch(), 0.0);
+    undoManager.undo();
+    EXPECT_FALSE(presenter.usesProjectKit());
 }
 
 TEST_F(KitPresenterTest, FSE09_LedLightsAfterHitAndGoesOffAfterHoldTime)
