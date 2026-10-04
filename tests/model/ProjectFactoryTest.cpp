@@ -1,5 +1,6 @@
 #include "model/ProjectFactory.h"
 #include "TestComparisons.h"
+#include "engine/KitDescription.h"
 #include "model/FakeIdGenerator.h"
 #include "model/ModelIds.h"
 #include "model/Project.h"
@@ -79,9 +80,9 @@ TEST_F(ProjectFactoryTest, FSE08_HiHatsShareOneChokeGroup)
 {
     const auto kit = project.kit();
 
-    EXPECT_EQ(kit.findSlot(42)->chokeGroup(), ProjectFactory::kHiHatChokeGroup);
-    EXPECT_EQ(kit.findSlot(44)->chokeGroup(), ProjectFactory::kHiHatChokeGroup);
-    EXPECT_EQ(kit.findSlot(46)->chokeGroup(), ProjectFactory::kHiHatChokeGroup);
+    EXPECT_EQ(kit.findSlot(42)->chokeGroup(), engine::kHiHatChokeGroup);
+    EXPECT_EQ(kit.findSlot(44)->chokeGroup(), engine::kHiHatChokeGroup);
+    EXPECT_EQ(kit.findSlot(46)->chokeGroup(), engine::kHiHatChokeGroup);
     EXPECT_EQ(kit.findSlot(38)->chokeGroup(), 0);
 }
 

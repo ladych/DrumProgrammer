@@ -120,6 +120,24 @@ TEST_F(SampleEngineTest, FSE03_QueueRejectsTriggersWhenFull)
     EXPECT_FALSE(engine.queueTrigger(36, 100));
 }
 
+TEST_F(SampleEngineTest, FIN03_MidiTriggerPlaysInTheNextBlock)
+{
+    engine.setKit(makeKit(constantSample(1.0F, 100), 0.5F));
+    EXPECT_TRUE(engine.queueMidiTrigger(36, 127));
+    EXPECT_FLOAT_EQ(render(1)[0], 0.5F);
+    EXPECT_EQ(engine.indicators().hitCount(0), 1U);
+}
+
+TEST_F(SampleEngineTest, FIN03_MidiQueueIsIndependentOfTheGuiQueue)
+{
+    for (std::size_t i = 0; i < SampleEngine::kTriggerQueueSize; ++i)
+        ASSERT_TRUE(engine.queueTrigger(36, 100));
+    EXPECT_TRUE(engine.queueMidiTrigger(36, 100));
+    for (std::size_t i = 1; i < SampleEngine::kTriggerQueueSize; ++i)
+        ASSERT_TRUE(engine.queueMidiTrigger(36, 100));
+    EXPECT_FALSE(engine.queueMidiTrigger(36, 100));
+}
+
 TEST_F(SampleEngineTest, Q04_NewKitIsUsedFromNextBlock)
 {
     engine.setKit(makeKit(constantSample(1.0F, 100)));
@@ -207,7 +225,7 @@ TEST_F(SampleEngineTest, Q04_ReplacedKitWaitsUntilPreviousGarbageIsCollected)
     EXPECT_FLOAT_EQ(render(1)[0], 0.25F);
 }
 
-TEST_F(SampleEngineTest, Q04_PublishingKitsWhileRenderingIsThreadSafe)
+TEST_F(SampleEngineTest, Q04_FIN03_PublishingKitsAndMidiHitsWhileRenderingIsThreadSafe)
 {
     std::atomic<bool> running{true};
     std::thread audio(
@@ -220,6 +238,15 @@ TEST_F(SampleEngineTest, Q04_PublishingKitsWhileRenderingIsThreadSafe)
                 engine.render(out.channels.data(), 2, 64);
             }
         });
+    std::thread midi(
+        [this, &running]
+        {
+            while (running.load())
+            {
+                engine.queueMidiTrigger(46, 100);
+                std::this_thread::yield();
+            }
+        });
     for (int i = 0; i < 200; ++i)
     {
         engine.setKit(makeKit(constantSample(0.1F, 200)));
@@ -228,6 +255,7 @@ TEST_F(SampleEngineTest, Q04_PublishingKitsWhileRenderingIsThreadSafe)
         std::this_thread::yield();
     }
     running.store(false);
+    midi.join();
     audio.join();
     engine.collectGarbage();
     SUCCEED();

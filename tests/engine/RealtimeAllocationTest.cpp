@@ -1,9 +1,13 @@
 #include "engine/SampleEngine.h"
 
 #include "engine/RenderHelpers.h"
+#include "input/EngineNoteSinks.h"
+#include "input/MidiInputHandler.h"
 
 #include <gtest/gtest.h>
 
+#include <array>
+#include <cstdint>
 #include <cstdlib>
 #include <memory>
 #include <new>
@@ -88,6 +92,29 @@ TEST(RealtimeAllocationTest, Q04_KitSwapAndQueuedTriggersDoNotAllocateOnAudioThr
         countAllocations = false;
         engine.collectGarbage();
     }
+
+    EXPECT_EQ(allocationCount, 0);
+}
+
+TEST(RealtimeAllocationTest, Q04_FIN03_MidiHitsDoNotAllocateOnMidiOrAudioThread)
+{
+    SampleEngine engine;
+    engine.prepare(48000.0);
+    engine.setKit(makeKit());
+    input::MidiNoteSink sink{engine};
+    input::InputActivity activity;
+    input::MidiInputHandler handler{sink, activity};
+    StereoOutput out(128);
+    engine.render(out.channels.data(), 2, 128);
+    const std::array<std::uint8_t, 3> noteOn{0x99, 36, 100};
+
+    countAllocations = true;
+    for (int block = 0; block < 20; ++block)
+    {
+        handler.handleMessage(noteOn);
+        engine.render(out.channels.data(), 2, 128);
+    }
+    countAllocations = false;
 
     EXPECT_EQ(allocationCount, 0);
 }
