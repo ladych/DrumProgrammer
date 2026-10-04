@@ -37,6 +37,7 @@ add_executable(drumprog_tests
     model/TakeRecorderTest.cpp
     model/TreeChangeListenerTest.cpp
     model/UuidGeneratorTest.cpp
+    ui/ActivePatternTest.cpp
     ui/ActivityLedTest.cpp
     ui/AudioStatusTest.cpp
     ui/DocumentControllerTest.cpp
@@ -44,6 +45,11 @@ add_executable(drumprog_tests
     ui/KeymapPresenterTest.cpp
     ui/KeyRouterTest.cpp
     ui/KitPresenterTest.cpp
+    ui/MusicalTimeTest.cpp
+    ui/PatternListPresenterTest.cpp
+    ui/PianoRollGeometryTest.cpp
+    ui/PianoRollPresenterTest.cpp
+    ui/SnapGridTest.cpp
     ui/TempoPresenterTest.cpp
     ui/TransportPresenterTest.cpp
 )
