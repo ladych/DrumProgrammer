@@ -174,12 +174,14 @@ void TransportBar::resized()
     numeratorBox_.setBounds(row.removeFromLeft(56).reduced(0, 2));
     denominatorBox_.setBounds(row.removeFromLeft(56).reduced(0, 2));
     row.removeFromLeft(2 * kGap);
-    modeLabel_.setBounds(row.removeFromLeft(54));
-    patternModeButton_.setBounds(row.removeFromLeft(70));
-    songModeButton_.setBounds(row.removeFromLeft(60));
+    layOutMode(row);
 
     area.removeFromTop(kGap);
-    row = area.removeFromTop(kRowHeight);
+    layOutMetronomeAndRecording(area.removeFromTop(kRowHeight));
+}
+
+void TransportBar::layOutMetronomeAndRecording(juce::Rectangle<int> row)
+{
     metronomeButton_.setBounds(row.removeFromLeft(100));
     metronomeRecordButton_.setBounds(row.removeFromLeft(120));
     metronomeLevel_.setBounds(row.removeFromLeft(100));
@@ -190,6 +192,13 @@ void TransportBar::resized()
     row.removeFromLeft(kGap);
     offsetLabel_.setBounds(row.removeFromLeft(90));
     offsetSlider_.setBounds(row.removeFromLeft(200));
+}
+
+void TransportBar::layOutMode(juce::Rectangle<int> row)
+{
+    modeLabel_.setBounds(row.removeFromLeft(54));
+    patternModeButton_.setBounds(row.removeFromLeft(70));
+    songModeButton_.setBounds(row.removeFromLeft(60));
 }
 
 void TransportBar::timerCallback()

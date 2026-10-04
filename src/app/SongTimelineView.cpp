@@ -1,6 +1,7 @@
 #include "app/SongTimelineView.h"
 
 #include <algorithm>
+#include <array>
 #include <utility>
 
 namespace drumprog::app
@@ -170,10 +171,11 @@ private:
         g.setColour(juce::Colours::white.withAlpha(0.15F));
         g.fillRoundedRectangle(area, 3.0F);
         g.setColour(juce::Colours::white);
-        const float dashes[] = {4.0F, 3.0F};
+        const std::array dashes{4.0F, 3.0F};
         juce::Path outline;
         outline.addRoundedRectangle(area, 3.0F);
-        juce::PathStrokeType(1.5F).createDashedStroke(outline, outline, dashes, 2);
+        juce::PathStrokeType(1.5F).createDashedStroke(
+            outline, outline, dashes.data(), static_cast<int>(dashes.size()));
         g.fillPath(outline);
         if (ghost->duplicate)
             g.drawText("+", area.reduced(4.0F), juce::Justification::topRight);

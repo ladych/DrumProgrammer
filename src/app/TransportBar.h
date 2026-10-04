@@ -32,6 +32,8 @@ private:
     void setUpTransport();
     void setUpTempo();
     void setUpMode();
+    void layOutMode(juce::Rectangle<int> row);
+    void layOutMetronomeAndRecording(juce::Rectangle<int> row);
     void setUpMetronome();
     void setUpRecording();
     void refresh();
