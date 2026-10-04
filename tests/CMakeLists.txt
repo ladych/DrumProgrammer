@@ -4,6 +4,7 @@ add_executable(drumprog_tests
     engine/KitDescriptionTest.cpp
     engine/SampleBufferTest.cpp
     engine/SampleEngineTest.cpp
+    engine/SnapshotExchangeTest.cpp
     engine/SpscQueueTest.cpp
     engine/TestToneSourceTest.cpp
     engine/TriggerIndicatorsTest.cpp
@@ -11,7 +12,16 @@ add_executable(drumprog_tests
     engine/VoicePoolTest.cpp
     engine/VoiceTest.cpp
     io/DeviceSettingsStoreTest.cpp
+    io/ProjectRepositoryTest.cpp
+    io/ProjectSerializerTest.cpp
     io/StdFileSystemTest.cpp
+    model/ProjectFactoryTest.cpp
+    model/ProjectTest.cpp
+    model/SnapshotBuilderTest.cpp
+    model/SnapshotPublisherTest.cpp
+    model/TreeChangeListenerTest.cpp
+    model/UuidGeneratorTest.cpp
+    ui/DocumentControllerTest.cpp
     ui/KitPresenterTest.cpp
 )
 

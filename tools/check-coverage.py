@@ -53,6 +53,10 @@ def run_gcovr(build_dir, exclusions):
         # GCC attributes exception cleanup of returned locals to the closing brace.
         "--exclude-noncode-lines",
         "--exclude-unreachable-branches",
+        # A template line is covered if any instantiation covers it (e.g. SnapshotExchange).
+        "--merge-lines",
+        # Lines like a lone "}" only carry compiler-generated exception cleanup.
+        "--exclude-noncode-lines",
         "--print-summary",
         "--txt", "-",
         "--html-details", str(report_dir / "index.html"),

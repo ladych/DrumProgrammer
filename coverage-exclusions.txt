@@ -1,11 +1,16 @@
 # Files excluded from the 100 % coverage gate (E-02, E-03).
 # Each entry: <path relative to repository root>  # reason
-# Only humble objects belong here: JUCE glue, driver callbacks and main without logic.
+# Only humble objects belong here: JUCE glue, driver callbacks and main without logic, and files
+# with declarations only, for which gcov records no executable lines.
 # tools/check-coverage.py fails if a file under src/ is neither covered nor listed here.
 
 src/app/Main.cpp                # JUCE application entry point and window, no logic
 src/app/AppComposition.h        # composition root (E-05), wiring only
 src/app/AppComposition.cpp      # composition root (E-05), wiring only
+src/app/JuceDocumentView.h      # JUCE message boxes and file choosers, no logic
+src/app/JuceDocumentView.cpp    # JUCE message boxes and file choosers, no logic
+src/app/MainMenu.h              # JUCE menu bar and shortcuts forwarding to ui::DocumentController
+src/app/MainMenu.cpp            # JUCE menu bar and shortcuts forwarding to ui::DocumentController
 src/app/MainComponent.h         # JUCE component layout, no logic
 src/app/MainComponent.cpp       # JUCE component layout and dialog launch, no logic
 src/app/AudioCallback.h         # driver callback forwarding to engine::TestToneSource and engine::SampleEngine
@@ -13,3 +18,5 @@ src/app/JuceSampleLoader.h      # ISampleLoader on top of juce::AudioFormatManag
 src/app/JuceSampleLoader.cpp    # ISampleLoader on top of juce::AudioFormatManager, decoding only
 src/app/KitPanel.h              # JUCE kit list and inspector widgets, logic in ui::KitPresenter
 src/app/KitPanel.cpp            # JUCE kit list and inspector widgets, logic in ui::KitPresenter
+src/engine/ProjectSnapshot.h    # plain data structs, no executable lines
+src/model/ModelIds.h            # ValueTree identifier constants, no executable lines
