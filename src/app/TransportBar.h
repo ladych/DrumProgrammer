@@ -9,9 +9,9 @@ namespace drumprog::app
 {
 
 /// Humble object (E-03): transport bar (Pflichtenheft 6.1, area 1) with back, play, stop, loop and
-/// rec, the position, BPM and time signature, metronome, count-in, recording mode and the recording
-/// offset. All logic is in ui::TransportPresenter and ui::TempoPresenter; a 30 Hz timer refreshes
-/// the display and hands recorded hits to the model (F-TR-04).
+/// rec, the position, BPM and time signature, the mode Pattern/Song (F-TR-05), metronome, count-in, recording
+/// mode and the recording offset. All logic is in ui::TransportPresenter and ui::TempoPresenter; a 30 Hz
+/// timer refreshes the display and hands recorded hits to the model (F-TR-04).
 class TransportBar final : public juce::Component, private juce::Timer
 {
 public:
@@ -31,6 +31,7 @@ private:
     void timerCallback() override;
     void setUpTransport();
     void setUpTempo();
+    void setUpMode();
     void setUpMetronome();
     void setUpRecording();
     void refresh();
@@ -53,6 +54,9 @@ private:
     juce::Label signatureLabel_{{}, "Takt"};
     juce::ComboBox numeratorBox_;
     juce::ComboBox denominatorBox_;
+    juce::Label modeLabel_{{}, "Modus"};
+    juce::TextButton patternModeButton_{"Pattern"};
+    juce::TextButton songModeButton_{"Song"};
 
     juce::ToggleButton metronomeButton_{"Metronom"};
     juce::ToggleButton metronomeRecordButton_{"bei Aufnahme"};

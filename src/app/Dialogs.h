@@ -24,4 +24,10 @@ void askForText(const juce::String& title,
                 const juce::String& initialText,
                 std::function<void(const std::string&)> onOk);
 
+/// Asks a yes/no question, e.g. before deleting; onYes runs only if the user confirms.
+void askToConfirm(const juce::String& title,
+                  const juce::String& question,
+                  const juce::String& yesButton,
+                  std::function<void()> onYes);
+
 } // namespace drumprog::app

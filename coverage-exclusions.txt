@@ -32,6 +32,8 @@ src/app/PianoRollToolbar.h      # JUCE snap and tool buttons, logic in ui::Piano
 src/app/PianoRollToolbar.cpp    # JUCE snap and tool buttons, logic in ui::PianoRollPresenter
 src/app/NoteInspector.h         # JUCE labels and slider of the note inspector, logic in ui::PianoRollPresenter
 src/app/NoteInspector.cpp       # JUCE labels and slider of the note inspector, logic in ui::PianoRollPresenter
+src/app/SongTimelineView.h      # JUCE painting, mouse and drag & drop forwarding, logic in ui::SongTimelinePresenter and ui::SongTimelineGeometry
+src/app/SongTimelineView.cpp    # JUCE painting, mouse and drag & drop forwarding, logic in ui::SongTimelinePresenter and ui::SongTimelineGeometry
 src/app/KeyboardInputGlue.h     # JUCE key listener forwarding to ui::KeyRouter, OS key names
 src/app/MidiInputCallback.h     # JUCE MIDI callback forwarding raw bytes to input::MidiInputHandler
 src/app/NativeKeyboard.h        # declarations of the platform keyboard access

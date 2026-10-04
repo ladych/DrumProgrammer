@@ -5,6 +5,7 @@
 #include "app/PatternListPanel.h"
 #include "app/PianoRollToolbar.h"
 #include "app/PianoRollView.h"
+#include "app/SongTimelineView.h"
 #include "app/TransportBar.h"
 #include "engine/TestToneSource.h"
 #include "ui/InputLedPresenter.h"
@@ -18,9 +19,13 @@ namespace drumprog::app
 
 /// Humble object (E-03): main window content (Pflichtenheft 6.1) with the transport bar (F-TR-01 to 09),
 /// the piano roll tools, the test tone switch, the input LEDs "MIDI In" and "Tastatur" (F-IN-05), the
-/// pattern list (F-SO-01), the piano roll with velocity lane (F-PR-01 to 11), the note inspector, the
-/// kit panel and a status line with device and latency (Q-02) and, on the right, snap and selection.
-class MainComponent final : public juce::Component, private juce::ChangeListener, private juce::Timer
+/// pattern list (F-SO-01), the song timeline (F-SO-02 to 07), the piano roll with velocity lane (F-PR-01 to
+/// 11), the note inspector, the kit panel and a status line with device and latency (Q-02) and, on the right,
+/// snap and selection.
+class MainComponent final : public juce::Component,
+                            public juce::DragAndDropContainer,
+                            private juce::ChangeListener,
+                            private juce::Timer
 {
 public:
     MainComponent(engine::TestToneSource& testTone,
@@ -30,6 +35,7 @@ public:
                   ui::KitPresenter& kitPresenter,
                   ui::PatternListPresenter& patterns,
                   PatternDialogs patternDialogs,
+                  ui::SongTimelinePresenter& songTimeline,
                   ui::PianoRollPresenter& pianoRoll,
                   ui::KeymapPresenter& keymapPresenter,
                   ui::InputLedPresenter& inputLeds,
@@ -60,6 +66,7 @@ private:
     TransportBar transportBar_;
     PianoRollToolbar pianoRollToolbar_;
     PatternListPanel patternList_;
+    SongTimelineView songTimeline_;
     PianoRollView pianoRollView_;
     NoteInspector noteInspector_;
     KitPanel kitPanel_;

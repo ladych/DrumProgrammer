@@ -80,6 +80,7 @@ set(DRUMPROG_APP_SOURCES
     app/PatternListPanel.cpp
     app/PianoRollToolbar.cpp
     app/PianoRollView.cpp
+    app/SongTimelineView.cpp
     app/TransportBar.cpp
 )
 

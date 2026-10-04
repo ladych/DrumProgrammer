@@ -52,16 +52,26 @@ struct PatternActions
     std::function<bool()> canRemove;
 };
 
+/// Actions of the menu "Song" (Pflichtenheft 6.2, F-SO-02, F-SO-03).
+struct SongActions
+{
+    std::function<void()> insertPattern;
+    std::function<void()> removeBlock;
+    std::function<void()> clear;
+    std::function<bool()> hasSelection;
+    std::function<bool()> isEmpty;
+};
+
 /// Transport commands that only have a shortcut, no menu entry (F-TR-07).
 struct TransportActions
 {
     std::function<void()> toggleRecordArmed;
 };
 
-/// Humble object (E-03): menus "Datei", "Bearbeiten", "Pattern", "Kit" and "Audio" with their shortcuts
-/// (Pflichtenheft 6.2), forwarding every command to the DocumentController or the actions. Shortcuts use
-/// Strg only, so letter keys stay free for drum triggers (6.4), except Entf; the space bar for play/stop
-/// is handled by ui::KeyRouter.
+/// Humble object (E-03): menus "Datei", "Bearbeiten", "Pattern", "Song", "Kit" and "Audio" with their
+/// shortcuts (Pflichtenheft 6.2), forwarding every command to the DocumentController or the actions.
+/// Shortcuts use Strg only, so letter keys stay free for drum triggers (6.4), except Entf; the space bar for
+/// play/stop is handled by ui::KeyRouter.
 class MainMenu final : public juce::MenuBarModel, public juce::ApplicationCommandTarget
 {
 public:
@@ -69,6 +79,7 @@ public:
              std::function<void()> quit,
              EditActions edit,
              PatternActions pattern,
+             SongActions song,
              KitMenuActions kit,
              AudioMenuActions audio,
              TransportActions transport);
@@ -95,6 +106,7 @@ private:
     [[nodiscard]] std::function<void()> actionFor(juce::CommandID commandID);
     [[nodiscard]] std::function<void()> editActionFor(juce::CommandID commandID) const;
     [[nodiscard]] std::function<void()> patternActionFor(juce::CommandID commandID) const;
+    [[nodiscard]] std::function<void()> songActionFor(juce::CommandID commandID) const;
     [[nodiscard]] std::function<void()> kitActionFor(juce::CommandID commandID) const;
     /// Whether the command can run now; empty for commands that always can.
     [[nodiscard]] std::function<bool()> activeCheckFor(juce::CommandID commandID) const;
@@ -103,6 +115,7 @@ private:
     std::function<void()> quit_;
     EditActions edit_;
     PatternActions pattern_;
+    SongActions song_;
     KitMenuActions kit_;
     AudioMenuActions audio_;
     TransportActions transport_;

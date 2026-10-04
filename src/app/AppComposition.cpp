@@ -56,12 +56,13 @@ AppComposition::AppComposition()
                           undoManager_,
                           activePattern_,
                           [this](int slot) { return keymapPresenter_.keyLabel(slot); }),
-      projectRepository_(fileSystem_),
+      songTimelinePresenter_(project_, undoManager_, activePattern_), projectRepository_(fileSystem_),
       documentController_(project_, undoManager_, projectRepository_, projectFactory_, documentView_),
       mainMenu_(documentController_,
                 [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); },
                 editActions(),
                 patternActions(),
+                songActions(),
                 {.copyGlobalKitToProject = [this] { kitPresenter_.copyGlobalKitToProject(); },
                  .useGlobalKit = [this] { kitPresenter_.useGlobalKit(); },
                  .copyProjectKitToGlobal = [this] { kitPresenter_.copyProjectKitToGlobal(); },
@@ -102,7 +103,9 @@ std::unique_ptr<juce::Component> AppComposition::createMainComponent()
         kitPresenter_,
         patternListPresenter_,
         PatternDialogs{.rename = [this](int index) { renamePattern(index); },
-                       .setLength = [this](int index) { askPatternLength(index); }},
+                       .setLength = [this](int index) { askPatternLength(index); },
+                       .remove = [this](int index) { removePattern(index); }},
+        songTimelinePresenter_,
         pianoRollPresenter_,
         keymapPresenter_,
         inputLeds_,
@@ -179,6 +182,20 @@ void AppComposition::askPatternLength(int index)
                });
 }
 
+void AppComposition::removePattern(int index)
+{
+    const auto question = patternListPresenter_.removeQuestion(index);
+    if (question.empty())
+    {
+        patternListPresenter_.remove(index);
+        return;
+    }
+    askToConfirm(juce::String::fromUTF8("Pattern l\xc3\xb6schen"),
+                 juce::String::fromUTF8(question.c_str()),
+                 juce::String::fromUTF8("L\xc3\xb6schen"),
+                 [this, index] { patternListPresenter_.remove(index); });
+}
+
 EditActions AppComposition::editActions()
 {
     auto& roll = pianoRollPresenter_;
@@ -202,8 +219,18 @@ PatternActions AppComposition::patternActions()
             .duplicate = [&list] { list.duplicate(list.selectedIndex()); },
             .rename = [this] { renamePattern(patternListPresenter_.selectedIndex()); },
             .setLength = [this] { askPatternLength(patternListPresenter_.selectedIndex()); },
-            .remove = [&list] { list.remove(list.selectedIndex()); },
+            .remove = [this] { removePattern(patternListPresenter_.selectedIndex()); },
             .canRemove = [&list] { return list.canRemove(); }};
+}
+
+SongActions AppComposition::songActions()
+{
+    auto& song = songTimelinePresenter_;
+    return {.insertPattern = [&song] { song.appendActivePattern(); },
+            .removeBlock = [&song] { song.removeSelected(); },
+            .clear = [&song] { song.clear(); },
+            .hasSelection = [&song] { return song.selectedBlock() >= 0; },
+            .isEmpty = [&song] { return song.isEmpty(); }};
 }
 
 } // namespace drumprog::app
