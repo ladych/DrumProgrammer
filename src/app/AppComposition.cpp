@@ -2,6 +2,7 @@
 
 #include "app/Dialogs.h"
 #include "app/MainComponent.h"
+#include "ui/AudioStatus.h"
 
 #include <filesystem>
 #include <string>
@@ -30,25 +31,32 @@ std::filesystem::path settingsFile(const char* name)
 AppComposition::AppComposition()
     : deviceSettings_(fileSystem_, settingsFile("audio-device.xml")),
       keymapSettings_(fileSystem_, settingsFile("keymap.txt")),
+      recordOffsetSettings_(fileSystem_, settingsFile("recording-offset.txt")),
       testTone_(kTestToneFrequencyHz, kTestToneGain), kitBuilder_(sampleLoader_),
-      kitPublisher_(kitBuilder_, sampleEngine_), audioCallback_(testTone_, sampleEngine_),
-      projectFactory_(idGenerator_), project_(projectFactory_.createDefault()),
-      snapshotPublisher_(project_, snapshots_, kitPublisher_),
+      kitPublisher_(kitBuilder_, sampleEngine_), playbackRenderer_(sequencer_, sampleEngine_, metronome_),
+      audioCallback_(testTone_, playbackRenderer_, snapshots_), projectFactory_(idGenerator_),
+      project_(projectFactory_.createDefault()), snapshotPublisher_(project_, snapshots_, kitPublisher_),
       kitPresenter_(project_, undoManager_, kitPublisher_, sampleEngine_),
-      keymap_(input::Keymap::fromText(keymapSettings_.load())),
-      keymapPresenter_(keymap_, keymapSettings_, keyNames_, kitPresenter_), guiNoteSink_(sampleEngine_),
-      keyboardInput_(keymap_, guiNoteSink_, inputActivity_), keyRouter_(keymapPresenter_, keyboardInput_),
-      keyboardListener_(keyRouter_), midiNoteSink_(sampleEngine_),
+      takeRecorder_(project_, undoManager_),
+      transportPresenter_(project_, sequencer_, metronome_, takeRecorder_, recordOffsetSettings_),
+      tempoPresenter_(project_, undoManager_), keymap_(input::Keymap::fromText(keymapSettings_.load())),
+      keymapPresenter_(keymap_, keymapSettings_, keyNames_, kitPresenter_),
+      guiNoteSink_(sampleEngine_, &engine::steadyClockSeconds),
+      keyboardInput_(keymap_, guiNoteSink_, inputActivity_),
+      keyRouter_(keymapPresenter_, keyboardInput_, transportPresenter_), keyboardListener_(keyRouter_),
+      midiNoteSink_(sampleEngine_, &engine::steadyClockSeconds),
       midiInputHandler_(midiNoteSink_, inputActivity_), midiInputCallback_(midiInputHandler_),
       inputLeds_(inputActivity_), projectRepository_(fileSystem_),
       documentController_(project_, undoManager_, projectRepository_, projectFactory_, documentView_),
       mainMenu_(documentController_,
                 [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); },
                 {.showSettings = [this] { showAudioSettingsDialog(deviceManager_, dialogParent_); },
-                 .showKeymap = [this] { showKeymapDialog(keymapPresenter_, dialogParent_); }})
+                 .showKeymap = [this] { showKeymapDialog(keymapPresenter_, dialogParent_); }},
+                {.toggleRecordArmed = [this] { transportPresenter_.toggleRecordArmed(); }})
 {
     restoreDeviceSettings();
     updateSampleRate();
+    updateOutputLatency();
     deviceManager_.addAudioCallback(&audioCallback_);
     // Empty identifier: messages of every MIDI input enabled in the settings (F-IN-03).
     deviceManager_.addMidiInputDeviceCallback({}, &midiInputCallback_);
@@ -67,6 +75,8 @@ std::unique_ptr<juce::Component> AppComposition::createMainComponent()
 {
     return std::make_unique<MainComponent>(testTone_,
                                            deviceManager_,
+                                           transportPresenter_,
+                                           tempoPresenter_,
                                            kitPresenter_,
                                            keymapPresenter_,
                                            inputLeds_,
@@ -77,6 +87,7 @@ void AppComposition::changeListenerCallback(juce::ChangeBroadcaster* /*source*/)
 {
     saveDeviceSettings();
     updateSampleRate();
+    updateOutputLatency();
 }
 
 void AppComposition::restoreDeviceSettings()
@@ -99,6 +110,20 @@ void AppComposition::updateSampleRate()
     // Samples are resampled to the device rate when the kit is built (F-SE-02).
     if (auto* device = deviceManager_.getCurrentAudioDevice())
         kitPublisher_.setDeviceSampleRate(device->getCurrentSampleRate());
+}
+
+void AppComposition::updateOutputLatency()
+{
+    // Recorded hits are moved back by the time until a block is heard (F-IN-08).
+    ui::AudioDeviceInfo info;
+    if (auto* device = deviceManager_.getCurrentAudioDevice())
+    {
+        info.open = true;
+        info.sampleRate = device->getCurrentSampleRate();
+        info.bufferSize = device->getCurrentBufferSizeSamples();
+        info.outputLatencySamples = device->getOutputLatencyInSamples();
+    }
+    transportPresenter_.setOutputLatencyMs(info.open ? ui::outputLatencyMs(info) : 0.0);
 }
 
 } // namespace drumprog::app

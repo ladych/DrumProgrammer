@@ -1,39 +1,44 @@
 #pragma once
 
+#include "engine/Clock.h"
 #include "engine/SampleEngine.h"
 #include "input/INoteSink.h"
 
 namespace drumprog::input
 {
 
-/// Computer keyboard hits from the GUI thread into the SampleEngine's GUI queue.
+/// Computer keyboard hits from the GUI thread into the SampleEngine's GUI queue, stamped with the time
+/// they were played (F-IN-08).
 class GuiNoteSink final : public INoteSink
 {
 public:
-    explicit GuiNoteSink(engine::SampleEngine& engine) : engine_(engine) {}
+    GuiNoteSink(engine::SampleEngine& engine, engine::Clock clock) : engine_(engine), clock_(clock) {}
 
     bool noteOn(int midiNote, int velocity) noexcept override
     {
-        return engine_.queueTrigger(midiNote, velocity);
+        return engine_.queueLiveTrigger(midiNote, velocity, clock_());
     }
 
 private:
     engine::SampleEngine& engine_;
+    engine::Clock clock_;
 };
 
-/// MIDI hits from the MIDI thread into the SampleEngine's MIDI queue.
+/// MIDI hits from the MIDI thread into the SampleEngine's MIDI queue, stamped with the time they
+/// arrived (F-IN-08).
 class MidiNoteSink final : public INoteSink
 {
 public:
-    explicit MidiNoteSink(engine::SampleEngine& engine) : engine_(engine) {}
+    MidiNoteSink(engine::SampleEngine& engine, engine::Clock clock) : engine_(engine), clock_(clock) {}
 
     bool noteOn(int midiNote, int velocity) noexcept override
     {
-        return engine_.queueMidiTrigger(midiNote, velocity);
+        return engine_.queueMidiTrigger(midiNote, velocity, clock_());
     }
 
 private:
     engine::SampleEngine& engine_;
+    engine::Clock clock_;
 };
 
 } // namespace drumprog::input

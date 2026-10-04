@@ -1,3 +1,4 @@
+#include "engine/PlaybackRenderer.h"
 #include "engine/SampleEngine.h"
 
 #include "engine/RenderHelpers.h"
@@ -101,7 +102,7 @@ TEST(RealtimeAllocationTest, Q04_FIN03_MidiHitsDoNotAllocateOnMidiOrAudioThread)
     SampleEngine engine;
     engine.prepare(48000.0);
     engine.setKit(makeKit());
-    input::MidiNoteSink sink{engine};
+    input::MidiNoteSink sink{engine, &engine::steadyClockSeconds};
     input::InputActivity activity;
     input::MidiInputHandler handler{sink, activity};
     StereoOutput out(128);
@@ -117,6 +118,35 @@ TEST(RealtimeAllocationTest, Q04_FIN03_MidiHitsDoNotAllocateOnMidiOrAudioThread)
     countAllocations = false;
 
     EXPECT_EQ(allocationCount, 0);
+}
+
+TEST(RealtimeAllocationTest, Q04_FTR06_FIN07_SequencerPlaybackAndRecordingDoNotAllocate)
+{
+    ProjectSnapshot snapshot;
+    snapshot.bpm = 300.0;
+    snapshot.ticksPerQuarter = 960;
+    snapshot.patterns.push_back({3840, {NoteSnapshot{2, 0, 240, 100}, NoteSnapshot{0, 480, 240, 100}}});
+    Sequencer sequencer;
+    SampleEngine engine;
+    Metronome metronome;
+    PlaybackRenderer renderer{sequencer, engine, metronome};
+    renderer.prepare(48000.0);
+    engine.setKit(makeKit());
+    sequencer.setMetronome(true, true);
+    sequencer.play({.take = 1, .countInBars = 1});
+    StereoOutput out(128);
+
+    countAllocations = true;
+    for (int block = 0; block < 2000; ++block)
+    {
+        engine.queueLiveTrigger(36, 100, 0.001 * block);
+        renderer.render(&snapshot, out.channels.data(), 2, 128, 0.001 * block);
+    }
+    countAllocations = false;
+
+    EXPECT_EQ(allocationCount, 0);
+    RecordedHit hit;
+    EXPECT_TRUE(sequencer.popRecordedHit(hit));
 }
 
 } // namespace

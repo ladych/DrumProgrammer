@@ -19,6 +19,7 @@ constexpr juce::CommandID editUndo = 0x2001;
 constexpr juce::CommandID editRedo = 0x2002;
 constexpr juce::CommandID audioSettings = 0x3001;
 constexpr juce::CommandID audioKeymap = 0x3002;
+constexpr juce::CommandID transportRecord = 0x4001;
 } // namespace command
 
 constexpr int kCtrl = juce::ModifierKeys::commandModifier;
@@ -60,6 +61,12 @@ constexpr std::array kCommands{
                 0,
                 0},
     CommandSpec{command::audioKeymap, "Tastatur-Mapping...", "Tasten den Drum-Slots zuordnen", "Audio", 0, 0},
+    CommandSpec{command::transportRecord,
+                "Aufnahme scharf",
+                "Aufnahme scharf schalten oder entschärfen",
+                "Transport",
+                'r',
+                kCtrl},
 };
 
 const CommandSpec* findCommand(juce::CommandID id)
@@ -72,8 +79,11 @@ const CommandSpec* findCommand(juce::CommandID id)
 
 } // namespace
 
-MainMenu::MainMenu(ui::DocumentController& document, std::function<void()> quit, AudioMenuActions audio)
-    : document_(document), quit_(std::move(quit)), audio_(std::move(audio))
+MainMenu::MainMenu(ui::DocumentController& document,
+                   std::function<void()> quit,
+                   AudioMenuActions audio,
+                   TransportActions transport)
+    : document_(document), quit_(std::move(quit)), audio_(std::move(audio)), transport_(std::move(transport))
 {
     commands_.registerAllCommandsForTarget(this);
     commands_.setFirstCommandTarget(this);
@@ -172,6 +182,8 @@ std::function<void()> MainMenu::actionFor(juce::CommandID commandID)
         return audio_.showSettings;
     case command::audioKeymap:
         return audio_.showKeymap;
+    case command::transportRecord:
+        return transport_.toggleRecordArmed;
     default:
         return {};
     }

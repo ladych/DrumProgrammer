@@ -33,6 +33,8 @@ public:
 
     /// Returns null for notes outside 0..127 or without slot.
     [[nodiscard]] const EngineSlot* slotForNote(int midiNote) const noexcept;
+    /// Returns null for indices outside the kit.
+    [[nodiscard]] const EngineSlot* slotAt(int slotIndex) const noexcept;
     [[nodiscard]] const std::vector<EngineSlot>& slots() const noexcept;
 
 private:
