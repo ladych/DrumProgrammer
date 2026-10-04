@@ -15,8 +15,11 @@ Das sind berechnete Werte. Die echte Latenz misst man so:
 
 1. Ausgang des Interfaces per Kabel auf einen Eingang legen (Loopback), z. B. Scarlett Out 1 → In 1. Pegel niedrig halten.
 2. JACK mit 48 kHz, 128 Frames/Periode, 2 Perioden starten, z. B. `jackd -d alsa -d hw:USB -r 48000 -p 128 -n 2`.
-3. `jack_iodelay` starten und verbinden: `jack_connect jack_delay:out system:playback_1` und `jack_connect system:capture_1 jack_delay:in`.
-4. `jack_iodelay` gibt die gemessene Round-Trip-Latenz in Frames und ms aus, abzüglich der Systemlatenz die „extra loopback latency“.
+3. `jack_iodelay` in einem Terminal starten. Es läuft weiter und meldet „Signal below threshold…“, solange noch nichts verbunden ist.
+4. In einem **zweiten** Terminal verbinden (oder in QjackCtl unter „Verbindungen“):
+   `jack_connect jack_delay:out system:playback_1` und `jack_connect system:capture_1 jack_delay:in`.
+   Die genauen Portnamen zeigt `jack_lsp`. Kommt weiter „below threshold“, ist das Loopback-Kabel nicht am richtigen Eingang oder der Eingangspegel zu niedrig.
+5. `jack_iodelay` gibt die gemessene Round-Trip-Latenz in Frames und ms aus, abzüglich der Systemlatenz die „extra loopback latency“.
 
 Die Ausgangslatenz ist ungefähr die Hälfte der Round-Trip-Latenz. Sie sollte mit dem Wert „Latenz“ in der Statuszeile übereinstimmen.
 
