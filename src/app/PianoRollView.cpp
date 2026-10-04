@@ -187,7 +187,8 @@ private:
             juce::Path outline;
             outline.addRectangle(area);
             juce::Path dashed;
-            juce::PathStrokeType(1.0F).createDashedStroke(dashed, outline, kDashes.data(), kDashes.size());
+            juce::PathStrokeType(1.0F).createDashedStroke(
+                dashed, outline, kDashes.data(), static_cast<int>(kDashes.size()));
             g.fillPath(dashed);
         }
         const auto tooltip = utf8(owner_.presenter_.dragTooltip());

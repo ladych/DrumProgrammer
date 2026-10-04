@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <iterator>
 #include <utility>
 
 namespace drumprog::app
@@ -86,10 +87,9 @@ void PianoRollToolbar::refresh()
 {
     // Strg+1/2/3 and the menu change the presenter directly, so the buttons follow it.
     snapButton_.setToggleState(presenter_.snapEnabled(), juce::dontSendNotification);
-    const auto* const grid =
-        std::find(ui::kGridDivisions.begin(), ui::kGridDivisions.end(), presenter_.grid());
-    gridBox_.setSelectedItemIndex(static_cast<int>(grid - ui::kGridDivisions.begin()),
-                                  juce::dontSendNotification);
+    const auto index =
+        std::distance(ui::kGridDivisions.begin(), std::ranges::find(ui::kGridDivisions, presenter_.grid()));
+    gridBox_.setSelectedItemIndex(static_cast<int>(index), juce::dontSendNotification);
     drawButton_.setToggleState(presenter_.tool() == ui::PianoRollTool::draw, juce::dontSendNotification);
     selectButton_.setToggleState(presenter_.tool() == ui::PianoRollTool::select, juce::dontSendNotification);
     eraseButton_.setToggleState(presenter_.tool() == ui::PianoRollTool::erase, juce::dontSendNotification);
