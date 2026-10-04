@@ -18,9 +18,10 @@
 namespace drumprog::ui
 {
 
-/// Logic behind the kit panel and the sample part of the inspector (humble view in app/KitPanel).
-/// It edits the kit of the project model, so every change is undoable (F-PJ-05) and saved with the
-/// project; the SnapshotPublisher hands the changed kit to the engine. GUI thread only.
+/// Logic behind the kit panel, the sample part of the inspector (humble view in app/KitPanel) and the
+/// menu "Kit". It edits the active kit: the project's own kit, which is saved with the project, or
+/// otherwise the global kit (program setting). Every change is undoable (F-PJ-05); the
+/// SnapshotPublisher hands the changed kit to the engine. GUI thread only.
 class KitPresenter
 {
 public:
@@ -28,6 +29,7 @@ public:
     static constexpr float kMaxGainDb = 6.0F;
 
     KitPresenter(juce::ValueTree project,
+                 juce::ValueTree globalKit,
                  juce::UndoManager& undoManager,
                  engine::KitPublisher& kits,
                  engine::SampleEngine& engine);
@@ -60,25 +62,43 @@ public:
     void setMidiNote(int midiNote);
     bool previewSelected();
 
+    // Kit source. Each of these is one undo step and does nothing where it makes no sense.
+    /// True if the project has its own kit, which overrides the global kit.
+    [[nodiscard]] bool usesProjectKit() const;
+    /// "Projekt-Kit" or "Programm-Kit", for the kit panel.
+    [[nodiscard]] std::string kitSourceLabel() const;
+    /// Copies the global kit into the project; the project then keeps its sounds when the global kit
+    /// changes.
+    void copyGlobalKitToProject();
+    /// Removes the project's own kit, so the project plays with the global kit again.
+    void useGlobalKit();
+    /// Makes the project's own kit the global kit for all projects without their own kit.
+    void copyProjectKitToGlobal();
+
     /// Call from the GUI timer: updates LED states and frees retired kits.
     void tick();
     [[nodiscard]] bool isLedOn(int slotIndex) const;
-    /// Changes whenever the project changed, also by undo or loading; the view refreshes on change.
+    /// Changes whenever the project or the global kit changed, also by undo or loading; the view refreshes on
+    /// change.
     [[nodiscard]] std::uint32_t changeCount() const noexcept { return changeCount_; }
 
 private:
+    [[nodiscard]] model::Project project() const;
+    [[nodiscard]] model::Kit activeKit() const;
     [[nodiscard]] std::optional<model::SampleSlot> slotAt(int slotIndex) const;
     [[nodiscard]] std::optional<model::SampleSlot> selected() const;
     void beginEdit(const model::SampleSlot& slot, const std::string& what);
 
     juce::ValueTree project_;
+    juce::ValueTree globalKit_;
     juce::UndoManager& undoManager_;
     engine::KitPublisher& kits_;
     engine::SampleEngine& engine_;
     std::optional<int> selected_;
     std::array<ActivityLed, engine::TriggerIndicators::kMaxSlots> leds_{};
     std::uint32_t changeCount_ = 0;
-    model::TreeChangeListener listener_;
+    model::TreeChangeListener projectListener_;
+    model::TreeChangeListener globalKitListener_;
 };
 
 } // namespace drumprog::ui

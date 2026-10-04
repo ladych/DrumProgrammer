@@ -24,6 +24,8 @@ add_library(drumprog_core STATIC
     input/Keymap.cpp
     input/MidiInputHandler.cpp
     input/Scancode.cpp
+    io/GlobalKit.cpp
+    io/MissingSamples.cpp
     io/ProjectRepository.cpp
     io/ProjectSerializer.cpp
     io/SettingsStore.cpp

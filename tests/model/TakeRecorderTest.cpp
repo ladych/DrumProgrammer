@@ -15,12 +15,14 @@ class TakeRecorderTest : public ::testing::Test
 {
 protected:
     [[nodiscard]] Pattern pattern() const { return project.pattern(0); }
+    [[nodiscard]] Kit kit() const { return project.activeKit(globalKit); }
 
     FakeIdGenerator ids;
     juce::ValueTree tree = ProjectFactory{ids}.createDefault(); // one pattern of 2 bars = 7680 ticks
     juce::UndoManager undoManager;
     Project project{tree, &undoManager};
-    TakeRecorder recorder{tree, undoManager};
+    juce::ValueTree globalKit = ProjectFactory::createDefaultKit();
+    TakeRecorder recorder{tree, globalKit, undoManager};
 };
 
 TEST_F(TakeRecorderTest, FIN07_NeedsAnExistingPattern)
@@ -40,11 +42,24 @@ TEST_F(TakeRecorderTest, FIN07_HitsBecomeLiveNotesOfTheirSlot)
 
     ASSERT_EQ(pattern().numNotes(), 1);
     const auto note = pattern().note(0).data();
-    EXPECT_EQ(note.slotNote, project.kit().slot(2).gmNote());
+    EXPECT_EQ(note.slotNote, kit().slot(2).gmNote());
     EXPECT_EQ(note.startTick, 1234);
     EXPECT_EQ(note.lengthTicks, 240);
     EXPECT_EQ(note.velocity, 90);
     EXPECT_EQ(note.origin, NoteOrigin::live);
+}
+
+TEST_F(TakeRecorderTest, FIN07_HitsUseTheProjectsOwnKitIfItHasOne)
+{
+    auto ownKit = ProjectFactory::createDefaultKit();
+    ownKit.removeChild(0, nullptr);
+    project.setOwnKit(ownKit);
+    ASSERT_TRUE(recorder.begin(0, RecordMode::overdub));
+    recorder.add(2, 90, 0);
+
+    ASSERT_EQ(pattern().numNotes(), 1);
+    EXPECT_EQ(pattern().note(0).slotNote(), project.kit().slot(2).gmNote());
+    EXPECT_NE(pattern().note(0).slotNote(), Kit(globalKit, nullptr).slot(2).gmNote());
 }
 
 TEST_F(TakeRecorderTest, FIN10_NotesAreFoldedAndCutAtThePatternEnd)
@@ -60,7 +75,7 @@ TEST_F(TakeRecorderTest, FIN07_IgnoresUnknownSlotsAndARemovedPattern)
 {
     recorder.begin(0, RecordMode::overdub);
     recorder.add(-1, 100, 0);
-    recorder.add(project.kit().numSlots(), 100, 0);
+    recorder.add(kit().numSlots(), 100, 0);
     EXPECT_EQ(pattern().numNotes(), 0);
 
     project.addPattern("other", "Other", 1);
@@ -109,12 +124,12 @@ TEST_F(TakeRecorderTest, FIN09_EditsDuringTheRunStayTheirOwnUndoStep)
     recorder.begin(0, RecordMode::overdub);
     recorder.add(0, 100, 100);
     undoManager.beginNewTransaction("Kit");
-    project.kit().slot(0).setGain(0.5);
+    kit().slot(0).setGain(0.5);
     recorder.add(0, 100, 200);
 
     ASSERT_TRUE(undoManager.undo());
     EXPECT_EQ(pattern().numNotes(), 1);
-    EXPECT_DOUBLE_EQ(project.kit().slot(0).gain(), 0.5);
+    EXPECT_DOUBLE_EQ(kit().slot(0).gain(), 0.5);
 }
 
 TEST_F(TakeRecorderTest, FIN09_EndWithoutRunDoesNothing)

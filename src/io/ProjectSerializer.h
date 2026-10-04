@@ -29,6 +29,8 @@ struct ParsedProject
 /// In memory sample and backing-track paths are absolute; in the file they are relative to the
 /// project directory with forward slashes, so projects can be moved together with their samples
 /// and opened on another operating system. Paths on another drive stay absolute.
+///
+/// The file contains a KIT only if the project has its own kit; without one it uses the global kit.
 class ProjectSerializer
 {
 public:

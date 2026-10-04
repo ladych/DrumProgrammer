@@ -47,6 +47,7 @@ private:
     std::vector<int> rows_;
     std::unique_ptr<juce::FileChooser> fileChooser_;
 
+    juce::Label kitSource_;
     juce::ListBox slotList_{"Drum-Kit", this};
     juce::ToggleButton showAllButton_{"Alle Slots anzeigen"};
     juce::Label slotName_;

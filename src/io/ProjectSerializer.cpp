@@ -80,7 +80,9 @@ void ProjectSerializer::convertPath(juce::ValueTree& tree,
 
 void ProjectSerializer::addMissingSections(juce::ValueTree& project)
 {
-    for (const auto* type : {&ids::kit, &ids::patterns, &ids::song, &ids::backingTrack, &ids::mix})
+    // No KIT: the project uses the global kit. Files older than the global kit always have one, which
+    // then stays the project's own kit, so they sound as before.
+    for (const auto* type : {&ids::patterns, &ids::song, &ids::backingTrack, &ids::mix})
         static_cast<void>(project.getOrCreateChildWithName(*type, nullptr));
 }
 

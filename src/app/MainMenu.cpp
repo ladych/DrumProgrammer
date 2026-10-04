@@ -19,6 +19,9 @@ constexpr juce::CommandID editUndo = 0x2001;
 constexpr juce::CommandID editRedo = 0x2002;
 constexpr juce::CommandID audioSettings = 0x3001;
 constexpr juce::CommandID audioKeymap = 0x3002;
+constexpr juce::CommandID kitCopyToProject = 0x5001;
+constexpr juce::CommandID kitUseGlobal = 0x5002;
+constexpr juce::CommandID kitCopyToGlobal = 0x5003;
 constexpr juce::CommandID transportRecord = 0x4001;
 } // namespace command
 
@@ -61,6 +64,24 @@ constexpr std::array kCommands{
                 0,
                 0},
     CommandSpec{command::audioKeymap, "Tastatur-Mapping...", "Tasten den Drum-Slots zuordnen", "Audio", 0, 0},
+    CommandSpec{command::kitCopyToProject,
+                "Kit ins Projekt übernehmen",
+                "Das Projekt bekommt ein eigenes Kit, das das Programm-Kit überschreibt",
+                "Kit",
+                0,
+                0},
+    CommandSpec{command::kitUseGlobal,
+                "Programm-Kit verwenden",
+                "Das eigene Kit des Projekts entfernen",
+                "Kit",
+                0,
+                0},
+    CommandSpec{command::kitCopyToGlobal,
+                "Projekt-Kit als Programm-Kit übernehmen",
+                "Das Kit des Projekts wird das Kit für alle Projekte ohne eigenes Kit",
+                "Kit",
+                0,
+                0},
     CommandSpec{command::transportRecord,
                 "Aufnahme scharf",
                 "Aufnahme scharf schalten oder entschärfen",
@@ -81,9 +102,11 @@ const CommandSpec* findCommand(juce::CommandID id)
 
 MainMenu::MainMenu(ui::DocumentController& document,
                    std::function<void()> quit,
+                   KitMenuActions kit,
                    AudioMenuActions audio,
                    TransportActions transport)
-    : document_(document), quit_(std::move(quit)), audio_(std::move(audio)), transport_(std::move(transport))
+    : document_(document), quit_(std::move(quit)), kit_(std::move(kit)), audio_(std::move(audio)),
+      transport_(std::move(transport))
 {
     commands_.registerAllCommandsForTarget(this);
     commands_.setFirstCommandTarget(this);
@@ -97,7 +120,7 @@ MainMenu::~MainMenu()
 
 juce::StringArray MainMenu::getMenuBarNames()
 {
-    return {"Datei", "Bearbeiten", "Audio"};
+    return {"Datei", "Bearbeiten", "Kit", "Audio"};
 }
 
 juce::PopupMenu MainMenu::getMenuForIndex(int menuIndex, const juce::String& /*menuName*/)
@@ -117,6 +140,13 @@ juce::PopupMenu MainMenu::getMenuForIndex(int menuIndex, const juce::String& /*m
     {
         menu.addCommandItem(&commands_, command::editUndo);
         menu.addCommandItem(&commands_, command::editRedo);
+    }
+    else if (menuIndex == 2)
+    {
+        menu.addCommandItem(&commands_, command::kitCopyToProject);
+        menu.addCommandItem(&commands_, command::kitUseGlobal);
+        menu.addSeparator();
+        menu.addCommandItem(&commands_, command::kitCopyToGlobal);
     }
     else
     {
@@ -144,6 +174,10 @@ void MainMenu::getCommandInfo(juce::CommandID commandID, juce::ApplicationComman
         result.addDefaultKeypress(spec->key, spec->modifiers);
     if (commandID == command::editUndo)
         result.setActive(document_.canUndo());
+    if (commandID == command::kitCopyToProject)
+        result.setActive(!kit_.usesProjectKit());
+    if (commandID == command::kitUseGlobal || commandID == command::kitCopyToGlobal)
+        result.setActive(kit_.usesProjectKit());
     if (commandID == command::editRedo)
     {
         result.addDefaultKeypress('z', kCtrlShift);
@@ -184,6 +218,21 @@ std::function<void()> MainMenu::actionFor(juce::CommandID commandID)
         return audio_.showKeymap;
     case command::transportRecord:
         return transport_.toggleRecordArmed;
+    default:
+        return kitActionFor(commandID);
+    }
+}
+
+std::function<void()> MainMenu::kitActionFor(juce::CommandID commandID) const
+{
+    switch (commandID)
+    {
+    case command::kitCopyToProject:
+        return kit_.copyGlobalKitToProject;
+    case command::kitUseGlobal:
+        return kit_.useGlobalKit;
+    case command::kitCopyToGlobal:
+        return kit_.copyProjectKitToGlobal;
     default:
         return {};
     }

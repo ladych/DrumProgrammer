@@ -17,23 +17,25 @@ constexpr int kMaxMidiNote = 127;
 } // namespace
 
 KitPresenter::KitPresenter(juce::ValueTree project,
+                           juce::ValueTree globalKit,
                            juce::UndoManager& undoManager,
                            engine::KitPublisher& kits,
                            engine::SampleEngine& engine)
-    : project_(std::move(project)), undoManager_(undoManager), kits_(kits), engine_(engine),
-      listener_(project_, [this] { ++changeCount_; })
+    : project_(std::move(project)), globalKit_(std::move(globalKit)), undoManager_(undoManager), kits_(kits),
+      engine_(engine), projectListener_(project_, [this] { ++changeCount_; }),
+      globalKitListener_(globalKit_, [this] { ++changeCount_; })
 {
 }
 
 int KitPresenter::numSlots() const
 {
-    return model::Project{project_, nullptr}.kit().numSlots();
+    return activeKit().numSlots();
 }
 
 std::vector<int> KitPresenter::visibleSlots(bool showAll) const
 {
     std::vector<int> visible;
-    const auto kit = model::Project{project_, nullptr}.kit();
+    const auto kit = activeKit();
     for (int index = 0; index < kit.numSlots(); ++index)
     {
         const int gmNote = kit.slot(index).gmNote();
@@ -152,6 +154,40 @@ bool KitPresenter::previewSelected()
     return slot && engine_.preview(slot->midiNote());
 }
 
+bool KitPresenter::usesProjectKit() const
+{
+    return project().hasOwnKit();
+}
+
+std::string KitPresenter::kitSourceLabel() const
+{
+    return usesProjectKit() ? "Projekt-Kit" : "Programm-Kit";
+}
+
+void KitPresenter::copyGlobalKitToProject()
+{
+    if (usesProjectKit())
+        return;
+    undoManager_.beginNewTransaction(juce::String::fromUTF8("Kit ins Projekt übernehmen"));
+    project().setOwnKit(globalKit_);
+}
+
+void KitPresenter::useGlobalKit()
+{
+    if (!usesProjectKit())
+        return;
+    undoManager_.beginNewTransaction("Programm-Kit verwenden");
+    project().removeOwnKit();
+}
+
+void KitPresenter::copyProjectKitToGlobal()
+{
+    if (!usesProjectKit())
+        return;
+    undoManager_.beginNewTransaction(juce::String::fromUTF8("Projekt-Kit als Programm-Kit übernehmen"));
+    globalKit_.copyPropertiesAndChildrenFrom(project().kit().tree(), &undoManager_);
+}
+
 void KitPresenter::tick()
 {
     engine_.collectGarbage();
@@ -167,9 +203,19 @@ bool KitPresenter::isLedOn(int slotIndex) const
     return leds_.at(static_cast<std::size_t>(slotIndex)).isOn();
 }
 
+model::Project KitPresenter::project() const
+{
+    return {project_, &undoManager_};
+}
+
+model::Kit KitPresenter::activeKit() const
+{
+    return project().activeKit(globalKit_);
+}
+
 std::optional<model::SampleSlot> KitPresenter::slotAt(int slotIndex) const
 {
-    const auto kit = model::Project{project_, &undoManager_}.kit();
+    const auto kit = activeKit();
     if (slotIndex < 0 || slotIndex >= kit.numSlots())
         return std::nullopt;
     return kit.slot(slotIndex);

@@ -15,6 +15,7 @@ namespace
 constexpr double kTestToneFrequencyHz = 440.0;
 constexpr float kTestToneGain = 0.2F;
 constexpr int kNumOutputChannels = 2;
+constexpr int kGlobalKitSaveIntervalMs = 1000;
 
 std::filesystem::path settingsFile(const char* name)
 {
@@ -32,12 +33,14 @@ AppComposition::AppComposition()
     : deviceSettings_(fileSystem_, settingsFile("audio-device.xml")),
       keymapSettings_(fileSystem_, settingsFile("keymap.txt")),
       recordOffsetSettings_(fileSystem_, settingsFile("recording-offset.txt")),
+      globalKitSettings_(fileSystem_, settingsFile("kit.xml")), globalKit_(globalKitSettings_, fileSystem_),
       testTone_(kTestToneFrequencyHz, kTestToneGain), kitBuilder_(sampleLoader_),
       kitPublisher_(kitBuilder_, sampleEngine_), playbackRenderer_(sequencer_, sampleEngine_, metronome_),
       audioCallback_(testTone_, playbackRenderer_, snapshots_), projectFactory_(idGenerator_),
-      project_(projectFactory_.createDefault()), snapshotPublisher_(project_, snapshots_, kitPublisher_),
-      kitPresenter_(project_, undoManager_, kitPublisher_, sampleEngine_),
-      takeRecorder_(project_, undoManager_),
+      project_(projectFactory_.createDefault()),
+      snapshotPublisher_(project_, globalKit_.tree(), snapshots_, kitPublisher_),
+      kitPresenter_(project_, globalKit_.tree(), undoManager_, kitPublisher_, sampleEngine_),
+      takeRecorder_(project_, globalKit_.tree(), undoManager_),
       transportPresenter_(project_, sequencer_, metronome_, takeRecorder_, recordOffsetSettings_),
       tempoPresenter_(project_, undoManager_), keymap_(input::Keymap::fromText(keymapSettings_.load())),
       keymapPresenter_(keymap_, keymapSettings_, keyNames_, kitPresenter_),
@@ -50,6 +53,10 @@ AppComposition::AppComposition()
       documentController_(project_, undoManager_, projectRepository_, projectFactory_, documentView_),
       mainMenu_(documentController_,
                 [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); },
+                {.copyGlobalKitToProject = [this] { kitPresenter_.copyGlobalKitToProject(); },
+                 .useGlobalKit = [this] { kitPresenter_.useGlobalKit(); },
+                 .copyProjectKitToGlobal = [this] { kitPresenter_.copyProjectKitToGlobal(); },
+                 .usesProjectKit = [this] { return kitPresenter_.usesProjectKit(); }},
                 {.showSettings = [this] { showAudioSettingsDialog(deviceManager_, dialogParent_); },
                  .showKeymap = [this] { showKeymapDialog(keymapPresenter_, dialogParent_); }},
                 {.toggleRecordArmed = [this] { transportPresenter_.toggleRecordArmed(); }})
@@ -61,10 +68,14 @@ AppComposition::AppComposition()
     // Empty identifier: messages of every MIDI input enabled in the settings (F-IN-03).
     deviceManager_.addMidiInputDeviceCallback({}, &midiInputCallback_);
     deviceManager_.addChangeListener(this);
+    documentController_.reportMissingGlobalKitSamples(globalKit_.missingSamples());
+    startTimer(kGlobalKitSaveIntervalMs);
 }
 
 AppComposition::~AppComposition()
 {
+    stopTimer();
+    globalKit_.saveIfChanged();
     deviceManager_.removeChangeListener(this);
     deviceManager_.removeMidiInputDeviceCallback({}, &midiInputCallback_);
     deviceManager_.removeAudioCallback(&audioCallback_);
@@ -88,6 +99,11 @@ void AppComposition::changeListenerCallback(juce::ChangeBroadcaster* /*source*/)
     saveDeviceSettings();
     updateSampleRate();
     updateOutputLatency();
+}
+
+void AppComposition::timerCallback()
+{
+    globalKit_.saveIfChanged();
 }
 
 void AppComposition::restoreDeviceSettings()

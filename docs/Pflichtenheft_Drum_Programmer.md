@@ -91,8 +91,8 @@ Alle Zeiten werden intern in absoluten Ticks mit 960 PPQ (Ticks pro Viertel) ges
 
 | Entität | Wichtige Attribute | Bemerkung |
 | --- | --- | --- |
-| Project | name, bpm, timeSignature, ppq = 960, kit, patterns\[\], song, backingTrack, mix | Wurzelobjekt, wird als .dpp gespeichert |
-| Kit | slots\[\] (16–20 Kernslots nach GM-Map) | Default-Kit wird beim Neuanlegen erzeugt |
+| Project | name, bpm, timeSignature, ppq = 960, kit (optional), patterns\[\], song, backingTrack, mix | Wurzelobjekt, wird als .dpp gespeichert; ohne eigenes Kit gilt das Programm-Kit |
+| Kit | slots\[\] (16–20 Kernslots nach GM-Map) | Programm-Kit (Einstellung, startet als GM-Default-Kit); ein Projekt kann es als eigenes Kit übernehmen, das dann das Programm-Kit überschreibt |
 | SampleSlot | midiNote (Default GM, überschreibbar), name, filePath (relativ zur .dpp), gain, pitch, chokeGroup | Datei-Pfade relativ, damit Projekte portabel sind |
 | Pattern | id (UUID), name, color, lengthBars, notes\[\] | eigenständig und wiederverwendbar |
 | Note | slotNote, startTick, lengthTicks, velocity (1–127), origin (grid oder live) | origin steuert Farbe: orange = gerastert, violett = frei eingespielt |

@@ -75,6 +75,12 @@ void DocumentController::requestClose(std::function<void()> onClose)
     ifChangesSaved(std::move(onClose));
 }
 
+void DocumentController::reportMissingGlobalKitSamples(const std::vector<io::MissingSample>& missing)
+{
+    if (!missing.empty())
+        view_.showMessage("Fehlende Samples im Programm-Kit", missingSamplesMessage(missing));
+}
+
 void DocumentController::undo()
 {
     undoManager_.undo();

@@ -18,6 +18,7 @@
 #include "input/KeyboardInput.h"
 #include "input/Keymap.h"
 #include "input/MidiInputHandler.h"
+#include "io/GlobalKit.h"
 #include "io/ProjectRepository.h"
 #include "io/SettingsStore.h"
 #include "io/StdFileSystem.h"
@@ -43,7 +44,7 @@ namespace drumprog::app
 /// Composition root (E-05): the only place where the object graph is created
 /// and wired. Members are declared in dependency order, so they are destroyed
 /// in reverse.
-class AppComposition final : private juce::ChangeListener
+class AppComposition final : private juce::ChangeListener, private juce::Timer
 {
 public:
     AppComposition();
@@ -65,6 +66,8 @@ public:
 
 private:
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
+    /// Saves changes of the global kit.
+    void timerCallback() override;
     void restoreDeviceSettings();
     void saveDeviceSettings();
     void updateSampleRate();
@@ -74,6 +77,8 @@ private:
     io::SettingsStore deviceSettings_;
     io::SettingsStore keymapSettings_;
     io::SettingsStore recordOffsetSettings_;
+    io::SettingsStore globalKitSettings_;
+    io::GlobalKit globalKit_;
     engine::TestToneSource testTone_;
     JuceSampleLoader sampleLoader_;
     engine::KitBuilder kitBuilder_;
@@ -87,8 +92,8 @@ private:
     AudioCallback audioCallback_;
     juce::AudioDeviceManager deviceManager_;
 
-    // Project model (AP1). It is the only source of the kit and the notes: the SnapshotPublisher hands
-    // every change to the engine.
+    // Project model (AP1). It is the only source of the notes, and of the kit together with the global
+    // kit: the SnapshotPublisher hands every change to the engine.
     model::UuidGenerator idGenerator_;
     model::ProjectFactory projectFactory_;
     juce::UndoManager undoManager_;

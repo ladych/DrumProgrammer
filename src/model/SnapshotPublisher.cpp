@@ -9,10 +9,11 @@ namespace drumprog::model
 {
 
 SnapshotPublisher::SnapshotPublisher(juce::ValueTree project,
+                                     juce::ValueTree globalKit,
                                      ProjectSnapshotExchange& exchange,
                                      engine::IKitSink& kitSink)
-    : project_(std::move(project)), exchange_(exchange), kitSink_(kitSink),
-      listener_(project_, [this] { publish(); })
+    : project_(std::move(project)), globalKit_(std::move(globalKit)), exchange_(exchange), kitSink_(kitSink),
+      projectListener_(project_, [this] { publish(); }), globalKitListener_(globalKit_, [this] { publish(); })
 {
     publish();
 }
@@ -20,8 +21,9 @@ SnapshotPublisher::SnapshotPublisher(juce::ValueTree project,
 void SnapshotPublisher::publish()
 {
     const Project project{project_, nullptr};
-    exchange_.publish(SnapshotBuilder::build(project));
-    kitSink_.publishKit(SnapshotBuilder::buildKit(project.kit()));
+    const auto kit = project.activeKit(globalKit_);
+    exchange_.publish(SnapshotBuilder::build(project, kit));
+    kitSink_.publishKit(SnapshotBuilder::buildKit(kit));
 }
 
 } // namespace drumprog::model

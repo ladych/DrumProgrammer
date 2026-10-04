@@ -396,6 +396,30 @@ Kit Project::kit() const
 {
     return {child(ids::kit), undoManager()};
 }
+
+bool Project::hasOwnKit() const
+{
+    return child(ids::kit).isValid();
+}
+
+Kit Project::activeKit(const juce::ValueTree& globalKit) const
+{
+    if (hasOwnKit())
+        return kit();
+    return {globalKit, undoManager()};
+}
+
+void Project::setOwnKit(const juce::ValueTree& kit)
+{
+    removeOwnKit();
+    mutableTree().appendChild(kit.createCopy(), undoManager());
+}
+
+void Project::removeOwnKit()
+{
+    if (hasOwnKit())
+        mutableTree().removeChild(child(ids::kit), undoManager());
+}
 Song Project::song() const
 {
     return {child(ids::song), undoManager()};

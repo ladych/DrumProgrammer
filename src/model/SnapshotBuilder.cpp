@@ -20,7 +20,7 @@ std::filesystem::path sampleFileOf(const SampleSlot& slot)
 
 } // namespace
 
-std::unique_ptr<const engine::ProjectSnapshot> SnapshotBuilder::build(const Project& project)
+std::unique_ptr<const engine::ProjectSnapshot> SnapshotBuilder::build(const Project& project, const Kit& kit)
 {
     auto snapshot = std::make_unique<engine::ProjectSnapshot>();
     const auto signature = project.timeSignature();
@@ -29,7 +29,6 @@ std::unique_ptr<const engine::ProjectSnapshot> SnapshotBuilder::build(const Proj
     snapshot->timeSigDenominator = signature.denominator;
     snapshot->ticksPerQuarter = project.ticksPerQuarter();
 
-    const auto kit = project.kit();
     for (int index = 0; index < project.numPatterns(); ++index)
         snapshot->patterns.push_back(buildPattern(project.pattern(index), kit, project.ticksPerBar()));
     snapshot->song = buildSong(project);

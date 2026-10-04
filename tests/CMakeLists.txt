@@ -25,6 +25,7 @@ add_executable(drumprog_tests
     input/KeymapTest.cpp
     input/MidiInputHandlerTest.cpp
     input/ScancodeTest.cpp
+    io/GlobalKitTest.cpp
     io/ProjectRepositoryTest.cpp
     io/ProjectSerializerTest.cpp
     io/SettingsStoreTest.cpp

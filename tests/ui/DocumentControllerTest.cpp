@@ -341,6 +341,30 @@ TEST_F(DocumentControllerTest, FPJ03_ListsMissingSamplesAfterOpening)
     EXPECT_THAT(view.messages[0].text, HasSubstr("Crash Cymbal 1: /samples/crash.wav\n"));
 }
 
+TEST_F(DocumentControllerTest, FPJ03_ReportsMissingSamplesOfTheGlobalKit)
+{
+    controller.reportMissingGlobalKitSamples({});
+    EXPECT_TRUE(view.messages.empty());
+
+    controller.reportMissingGlobalKitSamples({{"Acoustic Snare", "/samples/snare.wav"}});
+
+    ASSERT_EQ(view.messages.size(), 1U);
+    EXPECT_EQ(view.messages[0].title, "Fehlende Samples im Programm-Kit");
+    EXPECT_THAT(view.messages[0].text, HasSubstr("Acoustic Snare: /samples/snare.wav\n"));
+}
+
+TEST_F(DocumentControllerTest, FPJ02_OpeningAProjectWithoutOwnKitDropsTheOwnKitOfTheLastOne)
+{
+    project.setOwnKit(model::ProjectFactory::createDefaultKit());
+    view.saveChangesAnswer = SaveChangesChoice::discard;
+    view.fileToOpen = rockFile;
+    EXPECT_CALL(repository, load(_)).WillOnce(Return(loadableProject("Rock-Demo", 120.0)));
+
+    controller.open();
+
+    EXPECT_FALSE(project.hasOwnKit());
+}
+
 // ----- Close --------------------------------------------------------------------------------------
 
 TEST_F(DocumentControllerTest, FPJ04_ClosesWithoutAskingWhenEverythingIsSaved)

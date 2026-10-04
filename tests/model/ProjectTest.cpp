@@ -14,6 +14,9 @@ namespace
 class ProjectTest : public ::testing::Test
 {
 protected:
+    // The slot tests work on an own kit; without one a project uses the global kit.
+    ProjectTest() { tree.appendChild(ProjectFactory::createDefaultKit(), nullptr); }
+
     FakeIdGenerator ids;
     juce::UndoManager undoManager;
     juce::ValueTree tree = ProjectFactory{ids}.createDefault();
@@ -204,6 +207,50 @@ TEST_F(ProjectTest, FPJ03_AssigningANewFileClearsTheMissingMarker)
 
     EXPECT_FALSE(slot.isSampleMissing());
     EXPECT_TRUE(slot.hasSample());
+}
+
+TEST_F(ProjectTest, FPJ02_TheOwnKitOverridesTheGlobalKit)
+{
+    const juce::ValueTree globalKit{ids::kit};
+
+    EXPECT_TRUE(project.hasOwnKit());
+    EXPECT_EQ(project.activeKit(globalKit).tree(), project.kit().tree());
+}
+
+TEST_F(ProjectTest, FPJ02_WithoutOwnKitTheGlobalKitIsActive)
+{
+    const juce::ValueTree globalKit = ProjectFactory::createDefaultKit();
+
+    project.removeOwnKit();
+
+    EXPECT_FALSE(project.hasOwnKit());
+    EXPECT_EQ(project.activeKit(globalKit).tree(), globalKit);
+}
+
+TEST_F(ProjectTest, FPJ02_SetOwnKitCopiesTheKitAndReplacesTheOldOne)
+{
+    const juce::ValueTree globalKit = ProjectFactory::createDefaultKit();
+    snare().setGain(0.5);
+
+    project.setOwnKit(globalKit);
+
+    EXPECT_EQ(tree.getNumChildren(), 5); // still one KIT
+    EXPECT_DOUBLE_EQ(snare().gain(), 1.0);
+    snare().setGain(0.25);
+    EXPECT_DOUBLE_EQ(Kit(globalKit, nullptr).findSlot(38)->gain(), 1.0);
+}
+
+TEST_F(ProjectTest, FPJ05_ChangingTheKitSourceCanBeUndone)
+{
+    undoManager.beginNewTransaction();
+    project.removeOwnKit();
+    project.removeOwnKit(); // nothing left to remove
+    ASSERT_FALSE(project.hasOwnKit());
+
+    undoManager.undo();
+
+    EXPECT_TRUE(project.hasOwnKit());
+    EXPECT_EQ(project.kit().numSlots(), 25);
 }
 
 TEST_F(ProjectTest, FSE04_FindSlotReturnsNothingForUnknownNote)

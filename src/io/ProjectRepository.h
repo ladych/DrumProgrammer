@@ -10,7 +10,8 @@ namespace drumprog::io
 ///
 /// Saving writes a temporary file next to the target and then renames it, so a failed write never
 /// destroys the previous version (Q-10). Loading marks slots whose sample file does not exist and
-/// reports them instead of failing (F-PJ-03).
+/// reports them instead of failing (F-PJ-03); only the project's own kit is checked, the global kit is
+/// checked when the program starts (GlobalKit).
 class ProjectRepository final : public IProjectRepository
 {
 public:
@@ -21,8 +22,6 @@ public:
                                         const std::filesystem::path& file) override;
 
 private:
-    [[nodiscard]] std::vector<MissingSample> markMissingSamples(juce::ValueTree& project) const;
-
     IFileSystem& fileSystem_;
 };
 

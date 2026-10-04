@@ -39,12 +39,13 @@ protected:
 
     model::FakeIdGenerator ids;
     juce::ValueTree tree = model::ProjectFactory{ids}.createDefault();
+    juce::ValueTree globalKit = model::ProjectFactory::createDefaultKit();
     juce::UndoManager undoManager;
     NiceMock<engine::MockSampleLoader> loader;
     engine::KitBuilder builder{loader};
     engine::SampleEngine engine;
     engine::KitPublisher kits{builder, engine};
-    KitPresenter kit{tree, undoManager, kits, engine};
+    KitPresenter kit{tree, globalKit, undoManager, kits, engine};
 
     NiceMock<io::MockFileSystem> fileSystem;
     io::SettingsStore store{fileSystem, "config/keymap.txt"};
