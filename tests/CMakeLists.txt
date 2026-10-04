@@ -1,4 +1,5 @@
 add_executable(drumprog_tests
+    engine/DownmixTest.cpp
     engine/EngineKitTest.cpp
     engine/KitBuilderTest.cpp
     engine/KitDescriptionTest.cpp

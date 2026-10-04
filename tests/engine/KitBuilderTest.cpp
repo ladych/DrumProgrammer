@@ -93,6 +93,16 @@ TEST_F(KitBuilderTest, FSE06_FSE07_FSE08_CopiesGainPitchAndChokeGroup)
     EXPECT_EQ(slot->chokeGroup, 1);
 }
 
+TEST_F(KitBuilderTest, FSE01_MixesMultichannelSamplesDownToStereo)
+{
+    const SampleBuffer multi{48000.0, {{1.0F}, {1.0F}, {1.0F}, {1.0F}}};
+    EXPECT_CALL(loader, load(std::filesystem::path{"kick.wav"})).WillOnce(Return(multi));
+    const auto result = builder.build(kitWithKick(), 48000.0);
+    const auto& sample = *result.kit->slotForNote(36)->sample;
+    ASSERT_EQ(sample.numChannels(), 2);
+    EXPECT_FLOAT_EQ(sample.channels[0][0], 2.0F);
+}
+
 TEST(PitchToPlaybackRateTest, FSE07_SemitonesChangePlaybackSpeed)
 {
     EXPECT_DOUBLE_EQ(pitchToPlaybackRate(0), 1.0);
