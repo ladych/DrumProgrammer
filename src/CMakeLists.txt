@@ -1,5 +1,6 @@
 # Testable logic (E-02): everything in this library is measured by the coverage gate.
 add_library(drumprog_core STATIC
+    engine/Downmix.cpp
     engine/EngineKit.cpp
     engine/KitBuilder.cpp
     engine/KitDescription.cpp

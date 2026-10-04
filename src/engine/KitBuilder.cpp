@@ -1,5 +1,6 @@
 #include "engine/KitBuilder.h"
 
+#include "engine/Downmix.h"
 #include "engine/Resampler.h"
 
 #include <algorithm>
@@ -61,7 +62,7 @@ std::shared_ptr<const SampleBuffer> KitBuilder::sampleFor(const std::filesystem:
             originals_.erase(file);
             return nullptr;
         }
-        original = std::make_shared<const SampleBuffer>(std::move(*loaded));
+        original = std::make_shared<const SampleBuffer>(downmixToStereo(*loaded));
         originals_[file] = original;
     }
 
