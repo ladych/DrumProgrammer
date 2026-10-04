@@ -1,13 +1,18 @@
 add_executable(drumprog_tests
+    engine/ClockTest.cpp
     engine/DownmixTest.cpp
     engine/EngineKitTest.cpp
     engine/KitBuilderTest.cpp
     engine/KitDescriptionTest.cpp
     engine/KitPublisherTest.cpp
+    engine/MetronomeTest.cpp
+    engine/PlaybackRendererTest.cpp
     engine/SampleBufferTest.cpp
     engine/SampleEngineTest.cpp
+    engine/SequencerTest.cpp
     engine/SnapshotExchangeTest.cpp
     engine/SpscQueueTest.cpp
+    engine/TempoMathTest.cpp
     engine/TestToneSourceTest.cpp
     engine/TriggerIndicatorsTest.cpp
     engine/VelocityCurveTest.cpp
@@ -28,6 +33,7 @@ add_executable(drumprog_tests
     model/ProjectTest.cpp
     model/SnapshotBuilderTest.cpp
     model/SnapshotPublisherTest.cpp
+    model/TakeRecorderTest.cpp
     model/TreeChangeListenerTest.cpp
     model/UuidGeneratorTest.cpp
     ui/ActivityLedTest.cpp
@@ -37,6 +43,8 @@ add_executable(drumprog_tests
     ui/KeymapPresenterTest.cpp
     ui/KeyRouterTest.cpp
     ui/KitPresenterTest.cpp
+    ui/TempoPresenterTest.cpp
+    ui/TransportPresenterTest.cpp
 )
 
 # Q-04: replaces the global operator new to count allocations, which clashes with the

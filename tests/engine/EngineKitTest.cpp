@@ -39,5 +39,15 @@ TEST(EngineKitTest, FSE05_IgnoresSlotsWithInvalidNoteAndKeepsFirstDuplicate)
     EXPECT_EQ(kit.slotForNote(38)->slotIndex, 2);
 }
 
+TEST(EngineKitTest, FTR06_FindsSlotsByIndex)
+{
+    const EngineKit kit(
+        {EngineSlot{.slotIndex = 0, .midiNote = 36}, EngineSlot{.slotIndex = 1, .midiNote = 38}});
+    ASSERT_NE(kit.slotAt(1), nullptr);
+    EXPECT_EQ(kit.slotAt(1)->midiNote, 38);
+    EXPECT_EQ(kit.slotAt(-1), nullptr);
+    EXPECT_EQ(kit.slotAt(2), nullptr);
+}
+
 } // namespace
 } // namespace drumprog::engine

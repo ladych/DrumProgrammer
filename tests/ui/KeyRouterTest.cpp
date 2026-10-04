@@ -20,6 +20,14 @@ using ::testing::_;
 using ::testing::NiceMock;
 using ::testing::Return;
 
+class FakeTransport final : public ITransportControl
+{
+public:
+    void togglePlay() override { ++toggles; }
+
+    int toggles = 0;
+};
+
 class KeyRouterTest : public ::testing::Test
 {
 protected:
@@ -45,13 +53,33 @@ protected:
     input::FakeNoteSink sink;
     input::InputActivity activity;
     input::KeyboardInput keyboard{keymap, sink, activity};
-    KeyRouter router{keymapPresenter, keyboard};
+    FakeTransport transport;
+    KeyRouter router{keymapPresenter, keyboard, transport};
 };
 
 TEST_F(KeyRouterTest, FIN01_KeysTriggerDrumsWhileNotLearning)
 {
     EXPECT_TRUE(router.keyDown(scancode::kS, {}, false));
     EXPECT_EQ(sink.hits.size(), 1U);
+}
+
+TEST_F(KeyRouterTest, FTR01_SpaceStartsAndStopsTheTransport)
+{
+    EXPECT_TRUE(router.keyDown(scancode::kSpace, {}, false));
+    EXPECT_EQ(transport.toggles, 1);
+    EXPECT_TRUE(sink.hits.empty());
+
+    keymapPresenter.startLearning(3);
+    EXPECT_TRUE(router.keyDown(scancode::kSpace, {}, false));
+    EXPECT_EQ(transport.toggles, 2);
+    EXPECT_TRUE(keymapPresenter.learningRow().has_value());
+}
+
+TEST_F(KeyRouterTest, FTR01_SpaceIsLeftToTextFieldsAndShortcuts)
+{
+    EXPECT_FALSE(router.keyDown(scancode::kSpace, {}, true));
+    EXPECT_FALSE(router.keyDown(scancode::kSpace, {.commandOrAlt = true}, false));
+    EXPECT_EQ(transport.toggles, 0);
 }
 
 TEST_F(KeyRouterTest, FIN02_TheLearnedKeyDoesNotTrigger)

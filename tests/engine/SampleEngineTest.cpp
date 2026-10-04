@@ -73,6 +73,58 @@ TEST_F(SampleEngineTest, FTR06_DirectTriggerStartsAtSampleOffset)
     EXPECT_EQ(render(4), (std::vector<float>{0.0F, 0.0F, 1.0F, 1.0F}));
 }
 
+TEST_F(SampleEngineTest, FTR06_SlotTriggerStartsAtSampleOffset)
+{
+    engine.setKit(makeKit(constantSample(1.0F, 100)));
+    render(1);
+    engine.triggerSlot(0, 127, 1);
+    engine.triggerSlot(1, 127, 0); // slot without sample only lights its LED
+    engine.triggerSlot(9, 127, 0); // outside the kit
+    EXPECT_EQ(render(3), (std::vector<float>{0.0F, 1.0F, 1.0F}));
+    EXPECT_EQ(engine.indicators().hitCount(1), 1U);
+}
+
+TEST_F(SampleEngineTest, FTR06_SlotTriggerWithoutKitIsSilent)
+{
+    engine.triggerSlot(0, 127, 0);
+    EXPECT_EQ(render(2), std::vector<float>(2, 0.0F));
+}
+
+TEST_F(SampleEngineTest, FIN07_ReportsTheLiveHitsOfTheLastBlockWithTheirTime)
+{
+    engine.setKit(makeKit(constantSample(1.0F, 100)));
+    render(1);
+    EXPECT_TRUE(engine.queueLiveTrigger(42, 90, 1.5));
+    EXPECT_TRUE(engine.queueMidiTrigger(36, 100, 2.5));
+    EXPECT_TRUE(engine.queueMidiTrigger(37, 100, 3.0)); // no slot: not played, not reported
+    EXPECT_TRUE(engine.queueMidiTrigger(38, 0, 3.5));   // velocity 0: not played, not reported
+    engine.preview(36);                                 // previews are never recorded
+    render(1);
+
+    const auto hits = engine.liveHits();
+    ASSERT_EQ(hits.size(), 2U);
+    EXPECT_EQ(hits[0].slotIndex, 2);
+    EXPECT_EQ(hits[0].velocity, 90);
+    EXPECT_DOUBLE_EQ(hits[0].timeSeconds, 1.5);
+    EXPECT_EQ(hits[1].slotIndex, 0);
+    EXPECT_DOUBLE_EQ(hits[1].timeSeconds, 2.5);
+
+    render(1);
+    EXPECT_TRUE(engine.liveHits().empty());
+}
+
+TEST_F(SampleEngineTest, FIN07_Q04_ReportsUpToTwoFullQueuesOfLiveHitsPerBlock)
+{
+    engine.setKit(makeKit(constantSample(1.0F, 100)));
+    for (std::size_t i = 0; i < SampleEngine::kTriggerQueueSize; ++i)
+    {
+        ASSERT_TRUE(engine.queueLiveTrigger(36, 100, 0.0));
+        ASSERT_TRUE(engine.queueMidiTrigger(36, 100, 0.0));
+    }
+    render(1);
+    EXPECT_EQ(engine.liveHits().size(), SampleEngine::kMaxLiveHitsPerBlock);
+}
+
 TEST_F(SampleEngineTest, FSE10_PreviewPlaysWithVelocity100)
 {
     engine.setKit(makeKit(constantSample(1.0F, 100)));
@@ -123,7 +175,7 @@ TEST_F(SampleEngineTest, FSE03_QueueRejectsTriggersWhenFull)
 TEST_F(SampleEngineTest, FIN03_MidiTriggerPlaysInTheNextBlock)
 {
     engine.setKit(makeKit(constantSample(1.0F, 100), 0.5F));
-    EXPECT_TRUE(engine.queueMidiTrigger(36, 127));
+    EXPECT_TRUE(engine.queueMidiTrigger(36, 127, 0.0));
     EXPECT_FLOAT_EQ(render(1)[0], 0.5F);
     EXPECT_EQ(engine.indicators().hitCount(0), 1U);
 }
@@ -132,10 +184,10 @@ TEST_F(SampleEngineTest, FIN03_MidiQueueIsIndependentOfTheGuiQueue)
 {
     for (std::size_t i = 0; i < SampleEngine::kTriggerQueueSize; ++i)
         ASSERT_TRUE(engine.queueTrigger(36, 100));
-    EXPECT_TRUE(engine.queueMidiTrigger(36, 100));
+    EXPECT_TRUE(engine.queueMidiTrigger(36, 100, 0.0));
     for (std::size_t i = 1; i < SampleEngine::kTriggerQueueSize; ++i)
-        ASSERT_TRUE(engine.queueMidiTrigger(36, 100));
-    EXPECT_FALSE(engine.queueMidiTrigger(36, 100));
+        ASSERT_TRUE(engine.queueMidiTrigger(36, 100, 0.0));
+    EXPECT_FALSE(engine.queueMidiTrigger(36, 100, 0.0));
 }
 
 TEST_F(SampleEngineTest, Q04_NewKitIsUsedFromNextBlock)
@@ -243,7 +295,7 @@ TEST_F(SampleEngineTest, Q04_FIN03_PublishingKitsAndMidiHitsWhileRenderingIsThre
         {
             while (running.load())
             {
-                engine.queueMidiTrigger(46, 100);
+                engine.queueMidiTrigger(46, 100, 0.0);
                 std::this_thread::yield();
             }
         });
