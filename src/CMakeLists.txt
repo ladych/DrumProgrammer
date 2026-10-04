@@ -1,13 +1,18 @@
 # Testable logic (E-02): everything in this library is measured by the coverage gate.
 add_library(drumprog_core STATIC
+    engine/Clock.cpp
     engine/Downmix.cpp
     engine/EngineKit.cpp
     engine/KitBuilder.cpp
     engine/KitDescription.cpp
     engine/KitPublisher.cpp
+    engine/Metronome.cpp
+    engine/PlaybackRenderer.cpp
     engine/Resampler.cpp
     engine/SampleBuffer.cpp
     engine/SampleEngine.cpp
+    engine/Sequencer.cpp
+    engine/TempoMath.cpp
     engine/TestToneSource.cpp
     engine/TriggerIndicators.cpp
     engine/VelocityCurve.cpp
@@ -27,6 +32,7 @@ add_library(drumprog_core STATIC
     model/ProjectFactory.cpp
     model/SnapshotBuilder.cpp
     model/SnapshotPublisher.cpp
+    model/TakeRecorder.cpp
     model/TreeChangeListener.cpp
     model/TreeNode.cpp
     model/UuidGenerator.cpp
@@ -37,6 +43,8 @@ add_library(drumprog_core STATIC
     ui/KeymapPresenter.cpp
     ui/KeyRouter.cpp
     ui/KitPresenter.cpp
+    ui/TempoPresenter.cpp
+    ui/TransportPresenter.cpp
 )
 target_include_directories(drumprog_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(drumprog_core PUBLIC drumprog_juce)
@@ -57,6 +65,7 @@ set(DRUMPROG_APP_SOURCES
     app/KitPanel.cpp
     app/MainComponent.cpp
     app/MainMenu.cpp
+    app/TransportBar.cpp
 )
 
 # Physical keyboard access (scancodes) is platform code in separate files (Q-13).

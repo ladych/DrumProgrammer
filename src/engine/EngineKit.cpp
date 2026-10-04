@@ -35,6 +35,13 @@ const EngineSlot* EngineKit::slotForNote(int midiNote) const noexcept
     return index == kNoSlot ? nullptr : &slots_[static_cast<std::size_t>(index)];
 }
 
+const EngineSlot* EngineKit::slotAt(int slotIndex) const noexcept
+{
+    if (slotIndex < 0 || static_cast<std::size_t>(slotIndex) >= slots_.size())
+        return nullptr;
+    return &slots_[static_cast<std::size_t>(slotIndex)];
+}
+
 const std::vector<EngineSlot>& EngineKit::slots() const noexcept
 {
     return slots_;

@@ -16,13 +16,23 @@ struct AudioMenuActions
     std::function<void()> showKeymap;
 };
 
+/// Transport commands that only have a shortcut, no menu entry (F-TR-07).
+struct TransportActions
+{
+    std::function<void()> toggleRecordArmed;
+};
+
 /// Humble object (E-03): menus "Datei", "Bearbeiten" and "Audio" with their shortcuts (Pflichtenheft
-/// 6.2), forwarding every command to the DocumentController or the dialog actions. Shortcuts use Strg
-/// only, so letter keys stay free for drum triggers (6.4).
+/// 6.2), forwarding every command to the DocumentController or the actions. Shortcuts use Strg only,
+/// so letter keys stay free for drum triggers (6.4); the space bar for play/stop is handled by
+/// ui::KeyRouter.
 class MainMenu final : public juce::MenuBarModel, public juce::ApplicationCommandTarget
 {
 public:
-    MainMenu(ui::DocumentController& document, std::function<void()> quit, AudioMenuActions audio);
+    MainMenu(ui::DocumentController& document,
+             std::function<void()> quit,
+             AudioMenuActions audio,
+             TransportActions transport);
     ~MainMenu() override;
 
     MainMenu(const MainMenu&) = delete;
@@ -48,6 +58,7 @@ private:
     ui::DocumentController& document_;
     std::function<void()> quit_;
     AudioMenuActions audio_;
+    TransportActions transport_;
     juce::ApplicationCommandManager commands_;
 };
 

@@ -8,7 +8,10 @@
 #include "app/MidiInputCallback.h"
 #include "engine/KitBuilder.h"
 #include "engine/KitPublisher.h"
+#include "engine/Metronome.h"
+#include "engine/PlaybackRenderer.h"
 #include "engine/SampleEngine.h"
+#include "engine/Sequencer.h"
 #include "engine/TestToneSource.h"
 #include "input/EngineNoteSinks.h"
 #include "input/InputActivity.h"
@@ -20,12 +23,15 @@
 #include "io/StdFileSystem.h"
 #include "model/ProjectFactory.h"
 #include "model/SnapshotPublisher.h"
+#include "model/TakeRecorder.h"
 #include "model/UuidGenerator.h"
 #include "ui/DocumentController.h"
 #include "ui/InputLedPresenter.h"
 #include "ui/KeyRouter.h"
 #include "ui/KeymapPresenter.h"
 #include "ui/KitPresenter.h"
+#include "ui/TempoPresenter.h"
+#include "ui/TransportPresenter.h"
 
 #include <juce_audio_utils/juce_audio_utils.h>
 
@@ -62,27 +68,36 @@ private:
     void restoreDeviceSettings();
     void saveDeviceSettings();
     void updateSampleRate();
+    void updateOutputLatency();
 
     io::StdFileSystem fileSystem_;
     io::SettingsStore deviceSettings_;
     io::SettingsStore keymapSettings_;
+    io::SettingsStore recordOffsetSettings_;
     engine::TestToneSource testTone_;
     JuceSampleLoader sampleLoader_;
     engine::KitBuilder kitBuilder_;
     engine::SampleEngine sampleEngine_;
     engine::KitPublisher kitPublisher_;
+    // Transport and sequencer (AP4): the audio thread reads snapshots_ through the renderer.
+    model::ProjectSnapshotExchange snapshots_;
+    engine::Sequencer sequencer_;
+    engine::Metronome metronome_;
+    engine::PlaybackRenderer playbackRenderer_;
     AudioCallback audioCallback_;
     juce::AudioDeviceManager deviceManager_;
 
-    // Project model (AP1). It is the only source of the kit: the SnapshotPublisher hands every change
-    // to the engine. The audio thread will read snapshots_ from the sequencer on (AP4).
+    // Project model (AP1). It is the only source of the kit and the notes: the SnapshotPublisher hands
+    // every change to the engine.
     model::UuidGenerator idGenerator_;
     model::ProjectFactory projectFactory_;
     juce::UndoManager undoManager_;
     juce::ValueTree project_;
-    model::ProjectSnapshotExchange snapshots_;
     model::SnapshotPublisher snapshotPublisher_;
     ui::KitPresenter kitPresenter_;
+    model::TakeRecorder takeRecorder_;
+    ui::TransportPresenter transportPresenter_;
+    ui::TempoPresenter tempoPresenter_;
 
     // Live input (AP3): computer keyboard on the GUI thread, MIDI on the MIDI thread, each with its
     // own lock-free queue into the engine.

@@ -34,17 +34,22 @@ ui::AudioDeviceInfo deviceInfo(juce::AudioDeviceManager& deviceManager)
 
 MainComponent::MainComponent(engine::TestToneSource& testTone,
                              juce::AudioDeviceManager& deviceManager,
+                             ui::TransportPresenter& transport,
+                             ui::TempoPresenter& tempo,
                              ui::KitPresenter& kitPresenter,
                              ui::KeymapPresenter& keymapPresenter,
                              ui::InputLedPresenter& inputLeds,
                              const juce::String& sampleWildcard)
     : testTone_(testTone), deviceManager_(deviceManager), inputLeds_(inputLeds),
-      kitPanel_(kitPresenter, keymapPresenter, sampleWildcard)
+      transportBar_(transport, tempo), kitPanel_(kitPresenter, keymapPresenter, sampleWildcard)
 {
     testToneButton_.setToggleState(testTone_.isEnabled(), juce::dontSendNotification);
     testToneButton_.onClick = [this] { testTone_.setEnabled(testToneButton_.getToggleState()); };
     settingsButton_.onClick = [this] { showAudioSettingsDialog(deviceManager_, this); };
 
+    testToneButton_.setWantsKeyboardFocus(false);
+    settingsButton_.setWantsKeyboardFocus(false);
+    addAndMakeVisible(transportBar_);
     addAndMakeVisible(testToneButton_);
     addAndMakeVisible(settingsButton_);
     addAndMakeVisible(kitPanel_);
@@ -52,7 +57,7 @@ MainComponent::MainComponent(engine::TestToneSource& testTone,
     deviceManager_.addChangeListener(this);
     updateStatus();
     startTimerHz(kTimerHz);
-    setSize(1000, 600);
+    setSize(1100, 680);
 }
 
 MainComponent::~MainComponent()
@@ -74,6 +79,8 @@ void MainComponent::resized()
     auto area = getLocalBounds().reduced(16);
     status_.setBounds(area.removeFromBottom(24));
     area.removeFromBottom(8);
+    transportBar_.setBounds(area.removeFromTop(TransportBar::kPreferredHeight));
+    area.removeFromTop(12);
     auto row = area.removeFromTop(32);
     testToneButton_.setBounds(row.removeFromLeft(200));
     settingsButton_.setBounds(row.removeFromRight(240));

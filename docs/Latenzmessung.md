@@ -35,3 +35,13 @@ Der Wert enthält zusätzlich die Latenz des Drum-Moduls (MIDI-Ausgabe, typisch 
 ## 3. Dropouts
 
 Bei Buffer 128 einige Minuten spielen und auf Knackser achten. JACK zählt XRuns (`jack_xrun` im Log oder in QjackCtl). Ab AP11 gibt es den 30-Minuten-Dauertest (Q-03).
+
+## 4. Aufnahme-Versatz einstellen (F-IN-08)
+
+Aufgenommene Noten werden um die Ausgangslatenz der Statuszeile nach vorne verschoben, damit sie dort liegen, wo der Anschlag zur gehörten Wiedergabe gespielt wurde. Was das Programm nicht kennt (MIDI-Latenz des Drum-Moduls, eigene Spielgewohnheit), gleicht der Regler „Versatz (ms)“ in der Transportleiste aus (±50 ms, positiv = Noten später). Der Wert wird als Programmeinstellung gespeichert.
+
+1. Leeres Pattern, Loop an, Metronom bei Aufnahme an, Vorzähler 1 Takt, Rec scharf (Strg+R).
+2. Play und zwei Takte lang Viertel mit dem Metronom auf einem Pad spielen, dann Stop.
+3. Liegen die Noten im Mittel vor den Zählzeiten, den Versatz erhöhen, liegen sie dahinter, verringern. Mit Strg+Z verwerfen und wiederholen.
+
+Bis zum Piano-Roll (AP5) zeigt die Position einer Note nur die gespeicherte .dpp-Datei (Attribut `startTick`, 960 Ticks je Viertel); dort lässt sich die Abweichung ablesen.

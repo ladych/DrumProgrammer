@@ -24,9 +24,14 @@ bool SampleEngine::queueTrigger(int midiNote, int velocity) noexcept
     return triggers_.push(TriggerEvent{midiNote, velocity});
 }
 
-bool SampleEngine::queueMidiTrigger(int midiNote, int velocity) noexcept
+bool SampleEngine::queueLiveTrigger(int midiNote, int velocity, double timeSeconds) noexcept
 {
-    return midiTriggers_.push(TriggerEvent{midiNote, velocity});
+    return triggers_.push(TriggerEvent{midiNote, velocity, timeSeconds, true});
+}
+
+bool SampleEngine::queueMidiTrigger(int midiNote, int velocity, double timeSeconds) noexcept
+{
+    return midiTriggers_.push(TriggerEvent{midiNote, velocity, timeSeconds, true});
 }
 
 bool SampleEngine::preview(int midiNote) noexcept
@@ -51,9 +56,23 @@ void SampleEngine::prepare(double sampleRate) noexcept
 
 void SampleEngine::trigger(int midiNote, int velocity, int sampleOffset) noexcept
 {
-    const EngineSlot* slot = currentKit_ != nullptr ? currentKit_->slotForNote(midiNote) : nullptr;
+    play(currentKit_ != nullptr ? currentKit_->slotForNote(midiNote) : nullptr, velocity, sampleOffset);
+}
+
+void SampleEngine::triggerSlot(int slotIndex, int velocity, int sampleOffset) noexcept
+{
+    play(currentKit_ != nullptr ? currentKit_->slotAt(slotIndex) : nullptr, velocity, sampleOffset);
+}
+
+std::span<const LiveHit> SampleEngine::liveHits() const noexcept
+{
+    return {liveHits_.data(), numLiveHits_};
+}
+
+bool SampleEngine::play(const EngineSlot* slot, int velocity, int sampleOffset) noexcept
+{
     if (slot == nullptr || velocity <= 0)
-        return;
+        return false;
     indicators_.signal(slot->slotIndex);
     voices_.trigger(VoiceStart{.sample = slot->sample.get(),
                                .gain = slot->gain * velocityToGain(velocity),
@@ -61,6 +80,7 @@ void SampleEngine::trigger(int midiNote, int velocity, int sampleOffset) noexcep
                                .chokeGroup = slot->chokeGroup,
                                .startOffset = sampleOffset,
                                .owner = currentKit_});
+    return true;
 }
 
 void SampleEngine::render(float* const* outputs, int numOutputs, int numSamples) noexcept
@@ -75,11 +95,22 @@ void SampleEngine::render(float* const* outputs, int numOutputs, int numSamples)
 
 void SampleEngine::playQueuedTriggers() noexcept
 {
+    numLiveHits_ = 0;
+    // At most one queue length each, so a producer that keeps pushing cannot hold up the block.
     TriggerEvent event;
-    while (triggers_.pop(event))
-        trigger(event.midiNote, event.velocity, 0);
-    while (midiTriggers_.pop(event))
-        trigger(event.midiNote, event.velocity, 0);
+    for (std::size_t count = 0; count < kTriggerQueueSize && triggers_.pop(event); ++count)
+        playQueued(event);
+    for (std::size_t count = 0; count < kTriggerQueueSize && midiTriggers_.pop(event); ++count)
+        playQueued(event);
+}
+
+void SampleEngine::playQueued(const TriggerEvent& event) noexcept
+{
+    const EngineSlot* slot = currentKit_ != nullptr ? currentKit_->slotForNote(event.midiNote) : nullptr;
+    if (!play(slot, event.velocity, 0) || !event.live)
+        return;
+    // At most kTriggerQueueSize events of each queue per block, so there is always room.
+    liveHits_.at(numLiveHits_++) = {slot->slotIndex, event.velocity, event.timeSeconds};
 }
 
 void SampleEngine::pickUpPendingKit() noexcept
