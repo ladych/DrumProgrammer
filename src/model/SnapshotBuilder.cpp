@@ -1,7 +1,7 @@
 #include "model/SnapshotBuilder.h"
 
 #include "io/Utf8Path.h"
-#include "model/ModelIds.h"
+#include "model/SongLayout.h"
 
 #include <algorithm>
 #include <cmath>
@@ -31,7 +31,7 @@ std::unique_ptr<const engine::ProjectSnapshot> SnapshotBuilder::build(const Proj
 
     for (int index = 0; index < project.numPatterns(); ++index)
         snapshot->patterns.push_back(buildPattern(project.pattern(index), kit, project.ticksPerBar()));
-    snapshot->song = buildSong(project);
+    buildSong(project, *snapshot);
 
     const auto mix = project.mix();
     snapshot->mix = {mix.backingGain(), mix.drumsGain(), mix.masterGain()};
@@ -74,19 +74,12 @@ SnapshotBuilder::buildPattern(const Pattern& pattern, const Kit& kit, std::int64
     return snapshot;
 }
 
-std::vector<engine::SongEntrySnapshot> SnapshotBuilder::buildSong(const Project& project)
+void SnapshotBuilder::buildSong(const Project& project, engine::ProjectSnapshot& snapshot)
 {
-    std::vector<engine::SongEntrySnapshot> entries;
-    const auto song = project.song();
-    const auto patterns = project.tree().getChildWithName(ids::patterns);
-    for (int index = 0; index < song.numEntries(); ++index)
-    {
-        const auto entry = song.entry(index);
-        if (const auto pattern = project.findPattern(entry.patternId()))
-            entries.push_back({patterns.indexOf(pattern->tree()), entry.startBar() * project.ticksPerBar()});
-    }
-    std::ranges::stable_sort(entries, {}, &engine::SongEntrySnapshot::startTick);
-    return entries;
+    const auto blocks = layoutSong(project);
+    for (const auto& block : blocks)
+        snapshot.song.push_back({block.patternIndex, block.startTick, block.playedTicks});
+    snapshot.songLengthTicks = songLengthTicks(blocks);
 }
 
 } // namespace drumprog::model

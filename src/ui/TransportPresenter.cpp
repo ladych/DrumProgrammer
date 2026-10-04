@@ -1,6 +1,7 @@
 #include "ui/TransportPresenter.h"
 
 #include "model/Project.h"
+#include "model/SongLayout.h"
 #include "ui/MusicalTime.h"
 
 #include <algorithm>
@@ -34,6 +35,11 @@ void TransportPresenter::play()
 {
     if (isPlaying())
         return;
+    if (playMode_ == PlayMode::song)
+    {
+        sequencer_.play({.patternIndex = activePattern_, .song = true});
+        return;
+    }
     std::uint32_t take = 0;
     if (recordArmed_ && recorder_.begin(activePattern_, recordMode_))
     {
@@ -146,7 +152,41 @@ std::optional<std::int64_t> TransportPresenter::playheadTick() const
 {
     if (!isPlaying())
         return std::nullopt;
+    const std::int64_t position = sequencer_.position();
+    if (playMode_ == PlayMode::pattern)
+        return position;
+    for (const auto& block : model::layoutSong(model::Project{project_, nullptr}))
+    {
+        const std::int64_t tick = position - block.startTick;
+        if (block.patternIndex == activePattern_ && tick >= 0 && tick < block.playedTicks)
+            return tick;
+    }
+    return std::nullopt;
+}
+
+std::optional<std::int64_t> TransportPresenter::songPlayheadTick() const
+{
+    if (!isPlaying() || playMode_ != PlayMode::song)
+        return std::nullopt;
     return sequencer_.position();
+}
+
+void TransportPresenter::setPlayMode(PlayMode mode)
+{
+    if (mode == playMode_ || take_ != 0)
+        return;
+    playMode_ = mode;
+    restart();
+}
+
+void TransportPresenter::restart()
+{
+    // The sequencer still runs until the audio thread takes the commands, so play() would ignore it.
+    const bool playing = isPlaying();
+    sequencer_.stop();
+    sequencer_.rewind();
+    if (playing)
+        sequencer_.play({.patternIndex = activePattern_, .song = playMode_ == PlayMode::song});
 }
 
 void TransportPresenter::setActivePattern(int patternIndex)
@@ -154,8 +194,9 @@ void TransportPresenter::setActivePattern(int patternIndex)
     if (patternIndex == activePattern_)
         return;
     activePattern_ = patternIndex;
-    // A running playback switches to the new pattern; a recording keeps its pattern until Stop.
-    if (isPlaying() && take_ == 0)
+    // A running playback switches to the new pattern; a recording keeps its pattern until Stop, and the
+    // song plays on.
+    if (isPlaying() && take_ == 0 && playMode_ == PlayMode::pattern)
     {
         sequencer_.stop();
         sequencer_.play({.patternIndex = activePattern_});

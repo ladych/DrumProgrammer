@@ -152,6 +152,7 @@ TEST_F(SongTimelinePresenterTest, FSO06_OpeningABlockShowsItsPatternInThePianoRo
     presenter.open(0);
     EXPECT_EQ(active.index(), 1);
     presenter.open(3);
+    presenter.open(-1);
     EXPECT_EQ(active.index(), 1);
 }
 
@@ -261,6 +262,8 @@ TEST_F(SongTimelinePresenterTest, FSO02_HoveringAPatternShowsWhereItLands)
     presenter.hoverPattern(0, -2);
     EXPECT_EQ(presenter.ghost()->startBar, 0);
     presenter.hoverPattern(9, 2);
+    EXPECT_FALSE(presenter.ghost().has_value());
+    presenter.hoverPattern(-1, 2);
     EXPECT_FALSE(presenter.ghost().has_value());
 
     presenter.hoverPattern(1, 3);

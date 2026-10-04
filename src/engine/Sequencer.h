@@ -64,7 +64,9 @@ struct PlayRequest
     bool song = false;      ///< plays the song timeline instead of the pattern; never records (F-TR-05)
 };
 
-/// Transport and pattern sequencer (F-TR-01 to 09, F-IN-07 to 10).
+/// Transport and pattern sequencer (F-TR-01 to 09, F-IN-07 to 10). In the song mode it plays the song
+/// blocks of the snapshot one after another instead of one pattern (F-TR-05); loop, position and stop
+/// at the end then refer to the whole song.
 ///
 /// The GUI thread sends play, stop and rewind as commands through a lock-free queue and sets the
 /// options through atomics; it reads the state and position back through atomics, 30 times a second
@@ -126,9 +128,12 @@ private:
         PlayRequest request;
     };
 
+    /// What plays: the pattern looped, or the song blocks one after another.
     struct Timeline
     {
-        const PatternSnapshot* pattern = nullptr;
+        const ProjectSnapshot* snapshot = nullptr;
+        const PatternSnapshot* pattern = nullptr; ///< pattern mode only
+        bool song = false;
         std::int64_t length = 0;
         std::int64_t barTicks = 0;
         std::int64_t beatTicks = 0;
@@ -146,6 +151,17 @@ private:
                        std::pair<std::int64_t, std::int64_t> range,
                        int numSamples,
                        SequencerBlock& block) const noexcept;
+    void scheduleSong(const Timeline& timeline,
+                      std::int64_t passStart,
+                      std::pair<std::int64_t, std::int64_t> range,
+                      int numSamples,
+                      SequencerBlock& block) const noexcept;
+    /// Notes of the pattern that start in range, played from segmentStart for segmentLength ticks.
+    void scheduleSegment(const PatternSnapshot& pattern,
+                         std::pair<std::int64_t, std::int64_t> segment,
+                         std::pair<std::int64_t, std::int64_t> range,
+                         int numSamples,
+                         SequencerBlock& block) const noexcept;
     void scheduleClicks(const Timeline& timeline,
                         std::pair<std::int64_t, std::int64_t> range,
                         int numSamples,
@@ -174,6 +190,7 @@ private:
     double sampleRate_ = 48000.0;
     TransportState state_ = TransportState::stopped;
     int patternIndex_ = 0;
+    bool song_ = false;
     std::uint32_t take_ = 0;
     std::int64_t pausedTick_ = 0;
     std::int64_t countInEnd_ = 0; ///< tick the playback (and recording) starts at
