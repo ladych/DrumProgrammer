@@ -3,6 +3,7 @@ add_executable(drumprog_tests
     engine/EngineKitTest.cpp
     engine/KitBuilderTest.cpp
     engine/KitDescriptionTest.cpp
+    engine/KitPublisherTest.cpp
     engine/SampleBufferTest.cpp
     engine/SampleEngineTest.cpp
     engine/SnapshotExchangeTest.cpp
@@ -12,9 +13,16 @@ add_executable(drumprog_tests
     engine/VelocityCurveTest.cpp
     engine/VoicePoolTest.cpp
     engine/VoiceTest.cpp
-    io/DeviceSettingsStoreTest.cpp
+    input/EngineNoteSinksTest.cpp
+    input/InputActivityTest.cpp
+    input/KeyboardInputTest.cpp
+    input/KeyNamesTest.cpp
+    input/KeymapTest.cpp
+    input/MidiInputHandlerTest.cpp
+    input/ScancodeTest.cpp
     io/ProjectRepositoryTest.cpp
     io/ProjectSerializerTest.cpp
+    io/SettingsStoreTest.cpp
     io/StdFileSystemTest.cpp
     model/ProjectFactoryTest.cpp
     model/ProjectTest.cpp
@@ -22,7 +30,12 @@ add_executable(drumprog_tests
     model/SnapshotPublisherTest.cpp
     model/TreeChangeListenerTest.cpp
     model/UuidGeneratorTest.cpp
+    ui/ActivityLedTest.cpp
+    ui/AudioStatusTest.cpp
     ui/DocumentControllerTest.cpp
+    ui/InputLedPresenterTest.cpp
+    ui/KeymapPresenterTest.cpp
+    ui/KeyRouterTest.cpp
     ui/KitPresenterTest.cpp
 )
 

@@ -9,13 +9,20 @@
 namespace drumprog::app
 {
 
-/// Humble object (E-03): menus "Datei" and "Bearbeiten" with their shortcuts (Pflichtenheft 6.2),
-/// forwarding every command to the DocumentController. Shortcuts use Strg only, so letter keys stay
-/// free for drum triggers (6.4).
+/// Actions of the menu "Audio" that open dialogs.
+struct AudioMenuActions
+{
+    std::function<void()> showSettings;
+    std::function<void()> showKeymap;
+};
+
+/// Humble object (E-03): menus "Datei", "Bearbeiten" and "Audio" with their shortcuts (Pflichtenheft
+/// 6.2), forwarding every command to the DocumentController or the dialog actions. Shortcuts use Strg
+/// only, so letter keys stay free for drum triggers (6.4).
 class MainMenu final : public juce::MenuBarModel, public juce::ApplicationCommandTarget
 {
 public:
-    MainMenu(ui::DocumentController& document, std::function<void()> quit);
+    MainMenu(ui::DocumentController& document, std::function<void()> quit, AudioMenuActions audio);
     ~MainMenu() override;
 
     MainMenu(const MainMenu&) = delete;
@@ -36,8 +43,11 @@ public:
     bool perform(const InvocationInfo& info) override;
 
 private:
+    [[nodiscard]] std::function<void()> actionFor(juce::CommandID commandID);
+
     ui::DocumentController& document_;
     std::function<void()> quit_;
+    AudioMenuActions audio_;
     juce::ApplicationCommandManager commands_;
 };
 

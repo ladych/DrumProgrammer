@@ -8,15 +8,20 @@
 namespace drumprog::model
 {
 
-SnapshotPublisher::SnapshotPublisher(juce::ValueTree project, ProjectSnapshotExchange& exchange)
-    : project_(std::move(project)), exchange_(exchange), listener_(project_, [this] { publish(); })
+SnapshotPublisher::SnapshotPublisher(juce::ValueTree project,
+                                     ProjectSnapshotExchange& exchange,
+                                     engine::IKitSink& kitSink)
+    : project_(std::move(project)), exchange_(exchange), kitSink_(kitSink),
+      listener_(project_, [this] { publish(); })
 {
     publish();
 }
 
 void SnapshotPublisher::publish()
 {
-    exchange_.publish(SnapshotBuilder::build(Project{project_, nullptr}));
+    const Project project{project_, nullptr};
+    exchange_.publish(SnapshotBuilder::build(project));
+    kitSink_.publishKit(SnapshotBuilder::buildKit(project.kit()));
 }
 
 } // namespace drumprog::model

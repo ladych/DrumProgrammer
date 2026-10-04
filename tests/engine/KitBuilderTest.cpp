@@ -82,6 +82,20 @@ TEST_F(KitBuilderTest, FPJ03_RetriesMissingSampleOnNextBuild)
     EXPECT_NE(builder.build(kitWithKick(), 48000.0).kit->slotForNote(36)->sample, nullptr);
 }
 
+TEST_F(KitBuilderTest, FSE01_PreloadedSampleIsNotLoadedAgainOnBuild)
+{
+    EXPECT_CALL(loader, load(std::filesystem::path{"kick.wav"})).Times(1).WillOnce(Return(kKick));
+    EXPECT_TRUE(builder.preload("kick.wav"));
+    EXPECT_TRUE(builder.preload("kick.wav"));
+    EXPECT_NE(builder.build(kitWithKick(), 48000.0).kit->slotForNote(36)->sample, nullptr);
+}
+
+TEST_F(KitBuilderTest, FPJ03_PreloadReportsUnloadableFile)
+{
+    EXPECT_CALL(loader, load(std::filesystem::path{"broken.wav"})).WillOnce(Return(std::nullopt));
+    EXPECT_FALSE(builder.preload("broken.wav"));
+}
+
 TEST_F(KitBuilderTest, FSE06_FSE07_FSE08_CopiesGainPitchAndChokeGroup)
 {
     KitDescription kit{

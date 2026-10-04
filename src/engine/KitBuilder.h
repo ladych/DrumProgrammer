@@ -30,9 +30,12 @@ public:
     explicit KitBuilder(ISampleLoader& loader);
 
     [[nodiscard]] KitBuildResult build(const KitDescription& kit, double deviceSampleRate);
+    /// Loads a file into the cache before it is assigned; false if it cannot be loaded.
+    [[nodiscard]] bool preload(const std::filesystem::path& file);
 
 private:
     [[nodiscard]] std::shared_ptr<const SampleBuffer> sampleFor(const std::filesystem::path& file);
+    [[nodiscard]] std::shared_ptr<const SampleBuffer> originalFor(const std::filesystem::path& file);
 
     ISampleLoader& loader_;
     double cachedRate_ = 0.0;

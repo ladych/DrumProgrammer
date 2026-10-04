@@ -12,7 +12,9 @@ namespace drumprog::engine
 {
 
 /// Plays the kit on the audio thread. The GUI thread publishes immutable kits
-/// and queues triggers; the audio thread picks them up at the start of a block.
+/// and queues triggers, the MIDI thread queues the hits of the drum kit; the
+/// audio thread picks them up at the start of a block. Each producer thread has
+/// its own lock-free single-producer queue.
 /// A replaced kit stays alive until no voice plays its samples any more and is
 /// then deleted on the GUI thread, never in the callback (Q-04).
 class SampleEngine
@@ -33,6 +35,8 @@ public:
     void setKit(std::unique_ptr<EngineKit> kit);
     /// Queues a trigger for the next audio block; false if the queue is full.
     bool queueTrigger(int midiNote, int velocity) noexcept;
+    /// Same as queueTrigger(), for the MIDI input thread only (F-IN-03).
+    bool queueMidiTrigger(int midiNote, int velocity) noexcept;
     bool preview(int midiNote) noexcept;
     /// Deletes kits the audio thread no longer uses. Call regularly, e.g. from a GUI timer.
     void collectGarbage();
@@ -53,12 +57,14 @@ private:
         int velocity = 0;
     };
 
+    void playQueuedTriggers() noexcept;
     void pickUpPendingKit() noexcept;
     void retireDrainingKit() noexcept;
 
     VoicePool voices_;
     TriggerIndicators indicators_;
-    SpscQueue<TriggerEvent, kTriggerQueueSize> triggers_;
+    SpscQueue<TriggerEvent, kTriggerQueueSize> triggers_;     ///< GUI thread -> audio thread
+    SpscQueue<TriggerEvent, kTriggerQueueSize> midiTriggers_; ///< MIDI thread -> audio thread
     std::atomic<EngineKit*> pendingKit_{nullptr};
     std::atomic<EngineKit*> retiredKit_{nullptr};
     EngineKit* currentKit_ = nullptr;  ///< audio thread only

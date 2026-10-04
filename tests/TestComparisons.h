@@ -12,12 +12,6 @@
 namespace drumprog::engine
 {
 
-inline bool operator==(const SlotSnapshot& a, const SlotSnapshot& b)
-{
-    return std::tie(a.midiNote, a.gain, a.pitch, a.chokeGroup) ==
-           std::tie(b.midiNote, b.gain, b.pitch, b.chokeGroup);
-}
-
 inline bool operator==(const NoteSnapshot& a, const NoteSnapshot& b)
 {
     return std::tie(a.slotIndex, a.startTick, a.lengthTicks, a.velocity) ==

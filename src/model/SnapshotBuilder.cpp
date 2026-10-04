@@ -1,11 +1,24 @@
 #include "model/SnapshotBuilder.h"
 
+#include "io/Utf8Path.h"
 #include "model/ModelIds.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace drumprog::model
 {
+namespace
+{
+
+std::filesystem::path sampleFileOf(const SampleSlot& slot)
+{
+    if (!slot.hasSample())
+        return {};
+    return io::pathFromUtf8(slot.filePath());
+}
+
+} // namespace
 
 std::unique_ptr<const engine::ProjectSnapshot> SnapshotBuilder::build(const Project& project)
 {
@@ -17,7 +30,6 @@ std::unique_ptr<const engine::ProjectSnapshot> SnapshotBuilder::build(const Proj
     snapshot->ticksPerQuarter = project.ticksPerQuarter();
 
     const auto kit = project.kit();
-    snapshot->slots = buildSlots(kit);
     for (int index = 0; index < project.numPatterns(); ++index)
         snapshot->patterns.push_back(buildPattern(project.pattern(index), kit, project.ticksPerBar()));
     snapshot->song = buildSong(project);
@@ -27,15 +39,22 @@ std::unique_ptr<const engine::ProjectSnapshot> SnapshotBuilder::build(const Proj
     return snapshot;
 }
 
-std::vector<engine::SlotSnapshot> SnapshotBuilder::buildSlots(const Kit& kit)
+engine::KitDescription SnapshotBuilder::buildKit(const Kit& kit)
 {
-    std::vector<engine::SlotSnapshot> slots;
+    engine::KitDescription description;
     for (int index = 0; index < kit.numSlots(); ++index)
     {
         const auto slot = kit.slot(index);
-        slots.push_back({slot.midiNote(), slot.gain(), slot.pitch(), slot.chokeGroup()});
+        description.push_back({.gmNote = slot.gmNote(),
+                               .midiNote = slot.midiNote(),
+                               .name = slot.name(),
+                               .sampleFile = sampleFileOf(slot),
+                               .gain = static_cast<float>(slot.gain()),
+                               .pitchSemitones = static_cast<int>(std::lround(slot.pitch())),
+                               .chokeGroup = slot.chokeGroup(),
+                               .coreSlot = engine::isCoreGmNote(slot.gmNote())});
     }
-    return slots;
+    return description;
 }
 
 engine::PatternSnapshot

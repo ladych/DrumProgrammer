@@ -67,6 +67,14 @@ bool KitSlotDescription::usesGmNote() const noexcept
     return midiNote == gmNote;
 }
 
+bool isCoreGmNote(int gmNote) noexcept
+{
+    for (const auto& drum : kGmDrums)
+        if (drum.note == gmNote)
+            return drum.core;
+    return true;
+}
+
 KitDescription makeGmDefaultKit()
 {
     KitDescription kit;

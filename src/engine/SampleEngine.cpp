@@ -24,6 +24,11 @@ bool SampleEngine::queueTrigger(int midiNote, int velocity) noexcept
     return triggers_.push(TriggerEvent{midiNote, velocity});
 }
 
+bool SampleEngine::queueMidiTrigger(int midiNote, int velocity) noexcept
+{
+    return midiTriggers_.push(TriggerEvent{midiNote, velocity});
+}
+
 bool SampleEngine::preview(int midiNote) noexcept
 {
     return queueTrigger(midiNote, kPreviewVelocity);
@@ -63,12 +68,18 @@ void SampleEngine::render(float* const* outputs, int numOutputs, int numSamples)
     retireDrainingKit();
     pickUpPendingKit();
 
+    playQueuedTriggers();
+    voices_.render(outputs, numOutputs, numSamples);
+    retireDrainingKit();
+}
+
+void SampleEngine::playQueuedTriggers() noexcept
+{
     TriggerEvent event;
     while (triggers_.pop(event))
         trigger(event.midiNote, event.velocity, 0);
-
-    voices_.render(outputs, numOutputs, numSamples);
-    retireDrainingKit();
+    while (midiTriggers_.pop(event))
+        trigger(event.midiNote, event.velocity, 0);
 }
 
 void SampleEngine::pickUpPendingKit() noexcept

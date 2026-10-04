@@ -50,6 +50,13 @@ TEST(KitDescriptionTest, FSE04_CoreSlotsAreTheMainDrumKitPieces)
     EXPECT_FALSE(slotWithNote(kit, 58).coreSlot);
 }
 
+TEST(KitDescriptionTest, FSE04_CoreNoteLookupMatchesTheDefaultKit)
+{
+    for (const auto& slot : makeGmDefaultKit())
+        EXPECT_EQ(isCoreGmNote(slot.gmNote), slot.coreSlot) << slot.gmNote;
+    EXPECT_TRUE(isCoreGmNote(60)); // outside the GM table: never hidden
+}
+
 TEST(KitDescriptionTest, FSE08_HiHatsShareTheChokeGroup)
 {
     const auto kit = makeGmDefaultKit();

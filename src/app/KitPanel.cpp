@@ -14,8 +14,9 @@ constexpr int kLedSize = 10;
 
 } // namespace
 
-KitPanel::KitPanel(ui::KitPresenter& presenter, juce::String sampleWildcard)
-    : presenter_(presenter), sampleWildcard_(std::move(sampleWildcard))
+KitPanel::KitPanel(ui::KitPresenter& presenter, ui::KeymapPresenter& keymap, juce::String sampleWildcard)
+    : presenter_(presenter), keymap_(keymap), sampleWildcard_(std::move(sampleWildcard)),
+      seenChangeCount_(presenter.changeCount())
 {
     setUpControls();
     for (auto* component : std::initializer_list<juce::Component*>{&slotList_,
@@ -27,9 +28,11 @@ KitPanel::KitPanel(ui::KitPresenter& presenter, juce::String sampleWildcard)
                                                                    &gainSlider_,
                                                                    &pitchSlider_,
                                                                    &noteSlider_,
+                                                                   &keyButton_,
                                                                    &gainLabel_,
                                                                    &pitchLabel_,
-                                                                   &noteLabel_})
+                                                                   &noteLabel_,
+                                                                   &keyLabel_})
         addAndMakeVisible(component);
 
     refreshRows();
@@ -55,6 +58,11 @@ void KitPanel::setUpControls()
         presenter_.setMidiNote(static_cast<int>(noteSlider_.getValue()));
         slotList_.repaint();
     };
+    keyButton_.onClick = [this]
+    {
+        if (const auto selected = presenter_.selectedSlot())
+            keymap_.startLearning(*selected);
+    };
 }
 
 KitPanel::~KitPanel()
@@ -75,13 +83,14 @@ void KitPanel::resized()
     auto buttons = inspector.removeFromTop(28);
     loadButton_.setBounds(buttons.removeFromLeft(100));
     previewButton_.setBounds(buttons.removeFromLeft(100).withTrimmedLeft(8));
-    for (auto [label, slider] : {std::pair{&gainLabel_, &gainSlider_},
-                                 std::pair{&pitchLabel_, &pitchSlider_},
-                                 std::pair{&noteLabel_, &noteSlider_}})
+    for (auto [label, control] : {std::pair<juce::Label*, juce::Component*>{&gainLabel_, &gainSlider_},
+                                  std::pair<juce::Label*, juce::Component*>{&pitchLabel_, &pitchSlider_},
+                                  std::pair<juce::Label*, juce::Component*>{&noteLabel_, &noteSlider_},
+                                  std::pair<juce::Label*, juce::Component*>{&keyLabel_, &keyButton_}})
     {
         inspector.removeFromTop(8);
         label->setBounds(inspector.removeFromTop(20));
-        slider->setBounds(inspector.removeFromTop(24));
+        control->setBounds(inspector.removeFromTop(24).removeFromLeft(240));
     }
 }
 
@@ -105,9 +114,8 @@ void KitPanel::paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int
     g.fillEllipse(led);
 
     g.setColour(laf.findColour(juce::Label::textColourId));
-    const auto& description = presenter_.kit()[static_cast<size_t>(slot)];
     g.drawText(presenter_.noteLabel(slot), 24, 0, 110, height, juce::Justification::centredLeft);
-    g.drawText(juce::String::fromUTF8(description.name.c_str()),
+    g.drawText(juce::String::fromUTF8(presenter_.slotName(slot).c_str()),
                134,
                0,
                110,
@@ -131,6 +139,15 @@ void KitPanel::selectedRowsChanged(int lastRowSelected)
 void KitPanel::timerCallback()
 {
     presenter_.tick();
+    // Undo, redo and loading a project change the kit behind the panel's back.
+    if (presenter_.changeCount() != seenChangeCount_)
+    {
+        seenChangeCount_ = presenter_.changeCount();
+        refreshRows();
+        refreshInspector();
+    }
+    if (const auto selected = presenter_.selectedSlot())
+        keyButton_.setButtonText(juce::String::fromUTF8(keymap_.keyLabel(*selected).c_str()));
     slotList_.repaint();
 }
 
@@ -145,21 +162,23 @@ void KitPanel::refreshInspector()
 {
     const auto selected = presenter_.selectedSlot();
     for (auto* component : std::initializer_list<juce::Component*>{
-             &loadButton_, &previewButton_, &gainSlider_, &pitchSlider_, &noteSlider_})
+             &loadButton_, &previewButton_, &gainSlider_, &pitchSlider_, &noteSlider_, &keyButton_})
         component->setEnabled(selected.has_value());
     if (!selected)
     {
         slotName_.setText(juce::String::fromUTF8("Kein Slot ausgew\xc3\xa4hlt"), juce::dontSendNotification);
         sampleName_.setText({}, juce::dontSendNotification);
+        keyButton_.setButtonText({});
         return;
     }
-    const auto& slot = presenter_.kit()[static_cast<size_t>(*selected)];
-    slotName_.setText(juce::String::fromUTF8(slot.name.c_str()), juce::dontSendNotification);
+    slotName_.setText(juce::String::fromUTF8(presenter_.slotName(*selected).c_str()),
+                      juce::dontSendNotification);
     sampleName_.setText(juce::String::fromUTF8(presenter_.sampleLabel(*selected).c_str()),
                         juce::dontSendNotification);
     gainSlider_.setValue(presenter_.gainDb(), juce::dontSendNotification);
-    pitchSlider_.setValue(slot.pitchSemitones, juce::dontSendNotification);
-    noteSlider_.setValue(slot.midiNote, juce::dontSendNotification);
+    pitchSlider_.setValue(presenter_.pitch(), juce::dontSendNotification);
+    noteSlider_.setValue(presenter_.midiNote(*selected), juce::dontSendNotification);
+    keyButton_.setButtonText(juce::String::fromUTF8(keymap_.keyLabel(*selected).c_str()));
 }
 
 void KitPanel::chooseSample()

@@ -48,27 +48,35 @@ KitBuildResult KitBuilder::build(const KitDescription& kit, double deviceSampleR
     return result;
 }
 
+bool KitBuilder::preload(const std::filesystem::path& file)
+{
+    return originalFor(file) != nullptr;
+}
+
 std::shared_ptr<const SampleBuffer> KitBuilder::sampleFor(const std::filesystem::path& file)
 {
     if (const auto found = resampled_.find(file); found != resampled_.end())
         return found->second;
 
-    auto original = originals_[file];
+    const auto original = originalFor(file);
     if (original == nullptr)
-    {
-        auto loaded = loader_.load(file);
-        if (!loaded)
-        {
-            originals_.erase(file);
-            return nullptr;
-        }
-        original = std::make_shared<const SampleBuffer>(downmixToStereo(*loaded));
-        originals_[file] = original;
-    }
-
+        return nullptr;
     auto converted = std::make_shared<const SampleBuffer>(resample(*original, cachedRate_));
     resampled_[file] = converted;
     return converted;
+}
+
+std::shared_ptr<const SampleBuffer> KitBuilder::originalFor(const std::filesystem::path& file)
+{
+    if (const auto found = originals_.find(file); found != originals_.end())
+        return found->second;
+
+    auto loaded = loader_.load(file);
+    if (!loaded)
+        return nullptr;
+    auto original = std::make_shared<const SampleBuffer>(downmixToStereo(*loaded));
+    originals_[file] = original;
+    return original;
 }
 
 } // namespace drumprog::engine

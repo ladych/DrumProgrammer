@@ -30,6 +30,11 @@ inline constexpr int kHiHatChokeGroup = 1;
 
 /// Default kit with the GM drum notes 35..59 and no samples (F-SE-04).
 /// Closed (42), pedal (44) and open hi-hat (46) share one choke group (F-SE-08).
+/// This is the only GM table of the program: the project model creates its default kit from it.
 [[nodiscard]] KitDescription makeGmDefaultKit();
+
+/// Whether the kit panel shows a slot with this GM note without expanding (F-SE-04).
+/// Notes outside the GM table count as core slots, so they are never hidden.
+[[nodiscard]] bool isCoreGmNote(int gmNote) noexcept;
 
 } // namespace drumprog::engine

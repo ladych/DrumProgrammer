@@ -1,10 +1,8 @@
 #include "model/ProjectFactory.h"
 
+#include "engine/KitDescription.h"
 #include "model/ModelIds.h"
 #include "model/Project.h"
-
-#include <array>
-#include <string_view>
 
 namespace drumprog::model
 {
@@ -13,26 +11,6 @@ namespace
 
 constexpr const char* kDefaultProjectName = "Neues Projekt";
 constexpr const char* kFirstPatternName = "Pattern 1";
-
-/// General MIDI percussion names for notes 35-59.
-constexpr std::array<std::string_view, ProjectFactory::kLastGmNote - ProjectFactory::kFirstGmNote + 1>
-    kGmDrumNames{
-        "Acoustic Bass Drum", "Bass Drum 1",    "Side Stick",     "Acoustic Snare",
-        "Hand Clap",          "Electric Snare", "Low Floor Tom",  "Closed Hi-Hat",
-        "High Floor Tom",     "Pedal Hi-Hat",   "Low Tom",        "Open Hi-Hat",
-        "Low-Mid Tom",        "Hi-Mid Tom",     "Crash Cymbal 1", "High Tom",
-        "Ride Cymbal 1",      "Chinese Cymbal", "Ride Bell",      "Tambourine",
-        "Splash Cymbal",      "Cowbell",        "Crash Cymbal 2", "Vibraslap",
-        "Ride Cymbal 2",
-    };
-
-constexpr bool isHiHat(int gmNote)
-{
-    constexpr int kClosedHiHat = 42;
-    constexpr int kPedalHiHat = 44;
-    constexpr int kOpenHiHat = 46;
-    return gmNote == kClosedHiHat || gmNote == kPedalHiHat || gmNote == kOpenHiHat;
-}
 
 } // namespace
 
@@ -59,14 +37,13 @@ juce::ValueTree ProjectFactory::createDefault() const
 juce::ValueTree ProjectFactory::createDefaultKit()
 {
     juce::ValueTree kit{ids::kit};
-    for (int gmNote = kFirstGmNote; gmNote <= kLastGmNote; ++gmNote)
+    for (const auto& description : engine::makeGmDefaultKit())
     {
-        const auto name = kGmDrumNames.at(static_cast<std::size_t>(gmNote - kFirstGmNote));
         juce::ValueTree slot{ids::slot};
-        slot.setProperty(ids::gmNote, gmNote, nullptr);
-        slot.setProperty(ids::midiNote, gmNote, nullptr);
-        slot.setProperty(ids::name, juce::String{name.data(), name.size()}, nullptr);
-        slot.setProperty(ids::chokeGroup, isHiHat(gmNote) ? kHiHatChokeGroup : 0, nullptr);
+        slot.setProperty(ids::gmNote, description.gmNote, nullptr);
+        slot.setProperty(ids::midiNote, description.midiNote, nullptr);
+        slot.setProperty(ids::name, juce::String::fromUTF8(description.name.c_str()), nullptr);
+        slot.setProperty(ids::chokeGroup, description.chokeGroup, nullptr);
         kit.appendChild(slot, nullptr);
     }
     return kit;

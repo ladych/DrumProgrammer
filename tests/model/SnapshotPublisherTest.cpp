@@ -5,10 +5,20 @@
 
 #include <gtest/gtest.h>
 
+#include <vector>
+
 namespace drumprog::model
 {
 namespace
 {
+
+class FakeKitSink : public engine::IKitSink
+{
+public:
+    void publishKit(const engine::KitDescription& kit) override { kits.push_back(kit); }
+
+    std::vector<engine::KitDescription> kits;
+};
 
 class SnapshotPublisherTest : public ::testing::Test
 {
@@ -17,7 +27,8 @@ protected:
     juce::ValueTree tree = ProjectFactory{ids}.createDefault();
     Project project{tree, nullptr};
     ProjectSnapshotExchange exchange;
-    SnapshotPublisher publisher{tree, exchange};
+    FakeKitSink kitSink;
+    SnapshotPublisher publisher{tree, exchange, kitSink};
 };
 
 TEST_F(SnapshotPublisherTest, Q04_PublishesTheProjectRightAway)
@@ -35,6 +46,30 @@ TEST_F(SnapshotPublisherTest, Q04_PublishesAgainAfterEveryChange)
 
     project.pattern(0).addNote({36, 0, 240, 100, NoteOrigin::grid});
     EXPECT_EQ(exchange.acquire()->patterns[0].notes.size(), 1U);
+}
+
+TEST_F(SnapshotPublisherTest, FSE04_HandsTheKitToTheEngineRightAway)
+{
+    ASSERT_EQ(kitSink.kits.size(), 1U);
+    EXPECT_EQ(kitSink.kits.back().size(), 25U);
+}
+
+TEST_F(SnapshotPublisherTest, FSE05_HandsTheKitOverAgainWhenASlotChanges)
+{
+    project.kit().findSlot(38)->setMidiNote(40);
+
+    ASSERT_EQ(kitSink.kits.size(), 2U);
+    EXPECT_EQ(kitSink.kits.back()[3].midiNote, 40);
+}
+
+TEST_F(SnapshotPublisherTest, FPJ02_ALoadedProjectReplacesTheKit)
+{
+    auto loaded = ProjectFactory{ids}.createDefault();
+    Project{loaded, nullptr}.kit().findSlot(36)->setFilePath("/kits/kick.wav");
+
+    tree.copyPropertiesAndChildrenFrom(loaded, nullptr);
+
+    EXPECT_EQ(kitSink.kits.back()[1].sampleFile, std::filesystem::path{"/kits/kick.wav"});
 }
 
 TEST_F(SnapshotPublisherTest, Q04_OldSnapshotsAreFreedOnThePublishingThread)

@@ -17,6 +17,8 @@ constexpr juce::CommandID fileSaveAs = 0x1004;
 constexpr juce::CommandID fileQuit = 0x1005;
 constexpr juce::CommandID editUndo = 0x2001;
 constexpr juce::CommandID editRedo = 0x2002;
+constexpr juce::CommandID audioSettings = 0x3001;
+constexpr juce::CommandID audioKeymap = 0x3002;
 } // namespace command
 
 constexpr int kCtrl = juce::ModifierKeys::commandModifier;
@@ -28,7 +30,7 @@ struct CommandSpec
     const char* name; ///< UTF-8
     const char* description;
     const char* category;
-    char key;
+    char key; ///< 0: no shortcut
     int modifiers;
 };
 
@@ -51,6 +53,13 @@ constexpr std::array kCommands{
                 "Bearbeiten",
                 'y',
                 kCtrl},
+    CommandSpec{command::audioSettings,
+                "Einstellungen...",
+                "Audio-Treiber, Gerät, Buffer und MIDI-Eingang wählen",
+                "Audio",
+                0,
+                0},
+    CommandSpec{command::audioKeymap, "Tastatur-Mapping...", "Tasten den Drum-Slots zuordnen", "Audio", 0, 0},
 };
 
 const CommandSpec* findCommand(juce::CommandID id)
@@ -63,8 +72,8 @@ const CommandSpec* findCommand(juce::CommandID id)
 
 } // namespace
 
-MainMenu::MainMenu(ui::DocumentController& document, std::function<void()> quit)
-    : document_(document), quit_(std::move(quit))
+MainMenu::MainMenu(ui::DocumentController& document, std::function<void()> quit, AudioMenuActions audio)
+    : document_(document), quit_(std::move(quit)), audio_(std::move(audio))
 {
     commands_.registerAllCommandsForTarget(this);
     commands_.setFirstCommandTarget(this);
@@ -78,7 +87,7 @@ MainMenu::~MainMenu()
 
 juce::StringArray MainMenu::getMenuBarNames()
 {
-    return {"Datei", "Bearbeiten"};
+    return {"Datei", "Bearbeiten", "Audio"};
 }
 
 juce::PopupMenu MainMenu::getMenuForIndex(int menuIndex, const juce::String& /*menuName*/)
@@ -94,10 +103,15 @@ juce::PopupMenu MainMenu::getMenuForIndex(int menuIndex, const juce::String& /*m
         menu.addSeparator();
         menu.addCommandItem(&commands_, command::fileQuit);
     }
-    else
+    else if (menuIndex == 1)
     {
         menu.addCommandItem(&commands_, command::editUndo);
         menu.addCommandItem(&commands_, command::editRedo);
+    }
+    else
+    {
+        menu.addCommandItem(&commands_, command::audioSettings);
+        menu.addCommandItem(&commands_, command::audioKeymap);
     }
     return menu;
 }
@@ -116,7 +130,8 @@ void MainMenu::getCommandInfo(juce::CommandID commandID, juce::ApplicationComman
 
     result.setInfo(
         juce::String::fromUTF8(spec->name), juce::String::fromUTF8(spec->description), spec->category, 0);
-    result.addDefaultKeypress(spec->key, spec->modifiers);
+    if (spec->key != 0)
+        result.addDefaultKeypress(spec->key, spec->modifiers);
     if (commandID == command::editUndo)
         result.setActive(document_.canUndo());
     if (commandID == command::editRedo)
@@ -128,31 +143,37 @@ void MainMenu::getCommandInfo(juce::CommandID commandID, juce::ApplicationComman
 
 bool MainMenu::perform(const InvocationInfo& info)
 {
-    switch (info.commandID)
+    const auto action = actionFor(info.commandID);
+    if (!action)
+        return false;
+    action();
+    return true;
+}
+
+std::function<void()> MainMenu::actionFor(juce::CommandID commandID)
+{
+    switch (commandID)
     {
     case command::fileNew:
-        document_.newProject();
-        return true;
+        return [this] { document_.newProject(); };
     case command::fileOpen:
-        document_.open();
-        return true;
+        return [this] { document_.open(); };
     case command::fileSave:
-        document_.save();
-        return true;
+        return [this] { document_.save(); };
     case command::fileSaveAs:
-        document_.saveAs();
-        return true;
+        return [this] { document_.saveAs(); };
     case command::fileQuit:
-        quit_();
-        return true;
+        return quit_;
     case command::editUndo:
-        document_.undo();
-        return true;
+        return [this] { document_.undo(); };
     case command::editRedo:
-        document_.redo();
-        return true;
+        return [this] { document_.redo(); };
+    case command::audioSettings:
+        return audio_.showSettings;
+    case command::audioKeymap:
+        return audio_.showKeymap;
     default:
-        return false;
+        return {};
     }
 }
 
