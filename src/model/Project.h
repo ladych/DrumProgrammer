@@ -199,6 +199,9 @@ public:
     [[nodiscard]] Pattern pattern(int index) const;
     [[nodiscard]] std::optional<Pattern> findPattern(const std::string& id) const;
     Pattern addPattern(const std::string& id, const std::string& name, int lengthBars);
+    /// Copies the pattern at index with all its notes under a new id and name and inserts the copy
+    /// right after it.
+    Pattern duplicatePattern(int index, const std::string& newId, const std::string& newName);
     /// Also removes all song blocks that use the pattern (F-SO-05).
     void removePattern(int index);
 

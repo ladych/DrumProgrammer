@@ -1,12 +1,10 @@
 #include "ui/TransportPresenter.h"
 
-#include "engine/TempoMath.h"
 #include "model/Project.h"
+#include "ui/MusicalTime.h"
 
 #include <algorithm>
 #include <charconv>
-#include <cmath>
-#include <iomanip>
 #include <sstream>
 #include <utility>
 
@@ -141,14 +139,27 @@ void TransportPresenter::setRecordOffsetMs(double offsetMs)
 std::string TransportPresenter::positionText() const
 {
     const model::Project project{project_, nullptr};
-    const auto signature = project.timeSignature();
-    const std::int64_t beatTicks = engine::ticksPerBeat(project.ticksPerQuarter(), signature.denominator);
-    const std::int64_t barTicks = beatTicks * signature.numerator;
-    const std::int64_t position = sequencer_.position();
-    std::ostringstream text;
-    text << std::setfill('0') << std::setw(3) << position / barTicks + 1 << '.'
-         << position % barTicks / beatTicks + 1 << '.' << std::setw(3) << position % beatTicks;
-    return text.str();
+    return formatPosition(sequencer_.position(), project.ticksPerQuarter(), project.timeSignature());
+}
+
+std::optional<std::int64_t> TransportPresenter::playheadTick() const
+{
+    if (!isPlaying())
+        return std::nullopt;
+    return sequencer_.position();
+}
+
+void TransportPresenter::setActivePattern(int patternIndex)
+{
+    if (patternIndex == activePattern_)
+        return;
+    activePattern_ = patternIndex;
+    // A running playback switches to the new pattern; a recording keeps its pattern until Stop.
+    if (isPlaying() && take_ == 0)
+    {
+        sequencer_.stop();
+        sequencer_.play({.patternIndex = activePattern_});
+    }
 }
 
 void TransportPresenter::tick()

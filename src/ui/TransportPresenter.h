@@ -9,6 +9,7 @@
 #include <juce_data_structures/juce_data_structures.h>
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 namespace drumprog::ui
@@ -63,12 +64,16 @@ public:
     void setRecordOffsetMs(double offsetMs);
     [[nodiscard]] double recordOffsetMs() const noexcept { return recordOffsetMs_; }
 
-    /// Pattern that plays and records; the pattern list chooses it (AP5).
-    void setActivePattern(int patternIndex) noexcept { activePattern_ = patternIndex; }
+    /// Pattern that plays and records; the pattern list chooses it (F-SO-01). A running playback
+    /// continues in the new pattern; a running recording keeps its pattern.
+    void setActivePattern(int patternIndex);
     [[nodiscard]] int activePattern() const noexcept { return activePattern_; }
 
     /// Bar.Beat.Tick of the playback position, e.g. "003.2.090" (F-TR-04).
     [[nodiscard]] std::string positionText() const;
+
+    /// Tick of the playback cursor in the active pattern, nothing while stopped (F-PR-11).
+    [[nodiscard]] std::optional<std::int64_t> playheadTick() const;
 
     /// Call from the GUI timer: writes recorded hits into the pattern and ends a finished recording.
     void tick();
