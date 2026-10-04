@@ -1,16 +1,16 @@
-#include "io/DeviceSettingsStore.h"
+#include "io/SettingsStore.h"
 
 #include <utility>
 
 namespace drumprog::io
 {
 
-DeviceSettingsStore::DeviceSettingsStore(IFileSystem& fileSystem, std::filesystem::path settingsFile)
+SettingsStore::SettingsStore(IFileSystem& fileSystem, std::filesystem::path settingsFile)
     : fileSystem_(fileSystem), settingsFile_(std::move(settingsFile))
 {
 }
 
-std::optional<std::string> DeviceSettingsStore::load() const
+std::optional<std::string> SettingsStore::load() const
 {
     auto state = fileSystem_.readText(settingsFile_);
     if (!state || state->empty())
@@ -18,11 +18,11 @@ std::optional<std::string> DeviceSettingsStore::load() const
     return state;
 }
 
-bool DeviceSettingsStore::save(const std::string& deviceState)
+bool SettingsStore::save(const std::string& state)
 {
     if (!fileSystem_.createDirectories(settingsFile_.parent_path()))
         return false;
-    return fileSystem_.writeText(settingsFile_, deviceState);
+    return fileSystem_.writeText(settingsFile_, state);
 }
 
 } // namespace drumprog::io

@@ -1,9 +1,11 @@
 #pragma once
 
+#include "ui/KeymapPresenter.h"
 #include "ui/KitPresenter.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -11,11 +13,12 @@ namespace drumprog::app
 {
 
 /// Humble object (E-03): drum kit list with trigger LEDs (F-SE-04, F-SE-09) and the
-/// sample part of the inspector (F-SE-05 to F-SE-07, F-SE-10). All logic is in ui::KitPresenter.
+/// sample part of the inspector (F-SE-05 to F-SE-07, F-SE-10) with the slot's key (F-IN-02). All
+/// logic is in ui::KitPresenter and ui::KeymapPresenter.
 class KitPanel final : public juce::Component, private juce::ListBoxModel, private juce::Timer
 {
 public:
-    KitPanel(ui::KitPresenter& presenter, juce::String sampleWildcard);
+    KitPanel(ui::KitPresenter& presenter, ui::KeymapPresenter& keymap, juce::String sampleWildcard);
     ~KitPanel() override;
 
     KitPanel(const KitPanel&) = delete;
@@ -38,7 +41,9 @@ private:
     void chooseSample();
 
     ui::KitPresenter& presenter_;
+    ui::KeymapPresenter& keymap_;
     juce::String sampleWildcard_;
+    std::uint32_t seenChangeCount_ = 0;
     std::vector<int> rows_;
     std::unique_ptr<juce::FileChooser> fileChooser_;
 
@@ -51,9 +56,13 @@ private:
     juce::Slider gainSlider_{juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight};
     juce::Slider pitchSlider_{juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight};
     juce::Slider noteSlider_{juce::Slider::IncDecButtons, juce::Slider::TextBoxLeft};
+    juce::TextButton keyButton_;
     juce::Label gainLabel_{{}, juce::String::fromUTF8("Lautst\xc3\xa4rke (dB)")};
     juce::Label pitchLabel_{{}, juce::String::fromUTF8("Pitch (Halbt\xc3\xb6ne)")};
     juce::Label noteLabel_{{}, "MIDI-Note"};
+    juce::Label keyLabel_{{},
+                          juce::String::fromUTF8("Taste (klicken, dann Taste dr\xc3\xbc"
+                                                 "cken)")};
 
     JUCE_LEAK_DETECTOR(KitPanel)
 };

@@ -33,6 +33,8 @@ if(DRUMPROG_COVERAGE)
     if(MSVC)
         message(FATAL_ERROR "DRUMPROG_COVERAGE is only supported with GCC/Clang")
     endif()
-    add_compile_options(--coverage -O0 -fno-inline)
+    # Atomic counters: the thread-safety tests run code on several threads at once, and racing plain
+    # counters can make gcov report negative hit counts.
+    add_compile_options(--coverage -O0 -fno-inline -fprofile-update=atomic)
     add_link_options(--coverage)
 endif()

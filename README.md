@@ -7,6 +7,7 @@ Desktop-Anwendung zum Programmieren von Schlagzeug-Patterns (JUCE/C++), mit Echt
 - [Lastenheft](docs/Lastenheft_Drum_Programmer.md)
 - [Pflichtenheft](docs/Pflichtenheft_Drum_Programmer.md) – Arbeitspakete in Kapitel 8, Meilensteine in Kapitel 9
 - [GUI-Entwurf v0.1](docs/GUI-Entwurf_v0.1.png)
+- [Latenzmessung](docs/Latenzmessung.md) – Vorgehen für Q-01 und Q-02
 - Fortschritt: Issues und Meilensteine in diesem Repository
 
 ## Bauen

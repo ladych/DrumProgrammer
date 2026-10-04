@@ -12,7 +12,10 @@ namespace
 class MainWindow final : public juce::DocumentWindow
 {
 public:
-    MainWindow(const juce::String& name, std::unique_ptr<juce::Component> content, MainMenu& menu)
+    MainWindow(const juce::String& name,
+               std::unique_ptr<juce::Component> content,
+               MainMenu& menu,
+               juce::KeyListener& drumKeys)
         : DocumentWindow(name,
                          juce::Desktop::getInstance().getDefaultLookAndFeel().findColour(
                              juce::ResizableWindow::backgroundColourId),
@@ -21,6 +24,7 @@ public:
         setUsingNativeTitleBar(true);
         setMenuBar(&menu);
         addKeyListener(menu.keyMappings());
+        addKeyListener(&drumKeys);
         setContentOwned(content.release(), true);
         setResizable(true, true);
         centreWithSize(getWidth(), getHeight());
@@ -47,8 +51,11 @@ public:
     void initialise(const juce::String& /*commandLine*/) override
     {
         composition_ = std::make_unique<AppComposition>();
-        mainWindow_ = std::make_unique<MainWindow>(
-            getApplicationName(), composition_->createMainComponent(), composition_->mainMenu());
+        mainWindow_ = std::make_unique<MainWindow>(getApplicationName(),
+                                                   composition_->createMainComponent(),
+                                                   composition_->mainMenu(),
+                                                   composition_->keyboardListener());
+        composition_->setDialogParent(mainWindow_.get());
         composition_->documentView().setTitleSink([this](const juce::String& title)
                                                   { mainWindow_->setName(title); });
     }

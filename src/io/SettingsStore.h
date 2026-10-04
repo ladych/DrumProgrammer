@@ -9,18 +9,18 @@
 namespace drumprog::io
 {
 
-/// Persists the audio device state between runs (F-AO-04). The state itself is
-/// opaque text (JUCE's AudioDeviceManager XML); this class only stores it.
-class DeviceSettingsStore
+/// Persists one program setting as a text file between runs: the audio device state (F-AO-04, JUCE's
+/// AudioDeviceManager XML) and the keyboard mapping (F-IN-02). The text is opaque to this class.
+class SettingsStore
 {
 public:
-    DeviceSettingsStore(IFileSystem& fileSystem, std::filesystem::path settingsFile);
+    SettingsStore(IFileSystem& fileSystem, std::filesystem::path settingsFile);
 
     /// Returns the last saved state, or nothing if none was saved yet.
     [[nodiscard]] std::optional<std::string> load() const;
 
     /// Creates the settings directory if needed; returns false if writing failed.
-    bool save(const std::string& deviceState);
+    bool save(const std::string& state);
 
 private:
     IFileSystem& fileSystem_;

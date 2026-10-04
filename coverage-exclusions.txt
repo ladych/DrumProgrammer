@@ -18,5 +18,15 @@ src/app/JuceSampleLoader.h      # ISampleLoader on top of juce::AudioFormatManag
 src/app/JuceSampleLoader.cpp    # ISampleLoader on top of juce::AudioFormatManager, decoding only
 src/app/KitPanel.h              # JUCE kit list and inspector widgets, logic in ui::KitPresenter
 src/app/KitPanel.cpp            # JUCE kit list and inspector widgets, logic in ui::KitPresenter
+src/app/Dialogs.h               # opens JUCE dialog windows, no logic
+src/app/Dialogs.cpp             # opens JUCE dialog windows, no logic
+src/app/KeymapDialog.h          # JUCE widgets of the keyboard mapping dialog, logic in ui::KeymapPresenter
+src/app/KeymapDialog.cpp        # JUCE widgets of the keyboard mapping dialog, logic in ui::KeymapPresenter
+src/app/KeyboardInputGlue.h     # JUCE key listener forwarding to ui::KeyRouter, OS key names
+src/app/MidiInputCallback.h     # JUCE MIDI callback forwarding raw bytes to input::MidiInputHandler
+src/app/NativeKeyboard.h        # declarations of the platform keyboard access
+src/app/NativeKeyboard_linux.cpp    # X11 calls for scancodes and key labels, no logic
+src/app/NativeKeyboard_windows.cpp  # Win32 calls for scancodes and key labels, no logic
+src/app/NativeKeyboard_other.cpp    # fallback for unsupported platforms, never built on Linux CI
 src/engine/ProjectSnapshot.h    # plain data structs, no executable lines
 src/model/ModelIds.h            # ValueTree identifier constants, no executable lines

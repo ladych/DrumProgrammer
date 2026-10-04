@@ -1,5 +1,7 @@
 #include "ui/KitPresenter.h"
 
+#include "io/Utf8Path.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
@@ -14,64 +16,74 @@ constexpr int kMaxMidiNote = 127;
 
 } // namespace
 
-KitPresenter::KitPresenter(engine::KitDescription kit,
-                           engine::KitBuilder& builder,
+KitPresenter::KitPresenter(juce::ValueTree project,
+                           juce::UndoManager& undoManager,
+                           engine::KitPublisher& kits,
                            engine::SampleEngine& engine)
-    : kit_(std::move(kit)), builder_(builder), engine_(engine)
+    : project_(std::move(project)), undoManager_(undoManager), kits_(kits), engine_(engine),
+      listener_(project_, [this] { ++changeCount_; })
 {
-    publish();
 }
 
-void KitPresenter::setDeviceSampleRate(double sampleRate)
+int KitPresenter::numSlots() const
 {
-    sampleRate_ = sampleRate;
-    publish();
-}
-
-const engine::KitDescription& KitPresenter::kit() const noexcept
-{
-    return kit_;
+    return model::Project{project_, nullptr}.kit().numSlots();
 }
 
 std::vector<int> KitPresenter::visibleSlots(bool showAll) const
 {
     std::vector<int> visible;
-    for (std::size_t i = 0; i < kit_.size(); ++i)
-        if (showAll || kit_[i].coreSlot)
-            visible.push_back(static_cast<int>(i));
+    const auto kit = model::Project{project_, nullptr}.kit();
+    for (int index = 0; index < kit.numSlots(); ++index)
+    {
+        const int gmNote = kit.slot(index).gmNote();
+        if (showAll || engine::isCoreGmNote(gmNote))
+            visible.push_back(index);
+    }
     return visible;
+}
+
+std::string KitPresenter::slotName(int slotIndex) const
+{
+    const auto slot = slotAt(slotIndex);
+    return slot ? slot->name() : std::string{};
+}
+
+int KitPresenter::midiNote(int slotIndex) const
+{
+    const auto slot = slotAt(slotIndex);
+    return slot ? slot->midiNote() : -1;
 }
 
 std::string KitPresenter::sampleLabel(int slotIndex) const
 {
-    if (slotIndex < 0 || slotIndex >= static_cast<int>(kit_.size()))
+    const auto slot = slotAt(slotIndex);
+    if (!slot)
         return {};
-    const auto& file = kit_[static_cast<std::size_t>(slotIndex)].sampleFile;
-    if (file.empty())
+    if (!slot->hasSample())
         return "kein Sample";
-    const auto name = file.filename().u8string();
-    return {name.begin(), name.end()};
+    return io::utf8FromPath(io::pathFromUtf8(slot->filePath()).filename());
 }
 
 std::string KitPresenter::noteLabel(int slotIndex) const
 {
-    if (slotIndex < 0 || slotIndex >= static_cast<int>(kit_.size()))
+    const auto slot = slotAt(slotIndex);
+    if (!slot)
         return {};
-    const auto& slot = kit_[static_cast<std::size_t>(slotIndex)];
-    auto label = std::to_string(slot.midiNote);
-    if (slot.usesGmNote())
+    auto label = std::to_string(slot->midiNote());
+    if (slot->midiNote() == slot->gmNote())
         label += " (GM-Default)";
     return label;
 }
 
 const std::vector<std::filesystem::path>& KitPresenter::missingSamples() const noexcept
 {
-    return missing_;
+    return kits_.missingSamples();
 }
 
 void KitPresenter::select(int slotIndex)
 {
-    if (slotIndex >= 0 && slotIndex < static_cast<int>(kit_.size()))
+    if (slotAt(slotIndex))
         selected_ = slotIndex;
 }
 
@@ -82,97 +94,97 @@ std::optional<int> KitPresenter::selectedSlot() const noexcept
 
 bool KitPresenter::loadSample(const std::filesystem::path& file)
 {
-    auto* slot = selected();
-    if (slot == nullptr)
+    auto slot = selected();
+    if (!slot || !kits_.canLoad(file))
         return false;
-    auto previous = std::exchange(slot->sampleFile, file);
-    publish();
-    if (std::find(missing_.begin(), missing_.end(), file) == missing_.end())
-        return true;
-    slot->sampleFile = std::move(previous);
-    publish();
-    return false;
+    beginEdit(*slot, "Sample");
+    slot->setFilePath(io::utf8FromPath(file));
+    return true;
 }
 
 void KitPresenter::setGainDb(float gainDb)
 {
-    if (auto* slot = selected())
+    if (auto slot = selected())
     {
-        slot->gain = std::pow(10.0F, std::clamp(gainDb, kMinGainDb, kMaxGainDb) / 20.0F);
-        publish();
+        beginEdit(*slot, "Lautstärke");
+        slot->setGain(std::pow(10.0, std::clamp(gainDb, kMinGainDb, kMaxGainDb) / 20.0));
     }
 }
 
 float KitPresenter::gainDb() const
 {
-    if (!selected_)
+    const auto slot = selected();
+    if (!slot)
         return 0.0F;
-    const float gain = kit_[static_cast<std::size_t>(*selected_)].gain;
-    return gain > 0.0F ? std::max(20.0F * std::log10(gain), kMinGainDb) : kMinGainDb;
+    const double gain = slot->gain();
+    const double gainDb = gain > 0.0 ? 20.0 * std::log10(gain) : kMinGainDb;
+    return std::max(static_cast<float>(gainDb), kMinGainDb);
 }
 
 void KitPresenter::setPitch(int semitones)
 {
-    if (auto* slot = selected())
+    if (auto slot = selected())
     {
-        slot->pitchSemitones = std::clamp(
-            semitones, -engine::KitBuilder::kMaxPitchSemitones, engine::KitBuilder::kMaxPitchSemitones);
-        publish();
+        beginEdit(*slot, "Pitch");
+        slot->setPitch(std::clamp(
+            semitones, -engine::KitBuilder::kMaxPitchSemitones, engine::KitBuilder::kMaxPitchSemitones));
     }
+}
+
+int KitPresenter::pitch() const
+{
+    const auto slot = selected();
+    return slot ? static_cast<int>(std::lround(slot->pitch())) : 0;
 }
 
 void KitPresenter::setMidiNote(int midiNote)
 {
-    if (auto* slot = selected())
+    if (auto slot = selected())
     {
-        slot->midiNote = std::clamp(midiNote, 0, kMaxMidiNote);
-        publish();
+        beginEdit(*slot, "MIDI-Note");
+        slot->setMidiNote(std::clamp(midiNote, 0, kMaxMidiNote));
     }
 }
 
 bool KitPresenter::previewSelected()
 {
-    const auto* slot = selected();
-    return slot != nullptr && engine_.preview(slot->midiNote);
+    const auto slot = selected();
+    return slot && engine_.preview(slot->midiNote());
 }
 
 void KitPresenter::tick()
 {
     engine_.collectGarbage();
     const auto& indicators = engine_.indicators();
-    for (std::size_t i = 0; i < seenHits_.size(); ++i)
-    {
-        const auto hits = indicators.hitCount(static_cast<int>(i));
-        auto& ledTicks = ledTicks_.at(i);
-        if (hits != seenHits_.at(i))
-        {
-            seenHits_.at(i) = hits;
-            ledTicks = kLedHoldTicks;
-        }
-        else if (ledTicks > 0)
-        {
-            --ledTicks;
-        }
-    }
+    for (std::size_t index = 0; index < leds_.size(); ++index)
+        leds_.at(index).update(indicators.hitCount(static_cast<int>(index)));
 }
 
 bool KitPresenter::isLedOn(int slotIndex) const
 {
-    if (slotIndex < 0 || slotIndex >= static_cast<int>(ledTicks_.size()))
+    if (slotIndex < 0 || slotIndex >= static_cast<int>(leds_.size()))
         return false;
-    return ledTicks_.at(static_cast<std::size_t>(slotIndex)) > 0;
+    return leds_.at(static_cast<std::size_t>(slotIndex)).isOn();
 }
 
-engine::KitSlotDescription* KitPresenter::selected()
+std::optional<model::SampleSlot> KitPresenter::slotAt(int slotIndex) const
 {
-    return selected_ ? &kit_[static_cast<std::size_t>(*selected_)] : nullptr;
+    const auto kit = model::Project{project_, &undoManager_}.kit();
+    if (slotIndex < 0 || slotIndex >= kit.numSlots())
+        return std::nullopt;
+    return kit.slot(slotIndex);
 }
 
-void KitPresenter::publish()
+std::optional<model::SampleSlot> KitPresenter::selected() const
 {
-    auto result = builder_.build(kit_, sampleRate_);
-    missing_ = std::move(result.missingSamples);
-    engine_.setKit(std::move(result.kit));
+    return selected_ ? slotAt(*selected_) : std::nullopt;
+}
+
+void KitPresenter::beginEdit(const model::SampleSlot& slot, const std::string& what)
+{
+    const auto name = juce::String::fromUTF8((what + " " + slot.name()).c_str());
+    if (undoManager_.getCurrentTransactionName() != name)
+        undoManager_.beginNewTransaction(name);
 }
 
 } // namespace drumprog::ui
