@@ -75,5 +75,32 @@ TEST_F(StdFileSystemTest, FAO04_CreatingDirectoriesFailsWhenPathIsAFile)
     EXPECT_FALSE(fileSystem.createDirectories(blocker / "child"));
 }
 
+TEST_F(StdFileSystemTest, FPJ03_TellsWhetherAFileExists)
+{
+    const auto file = root / "kick.wav";
+    std::ofstream{file} << "x";
+
+    EXPECT_TRUE(fileSystem.exists(file));
+    EXPECT_FALSE(fileSystem.exists(root / "snare.wav"));
+}
+
+TEST_F(StdFileSystemTest, Q10_RenameReplacesTheTargetFile)
+{
+    const auto temp = root / "rock.dpp.tmp";
+    const auto target = root / "rock.dpp";
+    ASSERT_TRUE(fileSystem.writeText(target, "old"));
+    ASSERT_TRUE(fileSystem.writeText(temp, "new"));
+
+    EXPECT_TRUE(fileSystem.rename(temp, target));
+
+    EXPECT_EQ(fileSystem.readText(target), std::optional<std::string>{"new"});
+    EXPECT_FALSE(fs::exists(temp));
+}
+
+TEST_F(StdFileSystemTest, Q10_RenamingMissingFileFails)
+{
+    EXPECT_FALSE(fileSystem.rename(root / "missing.tmp", root / "rock.dpp"));
+}
+
 } // namespace
 } // namespace drumprog::io

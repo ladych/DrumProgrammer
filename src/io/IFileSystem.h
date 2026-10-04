@@ -16,6 +16,9 @@ public:
     [[nodiscard]] virtual std::optional<std::string> readText(const std::filesystem::path& file) const = 0;
     virtual bool writeText(const std::filesystem::path& file, const std::string& text) = 0;
     virtual bool createDirectories(const std::filesystem::path& directory) = 0;
+    [[nodiscard]] virtual bool exists(const std::filesystem::path& file) const = 0;
+    /// Replaces an existing target file.
+    virtual bool rename(const std::filesystem::path& from, const std::filesystem::path& to) = 0;
 
 protected:
     IFileSystem() = default;

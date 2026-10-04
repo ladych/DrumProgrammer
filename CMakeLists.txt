@@ -14,9 +14,7 @@ set(DRUMPROG_SANITIZERS "" CACHE STRING "Comma-separated sanitizers, e.g. addres
 
 include(cmake/DrumProgrammerOptions.cmake)
 
-if(DRUMPROG_BUILD_APP)
-    add_subdirectory(external/JUCE EXCLUDE_FROM_ALL)
-endif()
+include(cmake/DrumProgrammerJuce.cmake)
 
 add_subdirectory(src)
 

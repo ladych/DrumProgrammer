@@ -12,18 +12,27 @@ namespace
 class MainWindow final : public juce::DocumentWindow
 {
 public:
-    MainWindow(const juce::String& name, std::unique_ptr<juce::Component> content)
+    MainWindow(const juce::String& name, std::unique_ptr<juce::Component> content, MainMenu& menu)
         : DocumentWindow(name,
                          juce::Desktop::getInstance().getDefaultLookAndFeel().findColour(
                              juce::ResizableWindow::backgroundColourId),
                          DocumentWindow::allButtons)
     {
         setUsingNativeTitleBar(true);
+        setMenuBar(&menu);
+        addKeyListener(menu.keyMappings());
         setContentOwned(content.release(), true);
         setResizable(true, true);
         centreWithSize(getWidth(), getHeight());
         setVisible(true);
     }
+
+    ~MainWindow() override { setMenuBar(nullptr); }
+
+    MainWindow(const MainWindow&) = delete;
+    MainWindow& operator=(const MainWindow&) = delete;
+    MainWindow(MainWindow&&) = delete;
+    MainWindow& operator=(MainWindow&&) = delete;
 
     void closeButtonPressed() override { juce::JUCEApplication::getInstance()->systemRequestedQuit(); }
 };
@@ -38,7 +47,10 @@ public:
     void initialise(const juce::String& /*commandLine*/) override
     {
         composition_ = std::make_unique<AppComposition>();
-        mainWindow_ = std::make_unique<MainWindow>(getApplicationName(), composition_->createMainComponent());
+        mainWindow_ = std::make_unique<MainWindow>(
+            getApplicationName(), composition_->createMainComponent(), composition_->mainMenu());
+        composition_->documentView().setTitleSink([this](const juce::String& title)
+                                                  { mainWindow_->setName(title); });
     }
 
     void shutdown() override
@@ -47,7 +59,11 @@ public:
         composition_.reset();
     }
 
-    void systemRequestedQuit() override { quit(); }
+    // Window close button and Strg+Q: ask for unsaved changes first (F-PJ-04).
+    void systemRequestedQuit() override
+    {
+        composition_->documentController().requestClose([] { quit(); });
+    }
 
 private:
     std::unique_ptr<AppComposition> composition_;

@@ -28,7 +28,10 @@ std::filesystem::path deviceSettingsFile()
 
 AppComposition::AppComposition()
     : deviceSettings_(fileSystem_, deviceSettingsFile()), testTone_(kTestToneFrequencyHz, kTestToneGain),
-      audioCallback_(testTone_)
+      audioCallback_(testTone_), projectFactory_(idGenerator_), project_(projectFactory_.createDefault()),
+      snapshotPublisher_(project_, snapshots_), projectRepository_(fileSystem_),
+      documentController_(project_, undoManager_, projectRepository_, projectFactory_, documentView_),
+      mainMenu_(documentController_, [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); })
 {
     restoreDeviceSettings();
     deviceManager_.addAudioCallback(&audioCallback_);

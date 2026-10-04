@@ -32,4 +32,17 @@ bool StdFileSystem::createDirectories(const std::filesystem::path& directory)
     return !error;
 }
 
+bool StdFileSystem::exists(const std::filesystem::path& file) const
+{
+    std::error_code error;
+    return std::filesystem::exists(file, error);
+}
+
+bool StdFileSystem::rename(const std::filesystem::path& from, const std::filesystem::path& to)
+{
+    std::error_code error;
+    std::filesystem::rename(from, to, error);
+    return !error;
+}
+
 } // namespace drumprog::io
