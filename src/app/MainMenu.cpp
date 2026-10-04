@@ -2,6 +2,7 @@
 
 #include <array>
 #include <utility>
+#include <vector>
 
 namespace drumprog::app
 {
@@ -17,6 +18,20 @@ constexpr juce::CommandID fileSaveAs = 0x1004;
 constexpr juce::CommandID fileQuit = 0x1005;
 constexpr juce::CommandID editUndo = 0x2001;
 constexpr juce::CommandID editRedo = 0x2002;
+constexpr juce::CommandID editCut = 0x2003;
+constexpr juce::CommandID editCopy = 0x2004;
+constexpr juce::CommandID editPaste = 0x2005;
+constexpr juce::CommandID editDuplicate = 0x2006;
+constexpr juce::CommandID editDelete = 0x2007;
+constexpr juce::CommandID editSelectAll = 0x2008;
+constexpr juce::CommandID toolDraw = 0x2101;
+constexpr juce::CommandID toolSelect = 0x2102;
+constexpr juce::CommandID toolErase = 0x2103;
+constexpr juce::CommandID patternNew = 0x6001;
+constexpr juce::CommandID patternDuplicate = 0x6002;
+constexpr juce::CommandID patternRename = 0x6003;
+constexpr juce::CommandID patternLength = 0x6004;
+constexpr juce::CommandID patternDelete = 0x6005;
 constexpr juce::CommandID audioSettings = 0x3001;
 constexpr juce::CommandID audioKeymap = 0x3002;
 constexpr juce::CommandID kitCopyToProject = 0x5001;
@@ -57,6 +72,35 @@ constexpr std::array kCommands{
                 "Bearbeiten",
                 'y',
                 kCtrl},
+    CommandSpec{command::editCut, "Ausschneiden", "Ausgewählte Noten ausschneiden", "Bearbeiten", 'x', kCtrl},
+    CommandSpec{command::editCopy, "Kopieren", "Ausgewählte Noten kopieren", "Bearbeiten", 'c', kCtrl},
+    CommandSpec{command::editPaste,
+                "Einfügen",
+                "Noten an der zuletzt geklickten Stelle einfügen",
+                "Bearbeiten",
+                'v',
+                kCtrl},
+    CommandSpec{command::editDuplicate,
+                "Duplizieren",
+                "Ausgewählte Noten dahinter kopieren",
+                "Bearbeiten",
+                'd',
+                kCtrl},
+    CommandSpec{command::editDelete, "Löschen", "Ausgewählte Noten löschen", "Bearbeiten", 0, 0},
+    CommandSpec{command::editSelectAll,
+                "Alles auswählen",
+                "Alle Noten des Patterns auswählen",
+                "Bearbeiten",
+                'a',
+                kCtrl},
+    CommandSpec{command::toolDraw, "Werkzeug Zeichnen", "Noten zeichnen", "Bearbeiten", '1', kCtrl},
+    CommandSpec{command::toolSelect, "Werkzeug Auswahl", "Noten auswählen", "Bearbeiten", '2', kCtrl},
+    CommandSpec{command::toolErase, "Werkzeug Löschen", "Noten löschen", "Bearbeiten", '3', kCtrl},
+    CommandSpec{command::patternNew, "Neu", "Neues Pattern anlegen", "Pattern", 0, 0},
+    CommandSpec{command::patternDuplicate, "Duplizieren", "Aktives Pattern duplizieren", "Pattern", 0, 0},
+    CommandSpec{command::patternRename, "Umbenennen...", "Aktives Pattern umbenennen", "Pattern", 0, 0},
+    CommandSpec{command::patternLength, "Länge...", "Länge des aktiven Patterns in Takten", "Pattern", 0, 0},
+    CommandSpec{command::patternDelete, "Löschen", "Aktives Pattern löschen", "Pattern", 0, 0},
     CommandSpec{command::audioSettings,
                 "Einstellungen...",
                 "Audio-Treiber, Gerät, Buffer und MIDI-Eingang wählen",
@@ -90,6 +134,39 @@ constexpr std::array kCommands{
                 kCtrl},
 };
 
+constexpr juce::CommandID kSeparator = 0;
+
+/// Entries of the menus in the order of getMenuBarNames(); kSeparator draws a line.
+std::vector<juce::CommandID> menuCommands(int menuIndex)
+{
+    using namespace command;
+    switch (menuIndex)
+    {
+    case 0:
+        return {fileNew, fileOpen, kSeparator, fileSave, fileSaveAs, kSeparator, fileQuit};
+    case 1:
+        return {editUndo,
+                editRedo,
+                kSeparator,
+                editCut,
+                editCopy,
+                editPaste,
+                editDuplicate,
+                editDelete,
+                editSelectAll,
+                kSeparator,
+                toolDraw,
+                toolSelect,
+                toolErase};
+    case 2:
+        return {patternNew, patternDuplicate, patternRename, patternLength, patternDelete};
+    case 3:
+        return {kitCopyToProject, kitUseGlobal, kSeparator, kitCopyToGlobal};
+    default:
+        return {audioSettings, audioKeymap};
+    }
+}
+
 const CommandSpec* findCommand(juce::CommandID id)
 {
     for (const auto& spec : kCommands)
@@ -102,11 +179,13 @@ const CommandSpec* findCommand(juce::CommandID id)
 
 MainMenu::MainMenu(ui::DocumentController& document,
                    std::function<void()> quit,
+                   EditActions edit,
+                   PatternActions pattern,
                    KitMenuActions kit,
                    AudioMenuActions audio,
                    TransportActions transport)
-    : document_(document), quit_(std::move(quit)), kit_(std::move(kit)), audio_(std::move(audio)),
-      transport_(std::move(transport))
+    : document_(document), quit_(std::move(quit)), edit_(std::move(edit)), pattern_(std::move(pattern)),
+      kit_(std::move(kit)), audio_(std::move(audio)), transport_(std::move(transport))
 {
     commands_.registerAllCommandsForTarget(this);
     commands_.setFirstCommandTarget(this);
@@ -120,38 +199,18 @@ MainMenu::~MainMenu()
 
 juce::StringArray MainMenu::getMenuBarNames()
 {
-    return {"Datei", "Bearbeiten", "Kit", "Audio"};
+    return {"Datei", "Bearbeiten", "Pattern", "Kit", "Audio"};
 }
 
 juce::PopupMenu MainMenu::getMenuForIndex(int menuIndex, const juce::String& /*menuName*/)
 {
     juce::PopupMenu menu;
-    if (menuIndex == 0)
+    for (const auto id : menuCommands(menuIndex))
     {
-        menu.addCommandItem(&commands_, command::fileNew);
-        menu.addCommandItem(&commands_, command::fileOpen);
-        menu.addSeparator();
-        menu.addCommandItem(&commands_, command::fileSave);
-        menu.addCommandItem(&commands_, command::fileSaveAs);
-        menu.addSeparator();
-        menu.addCommandItem(&commands_, command::fileQuit);
-    }
-    else if (menuIndex == 1)
-    {
-        menu.addCommandItem(&commands_, command::editUndo);
-        menu.addCommandItem(&commands_, command::editRedo);
-    }
-    else if (menuIndex == 2)
-    {
-        menu.addCommandItem(&commands_, command::kitCopyToProject);
-        menu.addCommandItem(&commands_, command::kitUseGlobal);
-        menu.addSeparator();
-        menu.addCommandItem(&commands_, command::kitCopyToGlobal);
-    }
-    else
-    {
-        menu.addCommandItem(&commands_, command::audioSettings);
-        menu.addCommandItem(&commands_, command::audioKeymap);
+        if (id == kSeparator)
+            menu.addSeparator();
+        else
+            menu.addCommandItem(&commands_, id);
     }
     return menu;
 }
@@ -172,16 +231,38 @@ void MainMenu::getCommandInfo(juce::CommandID commandID, juce::ApplicationComman
         juce::String::fromUTF8(spec->name), juce::String::fromUTF8(spec->description), spec->category, 0);
     if (spec->key != 0)
         result.addDefaultKeypress(spec->key, spec->modifiers);
-    if (commandID == command::editUndo)
-        result.setActive(document_.canUndo());
-    if (commandID == command::kitCopyToProject)
-        result.setActive(!kit_.usesProjectKit());
-    if (commandID == command::kitUseGlobal || commandID == command::kitCopyToGlobal)
-        result.setActive(kit_.usesProjectKit());
     if (commandID == command::editRedo)
-    {
         result.addDefaultKeypress('z', kCtrlShift);
-        result.setActive(document_.canRedo());
+    if (commandID == command::editDelete)
+        result.addDefaultKeypress(juce::KeyPress::deleteKey, 0);
+    if (const auto isActive = activeCheckFor(commandID))
+        result.setActive(isActive());
+}
+
+std::function<bool()> MainMenu::activeCheckFor(juce::CommandID commandID) const
+{
+    switch (commandID)
+    {
+    case command::editUndo:
+        return [this] { return document_.canUndo(); };
+    case command::editRedo:
+        return [this] { return document_.canRedo(); };
+    case command::editCut:
+    case command::editCopy:
+    case command::editDuplicate:
+    case command::editDelete:
+        return edit_.hasSelection;
+    case command::editPaste:
+        return edit_.canPaste;
+    case command::patternDelete:
+        return pattern_.canRemove;
+    case command::kitCopyToProject:
+        return [this] { return !kit_.usesProjectKit(); };
+    case command::kitUseGlobal:
+    case command::kitCopyToGlobal:
+        return kit_.usesProjectKit;
+    default:
+        return {};
     }
 }
 
@@ -218,6 +299,52 @@ std::function<void()> MainMenu::actionFor(juce::CommandID commandID)
         return audio_.showKeymap;
     case command::transportRecord:
         return transport_.toggleRecordArmed;
+    default:
+        return editActionFor(commandID);
+    }
+}
+
+std::function<void()> MainMenu::editActionFor(juce::CommandID commandID) const
+{
+    switch (commandID)
+    {
+    case command::editCut:
+        return edit_.cut;
+    case command::editCopy:
+        return edit_.copy;
+    case command::editPaste:
+        return edit_.paste;
+    case command::editDuplicate:
+        return edit_.duplicate;
+    case command::editDelete:
+        return edit_.deleteSelection;
+    case command::editSelectAll:
+        return edit_.selectAll;
+    case command::toolDraw:
+        return edit_.drawTool;
+    case command::toolSelect:
+        return edit_.selectTool;
+    case command::toolErase:
+        return edit_.eraseTool;
+    default:
+        return patternActionFor(commandID);
+    }
+}
+
+std::function<void()> MainMenu::patternActionFor(juce::CommandID commandID) const
+{
+    switch (commandID)
+    {
+    case command::patternNew:
+        return pattern_.add;
+    case command::patternDuplicate:
+        return pattern_.duplicate;
+    case command::patternRename:
+        return pattern_.rename;
+    case command::patternLength:
+        return pattern_.setLength;
+    case command::patternDelete:
+        return pattern_.remove;
     default:
         return kitActionFor(commandID);
     }

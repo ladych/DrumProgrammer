@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <ranges>
 #include <utility>
 
 namespace drumprog::ui
@@ -164,8 +165,8 @@ void PianoRollPresenter::mouseUp(GridPoint point, PointerModifiers modifiers)
     mouseDrag(point, modifiers);
     if (drag_ == Drag::move)
         commitMove();
-    else if (drag_ == Drag::rectangle)
-        finishRectangle(modifiers);
+    else if (const auto rect = selectionRect())
+        finishRectangle(*rect, modifiers);
     drag_ = Drag::none;
     ++changeCount_;
 }
@@ -245,17 +246,19 @@ void PianoRollPresenter::cut()
 
 void PianoRollPresenter::paste()
 {
-    if (clipboard_.empty() || !hasPattern())
+    auto shown = pattern();
+    if (!shown || clipboard_.empty())
         return;
     undoManager_.beginNewTransaction(juce::String::fromUTF8("Einf\xc3\xbcgen"));
-    selection_ = addNotes(clipboard_, pasteTick_);
+    selection_ = addNotes(*shown, clipboard_, pasteTick_);
     pasteTick_ += clipboardSpan_;
     selectionChanged();
 }
 
 void PianoRollPresenter::duplicate()
 {
-    if (selection_.empty())
+    auto shown = pattern();
+    if (!shown || selection_.empty())
         return;
     const auto data = selectedData();
     std::int64_t first = data.front().startTick;
@@ -267,7 +270,7 @@ void PianoRollPresenter::duplicate()
     }
     const std::int64_t step = gridStepTicks();
     undoManager_.beginNewTransaction("Duplizieren");
-    selection_ = addNotes(data, engine::floorDiv(end - first + step - 1, step) * step);
+    selection_ = addNotes(*shown, data, engine::floorDiv(end - first + step - 1, step) * step);
     selectionChanged();
 }
 
@@ -353,9 +356,11 @@ void PianoRollPresenter::setSelectedVelocity(int velocity)
 {
     if (selection_.empty())
         return;
-    if (!velocityEditing_)
-        undoManager_.beginNewTransaction(kVelocityEdit);
-    else if (undoManager_.getCurrentTransactionName() != kVelocityEdit) // something else was changed
+    // The step goes on unless something else was changed in between.
+    bool continues = velocityEditing_;
+    if (continues)
+        continues = undoManager_.getCurrentTransactionName() == kVelocityEdit;
+    if (!continues)
         undoManager_.beginNewTransaction(kVelocityEdit);
     velocityEditing_ = true;
     for (const auto& tree : std::vector{selection_})
@@ -480,13 +485,13 @@ bool PianoRollPresenter::isSelected(const juce::ValueTree& tree) const
 PianoRollPresenter::Hit PianoRollPresenter::hit(GridPoint point, std::int64_t tolerance) const
 {
     // Later notes are drawn on top, so they are hit first.
-    for (auto note = notes_.rbegin(); note != notes_.rend(); ++note)
+    for (const auto& note : std::views::reverse(notes_))
     {
-        const std::int64_t end = note->start + note->length;
-        if (note->row != point.row || point.tick < note->start || point.tick >= end + tolerance)
+        const std::int64_t end = note.start + note.length;
+        if (note.row != point.row || point.tick < note.start || point.tick >= end + tolerance)
             continue;
-        const std::int64_t endZone = std::min(tolerance, note->length / 2);
-        return {&*note, point.tick >= end - endZone ? NoteHit::end : NoteHit::body};
+        const std::int64_t endZone = std::min(tolerance, note.length / 2);
+        return {&note, point.tick >= end - endZone ? NoteHit::end : NoteHit::body};
     }
     return {};
 }
@@ -526,14 +531,15 @@ void PianoRollPresenter::drawNote(GridPoint point, PointerModifiers modifiers)
 {
     const std::int64_t start = placed(point.tick, modifiers, false);
     const std::int64_t length = lengthTicks();
-    if (point.row < 0 || point.row >= numRows() || start < 0 || start >= length)
+    auto shown = pattern();
+    if (!shown || point.row < 0 || point.row >= numRows() || start < 0 || start >= length)
         return;
     undoManager_.beginNewTransaction("Note zeichnen");
-    auto note = pattern()->addNote({.slotNote = rows_[static_cast<std::size_t>(point.row)].gmNote,
-                                    .startTick = start,
-                                    .lengthTicks = std::min(gridStepTicks(), length - start),
-                                    .velocity = kDefaultVelocity,
-                                    .origin = model::NoteOrigin::grid});
+    auto note = shown->addNote({.slotNote = rows_[static_cast<std::size_t>(point.row)].gmNote,
+                                .startTick = start,
+                                .lengthTicks = std::min(gridStepTicks(), length - start),
+                                .velocity = kDefaultVelocity,
+                                .origin = model::NoteOrigin::grid});
     selection_.assign(1, note.tree());
     setLaneRow(point.row);
     selectionChanged();
@@ -608,7 +614,8 @@ void PianoRollPresenter::commitMove()
         model::Note note{view.tree, &undoManager_};
         const std::int64_t start = view.start + moveTicks_;
         note.setStartTick(start);
-        note.setSlotNote(rows_[static_cast<std::size_t>(view.row + moveRows_)].gmNote);
+        const int row = view.row + moveRows_;
+        note.setSlotNote(rows_[static_cast<std::size_t>(row)].gmNote);
         // Snapping a played-in note onto the grid makes it a gridded note (F-PR-07).
         if (!moveIsFree_ && start % step == 0)
             note.setOrigin(model::NoteOrigin::grid);
@@ -617,9 +624,8 @@ void PianoRollPresenter::commitMove()
     moveRows_ = 0;
 }
 
-void PianoRollPresenter::finishRectangle(PointerModifiers modifiers)
+void PianoRollPresenter::finishRectangle(const SelectionRect& rect, PointerModifiers modifiers)
 {
-    const auto rect = *selectionRect();
     if (!modifiers.ctrl)
         selection_.clear();
     for (const auto& note : notes_)
@@ -641,10 +647,10 @@ void PianoRollPresenter::removeNote(const juce::ValueTree& tree)
     parent.removeChild(tree, &undoManager_);
 }
 
-std::vector<juce::ValueTree> PianoRollPresenter::addNotes(const std::vector<model::NoteData>& notes,
-                                                          std::int64_t offset)
+std::vector<juce::ValueTree> PianoRollPresenter::addNotes(model::Pattern& shown,
+                                                          const std::vector<model::NoteData>& notes,
+                                                          std::int64_t offset) const
 {
-    auto shown = *pattern();
     const std::int64_t length = lengthTicks();
     std::vector<juce::ValueTree> added;
     for (auto note : notes)
@@ -659,6 +665,7 @@ std::vector<juce::ValueTree> PianoRollPresenter::addNotes(const std::vector<mode
 std::vector<model::NoteData> PianoRollPresenter::selectedData() const
 {
     std::vector<model::NoteData> data;
+    data.reserve(selection_.size());
     for (const auto& tree : selection_)
         data.push_back(model::Note{tree, nullptr}.data());
     return data;

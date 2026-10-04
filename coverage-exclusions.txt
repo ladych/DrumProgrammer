@@ -24,6 +24,14 @@ src/app/KeymapDialog.h          # JUCE widgets of the keyboard mapping dialog, l
 src/app/KeymapDialog.cpp        # JUCE widgets of the keyboard mapping dialog, logic in ui::KeymapPresenter
 src/app/TransportBar.h          # JUCE transport bar widgets, logic in ui::TransportPresenter and ui::TempoPresenter
 src/app/TransportBar.cpp        # JUCE transport bar widgets, logic in ui::TransportPresenter and ui::TempoPresenter
+src/app/PatternListPanel.h      # JUCE pattern list and context menu, logic in ui::PatternListPresenter
+src/app/PatternListPanel.cpp    # JUCE pattern list and context menu, logic in ui::PatternListPresenter
+src/app/PianoRollView.h         # JUCE painting and mouse forwarding, logic in ui::PianoRollPresenter and ui::PianoRollGeometry
+src/app/PianoRollView.cpp       # JUCE painting and mouse forwarding, logic in ui::PianoRollPresenter and ui::PianoRollGeometry
+src/app/PianoRollToolbar.h      # JUCE snap and tool buttons, logic in ui::PianoRollPresenter
+src/app/PianoRollToolbar.cpp    # JUCE snap and tool buttons, logic in ui::PianoRollPresenter
+src/app/NoteInspector.h         # JUCE labels and slider of the note inspector, logic in ui::PianoRollPresenter
+src/app/NoteInspector.cpp       # JUCE labels and slider of the note inspector, logic in ui::PianoRollPresenter
 src/app/KeyboardInputGlue.h     # JUCE key listener forwarding to ui::KeyRouter, OS key names
 src/app/MidiInputCallback.h     # JUCE MIDI callback forwarding raw bytes to input::MidiInputHandler
 src/app/NativeKeyboard.h        # declarations of the platform keyboard access

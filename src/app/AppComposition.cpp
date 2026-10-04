@@ -49,10 +49,19 @@ AppComposition::AppComposition()
       keyRouter_(keymapPresenter_, keyboardInput_, transportPresenter_), keyboardListener_(keyRouter_),
       midiNoteSink_(sampleEngine_, &engine::steadyClockSeconds),
       midiInputHandler_(midiNoteSink_, inputActivity_), midiInputCallback_(midiInputHandler_),
-      inputLeds_(inputActivity_), projectRepository_(fileSystem_),
+      inputLeds_(inputActivity_), activePattern_(project_),
+      patternListPresenter_(project_, undoManager_, idGenerator_, activePattern_),
+      pianoRollPresenter_(project_,
+                          globalKit_.tree(),
+                          undoManager_,
+                          activePattern_,
+                          [this](int slot) { return keymapPresenter_.keyLabel(slot); }),
+      projectRepository_(fileSystem_),
       documentController_(project_, undoManager_, projectRepository_, projectFactory_, documentView_),
       mainMenu_(documentController_,
                 [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); },
+                editActions(),
+                patternActions(),
                 {.copyGlobalKitToProject = [this] { kitPresenter_.copyGlobalKitToProject(); },
                  .useGlobalKit = [this] { kitPresenter_.useGlobalKit(); },
                  .copyProjectKitToGlobal = [this] { kitPresenter_.copyProjectKitToGlobal(); },
@@ -61,6 +70,7 @@ AppComposition::AppComposition()
                  .showKeymap = [this] { showKeymapDialog(keymapPresenter_, dialogParent_); }},
                 {.toggleRecordArmed = [this] { transportPresenter_.toggleRecordArmed(); }})
 {
+    activePattern_.addOnChange([this](int index) { transportPresenter_.setActivePattern(index); });
     restoreDeviceSettings();
     updateSampleRate();
     updateOutputLatency();
@@ -84,14 +94,19 @@ AppComposition::~AppComposition()
 
 std::unique_ptr<juce::Component> AppComposition::createMainComponent()
 {
-    return std::make_unique<MainComponent>(testTone_,
-                                           deviceManager_,
-                                           transportPresenter_,
-                                           tempoPresenter_,
-                                           kitPresenter_,
-                                           keymapPresenter_,
-                                           inputLeds_,
-                                           sampleLoader_.wildcardPattern());
+    return std::make_unique<MainComponent>(
+        testTone_,
+        deviceManager_,
+        transportPresenter_,
+        tempoPresenter_,
+        kitPresenter_,
+        patternListPresenter_,
+        PatternDialogs{.rename = [this](int index) { renamePattern(index); },
+                       .setLength = [this](int index) { askPatternLength(index); }},
+        pianoRollPresenter_,
+        keymapPresenter_,
+        inputLeds_,
+        sampleLoader_.wildcardPattern());
 }
 
 void AppComposition::changeListenerCallback(juce::ChangeBroadcaster* /*source*/)
@@ -140,6 +155,55 @@ void AppComposition::updateOutputLatency()
         info.outputLatencySamples = device->getOutputLatencyInSamples();
     }
     transportPresenter_.setOutputLatencyMs(info.open ? ui::outputLatencyMs(info) : 0.0);
+}
+
+void AppComposition::renamePattern(int index)
+{
+    askForText("Pattern umbenennen",
+               "Name",
+               juce::String::fromUTF8(patternListPresenter_.name(index).c_str()),
+               [this, index](const std::string& name) { patternListPresenter_.rename(index, name); });
+}
+
+void AppComposition::askPatternLength(int index)
+{
+    askForText(juce::String::fromUTF8("Pattern-L\xc3\xa4nge"),
+               juce::String::fromUTF8("Takte (1\xe2\x80\x93"
+                                      "64)"),
+               juce::String(patternListPresenter_.lengthBars(index)),
+               [this, index](const std::string& text)
+               {
+                   const int bars = juce::String::fromUTF8(text.c_str()).getIntValue();
+                   if (bars > 0)
+                       patternListPresenter_.setLengthBars(index, bars);
+               });
+}
+
+EditActions AppComposition::editActions()
+{
+    auto& roll = pianoRollPresenter_;
+    return {.cut = [&roll] { roll.cut(); },
+            .copy = [&roll] { roll.copy(); },
+            .paste = [&roll] { roll.paste(); },
+            .duplicate = [&roll] { roll.duplicate(); },
+            .deleteSelection = [&roll] { roll.deleteSelection(); },
+            .selectAll = [&roll] { roll.selectAll(); },
+            .drawTool = [&roll] { roll.setTool(ui::PianoRollTool::draw); },
+            .selectTool = [&roll] { roll.setTool(ui::PianoRollTool::select); },
+            .eraseTool = [&roll] { roll.setTool(ui::PianoRollTool::erase); },
+            .hasSelection = [&roll] { return roll.numSelected() > 0; },
+            .canPaste = [&roll] { return roll.canPaste(); }};
+}
+
+PatternActions AppComposition::patternActions()
+{
+    auto& list = patternListPresenter_;
+    return {.add = [&list] { list.add(); },
+            .duplicate = [&list] { list.duplicate(list.selectedIndex()); },
+            .rename = [this] { renamePattern(patternListPresenter_.selectedIndex()); },
+            .setLength = [this] { askPatternLength(patternListPresenter_.selectedIndex()); },
+            .remove = [&list] { list.remove(list.selectedIndex()); },
+            .canRemove = [&list] { return list.canRemove(); }};
 }
 
 } // namespace drumprog::app

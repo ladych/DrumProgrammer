@@ -204,8 +204,8 @@ private:
     [[nodiscard]] model::Project project() const;
     [[nodiscard]] std::optional<model::Pattern> pattern() const;
     void refresh();
-    void rebuildRows(const model::Pattern* pattern);
-    void rebuildNotes(const model::Pattern* pattern);
+    void rebuildRows(const model::Pattern* shown);
+    void rebuildNotes(const model::Pattern* shown);
     void selectionChanged();
     [[nodiscard]] std::optional<int> rowOf(int gmNote) const;
     [[nodiscard]] const NoteView* viewOf(const juce::ValueTree& tree) const;
@@ -213,17 +213,18 @@ private:
     [[nodiscard]] Hit hit(GridPoint point, std::int64_t tolerance) const;
     [[nodiscard]] std::int64_t placed(std::int64_t tick, PointerModifiers modifiers, bool nearest) const;
 
-    void grab(const Hit& hit, GridPoint point, PointerModifiers modifiers);
+    void grab(const Hit& found, GridPoint point, PointerModifiers modifiers);
     void drawNote(GridPoint point, PointerModifiers modifiers);
     void startRectangle(GridPoint point);
     void eraseAt(GridPoint point);
     void updateMove(GridPoint point, PointerModifiers modifiers);
     void updateResize(GridPoint point, PointerModifiers modifiers);
     void commitMove();
-    void finishRectangle(PointerModifiers modifiers);
+    void finishRectangle(const SelectionRect& rect, PointerModifiers modifiers);
     void removeNotes(const std::vector<juce::ValueTree>& trees);
     void removeNote(const juce::ValueTree& tree);
-    std::vector<juce::ValueTree> addNotes(const std::vector<model::NoteData>& notes, std::int64_t offset);
+    std::vector<juce::ValueTree>
+    addNotes(model::Pattern& shown, const std::vector<model::NoteData>& notes, std::int64_t offset) const;
     [[nodiscard]] std::vector<model::NoteData> selectedData() const;
     void applyVelocityLine(std::int64_t fromTick, int fromVelocity, std::int64_t toTick, int toVelocity);
 

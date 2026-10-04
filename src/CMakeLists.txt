@@ -73,6 +73,10 @@ set(DRUMPROG_APP_SOURCES
     app/KitPanel.cpp
     app/MainComponent.cpp
     app/MainMenu.cpp
+    app/NoteInspector.cpp
+    app/PatternListPanel.cpp
+    app/PianoRollToolbar.cpp
+    app/PianoRollView.cpp
     app/TransportBar.cpp
 )
 

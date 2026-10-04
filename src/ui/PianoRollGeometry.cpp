@@ -7,6 +7,19 @@
 
 namespace drumprog::ui
 {
+namespace
+{
+
+GridLineKind kindOf(std::int64_t tick, std::int64_t barTicks, std::int64_t beatTicks)
+{
+    if (tick % barTicks == 0)
+        return GridLineKind::bar;
+    if (tick % beatTicks == 0)
+        return GridLineKind::beat;
+    return GridLineKind::step;
+}
+
+} // namespace
 
 PianoRollGeometry::PianoRollGeometry(int ticksPerQuarter) : ticksPerQuarter_(ticksPerQuarter) {}
 
@@ -103,10 +116,7 @@ PianoRollGeometry::gridLines(std::int64_t barTicks, std::int64_t beatTicks, std:
         for (std::int64_t tick = engine::floorDiv(first + spacing - 1, spacing) * spacing; tick <= last;
              tick += spacing)
         {
-            const auto kind = tick % barTicks == 0    ? GridLineKind::bar
-                              : tick % beatTicks == 0 ? GridLineKind::beat
-                                                      : GridLineKind::step;
-            lines.push_back({tick, kind});
+            lines.push_back({tick, kindOf(tick, barTicks, beatTicks)});
         }
     };
     // Triplet steps do not always meet the beats, so beats are added on their own.

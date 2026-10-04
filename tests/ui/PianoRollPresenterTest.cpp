@@ -595,6 +595,7 @@ TEST_F(PianoRollClipboardTest, FPR05_PasteNeedsAPattern)
     tree.getChildWithName(model::ids::patterns).removeAllChildren(nullptr);
 
     presenter.paste();
+    presenter.duplicate();
 
     EXPECT_FALSE(undoManager.canUndo());
 }
