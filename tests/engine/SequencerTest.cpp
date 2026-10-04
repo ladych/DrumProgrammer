@@ -517,5 +517,113 @@ TEST_F(SequencerRecordTest, FIN07_HitsOfTheLastBlockAreRecordedWhenThePatternEnd
     EXPECT_EQ(hits[0].take, 3U);
 }
 
+// ----- Song mode (F-TR-05) -------------------------------------------------------------------
+
+class SequencerSongTest : public SequencerTest
+{
+protected:
+    void SetUp() override
+    {
+        SequencerTest::SetUp();
+        // Pattern 0 "verse" plays slot 0 on every beat, pattern 1 "fill" slot 1 on the first beat.
+        snapshot = makeSnapshot({note(0, 0), note(960, 0), note(1920, 0), note(2880, 0)});
+        snapshot.patterns.push_back({kBarTicks, {note(0, 1)}});
+        setSong({{1, 0, kBarTicks}, {0, 2 * kBarTicks, kBarTicks}});
+    }
+
+    void setSong(std::vector<SongEntrySnapshot> entries)
+    {
+        snapshot.songLengthTicks = 0;
+        for (const auto& entry : entries)
+            snapshot.songLengthTicks =
+                std::max(snapshot.songLengthTicks, entry.startTick + entry.lengthTicks);
+        snapshot.song = std::move(entries);
+    }
+};
+
+TEST_F(SequencerSongTest, FTR05_PlaysTheBlocksOfTheSongAndLoopsIt)
+{
+    sequencer.play({.song = true});
+    run(3 * kBar + kBeat / 2);
+    EXPECT_EQ(notes,
+              (std::vector<Event>{{0, 1},
+                                  {2 * kBar, 0},
+                                  {2 * kBar + kBeat, 0},
+                                  {2 * kBar + 2 * kBeat, 0},
+                                  {2 * kBar + 3 * kBeat, 0},
+                                  {3 * kBar, 1}}));
+}
+
+TEST_F(SequencerSongTest, FTR05_WithoutLoopTheSongStopsAtItsEnd)
+{
+    sequencer.setLoop(false);
+    sequencer.play({.song = true});
+    run(3 * kBar - 128);
+    EXPECT_EQ(sequencer.state(), TransportState::playing);
+    run(kBar);
+    EXPECT_EQ(notes.size(), 5U);
+    EXPECT_EQ(sequencer.state(), TransportState::stopped);
+    EXPECT_EQ(sequencer.position(), 0);
+}
+
+TEST_F(SequencerSongTest, FTR04_PositionCountsFromTheSongStart)
+{
+    sequencer.play({.song = true});
+    run(2 * kBar + kBeat);
+    EXPECT_EQ(sequencer.position(), 2 * kBarTicks + 960);
+    sequencer.stop();
+    processBlock();
+    EXPECT_EQ(sequencer.position(), 2 * kBarTicks + 960);
+    sequencer.play({.song = true});
+    run(kBeat);
+    EXPECT_EQ(sequencer.position(), 2 * kBarTicks + 2 * 960);
+}
+
+TEST_F(SequencerSongTest, FTR05_ABlockOnlyPlaysItsPlayedLength)
+{
+    setSong({{0, 0, kBarTicks / 2}, {1, kBarTicks / 2, kBarTicks}});
+    sequencer.play({.song = true});
+    run(kBar + kBar / 2 - 128);
+    EXPECT_EQ(notes, (std::vector<Event>{{0, 0}, {kBeat, 0}, {2 * kBeat, 1}}));
+}
+
+TEST_F(SequencerSongTest, FTR05_BlocksOfPatternsOutsideTheSnapshotAreSilent)
+{
+    setSong({{5, 0, kBarTicks}, {-1, kBarTicks, kBarTicks}, {1, 2 * kBarTicks, kBarTicks}});
+    sequencer.setLoop(false);
+    sequencer.play({.song = true});
+    run(4 * kBar);
+    EXPECT_EQ(notes, (std::vector<Event>{{2 * kBar, 1}}));
+}
+
+TEST_F(SequencerSongTest, FTR05_AnEmptySongPlaysOneSilentBar)
+{
+    setSong({});
+    sequencer.setLoop(false);
+    sequencer.setMetronome(true, true);
+    sequencer.play({.song = true});
+    run(2 * kBar);
+    EXPECT_TRUE(notes.empty());
+    EXPECT_EQ(clicks.size(), 4U);
+    EXPECT_EQ(sequencer.state(), TransportState::stopped);
+}
+
+TEST_F(SequencerSongTest, FTR05_TheSongModeNeverRecords)
+{
+    sequencer.play({.take = 4, .countInBars = 1, .song = true});
+    processBlock();
+    EXPECT_EQ(sequencer.state(), TransportState::playing);
+    EXPECT_EQ(sequencer.activeTake(), 0U);
+    sequencer.record(std::array{LiveHit{0, 100, 0.0}}, 0.0);
+    EXPECT_TRUE(recordedHits().empty());
+}
+
+TEST_F(SequencerSongTest, FTR05_ThePatternModeIgnoresTheSong)
+{
+    sequencer.play({.patternIndex = 1});
+    run(2 * kBar);
+    EXPECT_EQ(notes, (std::vector<Event>{{0, 1}, {kBar, 1}}));
+}
+
 } // namespace
 } // namespace drumprog::engine

@@ -61,6 +61,7 @@ struct PlayRequest
     int patternIndex = 0;
     std::uint32_t take = 0; ///< > 0 records under this number, 0 only plays
     int countInBars = 0;    ///< 0..2, only before a recording (F-TR-09)
+    bool song = false;      ///< plays the song timeline instead of the pattern; never records (F-TR-05)
 };
 
 /// Transport and pattern sequencer (F-TR-01 to 09, F-IN-07 to 10).

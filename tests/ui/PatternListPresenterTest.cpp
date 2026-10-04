@@ -152,5 +152,39 @@ TEST_F(PatternListPresenterTest, FSO01_ChangeCountFollowsTheModel)
     EXPECT_NE(presenter.changeCount(), before);
 }
 
+TEST_F(PatternListPresenterTest, FSO05_DeletingAPatternOfTheSongNeedsConfirmation)
+{
+    project.addPattern("p-2", "Verse", 2);
+    project.song().addEntry("p-2", 0);
+    project.song().addEntry("id-1", 2);
+    project.song().addEntry("p-2", 4);
+
+    EXPECT_EQ(presenter.songUses(1), 2);
+    EXPECT_EQ(presenter.songUses(0), 1);
+    EXPECT_EQ(presenter.songUses(4), 0);
+    EXPECT_EQ(presenter.removeQuestion(1),
+              "\xe2\x80\x9eVerse\xe2\x80\x9c wird im Song 2-mal verwendet. Beim L\xc3\xb6schen werden alle "
+              "Bl\xc3\xb6"
+              "cke entfernt.");
+    EXPECT_EQ(presenter.removeQuestion(0),
+              "\xe2\x80\x9ePattern 1\xe2\x80\x9c wird im Song 1-mal verwendet. Beim L\xc3\xb6schen werden "
+              "alle Bl\xc3\xb6"
+              "cke entfernt.");
+
+    presenter.remove(1);
+    EXPECT_EQ(project.song().numEntries(), 1);
+    EXPECT_EQ(presenter.removeQuestion(0),
+              "\xe2\x80\x9ePattern 1\xe2\x80\x9c wird im Song 1-mal verwendet. Beim L\xc3\xb6schen werden "
+              "alle Bl\xc3\xb6"
+              "cke entfernt.");
+}
+
+TEST_F(PatternListPresenterTest, FSO05_DeletingAnUnusedPatternNeedsNoConfirmation)
+{
+    project.addPattern("p-2", "Verse", 2);
+    EXPECT_EQ(presenter.removeQuestion(1), "");
+    EXPECT_EQ(presenter.removeQuestion(7), "");
+}
+
 } // namespace
 } // namespace drumprog::ui
