@@ -1,5 +1,6 @@
 # Testable logic (E-02): everything in this library is measured by the coverage gate.
 add_library(drumprog_core STATIC
+    engine/BackingTrackPlayer.cpp
     engine/Clock.cpp
     engine/Downmix.cpp
     engine/EngineKit.cpp
@@ -37,6 +38,7 @@ add_library(drumprog_core STATIC
     model/SnapshotBuilder.cpp
     model/SnapshotPublisher.cpp
     model/SongLayout.cpp
+    model/SongTakeRecorder.cpp
     model/TakeRecorder.cpp
     model/TreeChangeListener.cpp
     model/TreeNode.cpp
@@ -44,12 +46,14 @@ add_library(drumprog_core STATIC
     ui/ActivePattern.cpp
     ui/ActivityLed.cpp
     ui/AudioStatus.cpp
+    ui/BackingTrackPresenter.cpp
     ui/DocumentController.cpp
     ui/InputLedPresenter.cpp
     ui/KeymapPresenter.cpp
     ui/KeyRouter.cpp
     ui/KitPresenter.cpp
     ui/MidiExportController.cpp
+    ui/MixPresenter.cpp
     ui/MusicalTime.cpp
     ui/PatternListPresenter.cpp
     ui/PianoRollGeometry.cpp

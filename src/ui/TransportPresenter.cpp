@@ -22,9 +22,10 @@ TransportPresenter::TransportPresenter(juce::ValueTree project,
                                        engine::Sequencer& sequencer,
                                        engine::Metronome& metronome,
                                        model::TakeRecorder& recorder,
+                                       model::SongTakeRecorder& songRecorder,
                                        io::SettingsStore& offsetSettings)
     : project_(std::move(project)), sequencer_(sequencer), metronome_(metronome), recorder_(recorder),
-      offsetSettings_(offsetSettings)
+      songRecorder_(songRecorder), offsetSettings_(offsetSettings)
 {
     sequencer_.setMetronome(metronomeOnPlayback_, metronomeOnRecord_);
     loadRecordOffset();
@@ -35,19 +36,19 @@ void TransportPresenter::play()
 {
     if (isPlaying())
         return;
-    if (playMode_ == PlayMode::song)
-    {
-        sequencer_.play({.patternIndex = activePattern_, .song = true});
-        return;
-    }
+    const bool song = playMode_ == PlayMode::song;
     std::uint32_t take = 0;
-    if (recordArmed_ && recorder_.begin(activePattern_, recordMode_))
+    if (recordArmed_ && (song || recorder_.begin(activePattern_, recordMode_)))
     {
+        if (song)
+            songRecorder_.begin();
         take = nextTake_++;
         take_ = take;
         takeStarted_ = false;
+        songTake_ = song;
     }
-    sequencer_.play({.patternIndex = activePattern_, .take = take, .countInBars = countInBars_});
+    sequencer_.play(
+        {.patternIndex = activePattern_, .take = take, .countInBars = countInBars_, .song = song});
 }
 
 void TransportPresenter::stop()
@@ -67,7 +68,22 @@ void TransportPresenter::togglePlay()
 
 void TransportPresenter::rewind()
 {
-    sequencer_.rewind();
+    if (!songTake_)
+        sequencer_.rewind();
+}
+
+void TransportPresenter::locate(std::int64_t songTick)
+{
+    if (take_ != 0)
+        return;
+    if (playMode_ == PlayMode::song)
+    {
+        sequencer_.locate(songTick);
+        return;
+    }
+    playMode_ = PlayMode::song;
+    restart();
+    sequencer_.locate(songTick);
 }
 
 bool TransportPresenter::isPlaying() const
@@ -166,7 +182,7 @@ std::optional<std::int64_t> TransportPresenter::playheadTick() const
 
 std::optional<std::int64_t> TransportPresenter::songPlayheadTick() const
 {
-    if (!isPlaying() || playMode_ != PlayMode::song)
+    if (playMode_ != PlayMode::song)
         return std::nullopt;
     return sequencer_.position();
 }
@@ -220,16 +236,33 @@ void TransportPresenter::writeRecordedHits()
 {
     engine::RecordedHit hit;
     while (sequencer_.popRecordedHit(hit))
-        if (take_ != 0 && hit.take == take_)
+    {
+        if (take_ == 0 || hit.take != take_)
+            continue;
+        if (songTake_)
+            songRecorder_.add(hit.slotIndex, hit.velocity, hit.tick);
+        else
             recorder_.add(hit.slotIndex, hit.velocity, hit.tick);
+    }
 }
 
 void TransportPresenter::endTake()
 {
     writeRecordedHits();
-    recorder_.end();
+    if (songTake_)
+        endSongTake();
+    else
+        recorder_.end();
     take_ = 0;
     takeStarted_ = false;
+    songTake_ = false;
+}
+
+void TransportPresenter::endSongTake()
+{
+    const auto pattern = songRecorder_.end(sequencer_.recordStart(), sequencer_.position());
+    if (pattern && onSongTake_)
+        onSongTake_(*pattern);
 }
 
 void TransportPresenter::updateLatencyCompensation()

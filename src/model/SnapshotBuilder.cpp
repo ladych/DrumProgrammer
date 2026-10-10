@@ -33,6 +33,8 @@ std::unique_ptr<const engine::ProjectSnapshot> SnapshotBuilder::build(const Proj
         snapshot->patterns.push_back(buildPattern(project.pattern(index), kit, project.ticksPerBar()));
     buildSong(project, *snapshot);
 
+    const auto backingTrack = project.backingTrack();
+    snapshot->backingTrack = {backingTrack.offsetSamples(), backingTrack.gain()};
     const auto mix = project.mix();
     snapshot->mix = {mix.backingGain(), mix.drumsGain(), mix.masterGain()};
     return snapshot;
