@@ -72,6 +72,44 @@ TEST(MidiFileReaderTest, FMI03_ReadsTheFilesTheExportWrites)
     EXPECT_EQ(notesOf(*content), (std::vector<std::string>{"36@0+200/127", "38@960+240/90"}));
 }
 
+TEST(MidiFileReaderTest, FMI03_ReadsTheFirstTempo)
+{
+    const auto file = header(1, 2, 96) +
+                      track(bytes({0x00,
+                                   0xFF,
+                                   0x51,
+                                   0x03,
+                                   0x07,
+                                   0xA1,
+                                   0x20, // 500000 us = 120 BPM
+                                   0x00,
+                                   0xFF,
+                                   0x51,
+                                   0x03,
+                                   0x0F,
+                                   0x42,
+                                   0x40}) + // 1000000 us = 60 BPM
+                            kEndOfTrack) +
+                      track(bytes({0x00, 0xFF, 0x51, 0x03, 0x09, 0x27, 0xC0}) + kEndOfTrack);
+
+    EXPECT_DOUBLE_EQ(readMidiFile(file)->bpm, 120.0);
+}
+
+TEST(MidiFileReaderTest, FMI03_IgnoresInvalidTempoEvents)
+{
+    const auto file = header(0, 1, 96) + track(bytes({0x00, 0xFF, 0x51, 0x02, 0x07, 0xA1,       // too short
+                                                      0x00, 0xFF, 0x51, 0x03, 0x00, 0x00, 0x00, // zero
+                                                      0x00, 0xFF, 0x51, 0x03, 0x0F, 0x42, 0x40}) +
+                                               kEndOfTrack);
+
+    EXPECT_DOUBLE_EQ(readMidiFile(file)->bpm, 60.0);
+}
+
+TEST(MidiFileReaderTest, FMI03_AFileWithoutTempoHasNone)
+{
+    EXPECT_DOUBLE_EQ(readMidiFile(header(0, 1, 96) + track(kEndOfTrack))->bpm, 0.0);
+}
+
 TEST(MidiFileReaderTest, FMI03_MergesTheTracksOfAType1File)
 {
     const auto file =

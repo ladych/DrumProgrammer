@@ -7,6 +7,7 @@
 #include "model/ProjectFactory.h"
 #include "ui/ActivePattern.h"
 #include "ui/FakeMidiImportView.h"
+#include "ui/TempoPresenter.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -127,17 +128,84 @@ TEST_F(MidiImportControllerTest, FMI03_TheImportIsOneUndoStep)
     EXPECT_EQ(activePattern.index(), 0);
 }
 
-TEST_F(MidiImportControllerTest, FMI03_KeepsTempoAndTimeSignatureOfTheProject)
+TEST_F(MidiImportControllerTest, FMI03_TakesTheTempoOfTheFile)
 {
-    midi.bpm = 90.0;
+    midi.bpm = 87.5;
     midi.timeSigNumerator = 3;
     midi.notes = {{.note = 36, .startTick = 0, .lengthTicks = 120, .velocity = 100}};
     chooseFile("beat.mid");
 
     controller.importMidiFile();
 
-    EXPECT_DOUBLE_EQ(project.bpm(), 120.0);
+    EXPECT_DOUBLE_EQ(project.bpm(), 87.5);
     EXPECT_EQ(project.timeSignature().numerator, 4);
+}
+
+TEST_F(MidiImportControllerTest, FMI03_RoundsAndClampsTheTempoOfTheFile)
+{
+    midi.bpm = 96.5; // stored as 621762 microseconds per quarter
+    midi.notes = {{.note = 36, .startTick = 0, .lengthTicks = 120, .velocity = 100}};
+    chooseFile("beat.mid");
+    controller.importMidiFile();
+    EXPECT_DOUBLE_EQ(project.bpm(), 96.5);
+
+    midi.bpm = 20.0;
+    chooseFile("slow.mid");
+    controller.importMidiFile();
+    EXPECT_DOUBLE_EQ(project.bpm(), TempoPresenter::kMinBpm);
+}
+
+TEST_F(MidiImportControllerTest, FMI03_KeepsTheProjectTempoIfTheFileHasNone)
+{
+    // Type 0, 480 ticks per quarter, one note on channel 10 and the end of track, no tempo
+    const std::string file = std::string{"MThd\0\0\0\x06\0\0\0\x01\x01\xE0MTrk\0\0\0\x0C", 22} +
+                             std::string{"\0\x99\x24\x64\x60\x89\x24\0\0\xFF\x2F\0", 12};
+    view.fileToOpen = fs::path{"beat.mid"};
+    EXPECT_CALL(fileSystem, readText(fs::path{"beat.mid"})).WillOnce(Return(file));
+
+    controller.importMidiFile();
+
+    EXPECT_EQ(numPatterns(), 2);
+    EXPECT_DOUBLE_EQ(project.bpm(), 120.0);
+}
+
+TEST_F(MidiImportControllerTest, FMI03_TheTempoChangeIsPartOfTheImportUndoStep)
+{
+    midi.bpm = 90.0;
+    midi.notes = {{.note = 36, .startTick = 0, .lengthTicks = 120, .velocity = 100}};
+    chooseFile("beat.mid");
+
+    controller.importMidiFile();
+    undoManager.undo();
+
+    EXPECT_DOUBLE_EQ(project.bpm(), 120.0);
+    EXPECT_EQ(numPatterns(), 1);
+}
+
+TEST_F(MidiImportControllerTest, FMI03_AnImportIntoAnEmptySongBecomesItsFirstBlock)
+{
+    midi.notes = {{.note = 36, .startTick = 0, .lengthTicks = 120, .velocity = 100}};
+    chooseFile("song.mid");
+
+    controller.importMidiFile();
+
+    ASSERT_EQ(project.song().numEntries(), 1);
+    EXPECT_EQ(project.song().entry(0).patternId(), imported().id());
+    EXPECT_EQ(project.song().entry(0).startBar(), 0);
+    undoManager.undo();
+    EXPECT_EQ(project.song().numEntries(), 0);
+}
+
+TEST_F(MidiImportControllerTest, FMI03_AnImportLeavesASongWithBlocksAsItIs)
+{
+    project.song().addEntry("id-1", 0);
+    midi.notes = {{.note = 36, .startTick = 0, .lengthTicks = 120, .velocity = 100}};
+    chooseFile("fill.mid");
+
+    controller.importMidiFile();
+
+    ASSERT_EQ(project.song().numEntries(), 1);
+    EXPECT_EQ(project.song().entry(0).patternId(), "id-1");
 }
 
 TEST_F(MidiImportControllerTest, FMI03_UsesTheKitTheProjectPlaysWith)
