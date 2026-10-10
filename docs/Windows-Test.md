@@ -4,7 +4,7 @@ Prüft F-AO-03 (ASIO, WASAPI als Fallback), Q-09 (Gerätewechsel, Interface abzi
 
 ## Vorbereitung
 
-1. Das Programm kommt aus der CI: im Lauf des Pull Requests unter „Artifacts" `DrumProgrammer-Windows` laden und entpacken. Mit ASIO ist es nur gebaut, wenn das Repository-Secret `ASIO_SDK_URL` gesetzt ist (sonst steht im Windows-Job die Warnung „building without ASIO").
+1. Das Programm kommt aus der CI: im Lauf des Pull Requests unter „Artifacts" `DrumProgrammer-Windows` laden und entpacken. Es ist immer mit ASIO gebaut (im Windows-Job steht „ASIO enabled with the SDK in …").
 2. Treiber des Interfaces (z. B. Focusrite Scarlett) mit ASIO-Treiber installieren.
 3. Für einen echten ersten Start die alten Einstellungen entfernen: `%APPDATA%\DrumProgrammer\audio-device.xml` löschen.
 

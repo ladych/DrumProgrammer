@@ -48,31 +48,9 @@ jobs:
       - uses: actions/checkout@v5
         with:
           submodules: recursive
-      # The ASIO SDK must not be in the repository (Q-12): the secret ASIO_SDK_URL names the SDK zip.
-      # Without it the build has WASAPI and DirectSound only.
-      - name: Fetch ASIO SDK
-        shell: pwsh
-        env:
-          ASIO_SDK_URL: ${{ secrets.ASIO_SDK_URL }}
-        run: |
-          if (-not $env:ASIO_SDK_URL) {
-            Write-Output "::warning::Secret ASIO_SDK_URL is not set, building without ASIO"
-            exit 0
-          }
-          $zip = Join-Path $env:RUNNER_TEMP "asiosdk.zip"
-          $dir = Join-Path $env:RUNNER_TEMP "asiosdk"
-          Invoke-WebRequest -Uri $env:ASIO_SDK_URL -OutFile $zip
-          Expand-Archive -Path $zip -DestinationPath $dir
-          $header = Get-ChildItem -Path $dir -Recurse -Filter iasiodrv.h | Select-Object -First 1
-          if (-not $header) { throw "iasiodrv.h not found in the ASIO SDK" }
-          $sdk = Split-Path (Split-Path $header.FullName)
-          "ASIO_SDK_ARG=-DDRUMPROG_ASIO_SDK_DIR=$($sdk -replace '\\', '/')" | Out-File -FilePath $env:GITHUB_ENV -Append
+      # CMake downloads the ASIO SDK (GPLv3) from Steinberg, see cmake/DrumProgrammerJuce.cmake.
       - name: Configure
-        shell: pwsh
-        run: |
-          $asio = @()
-          if ($env:ASIO_SDK_ARG) { $asio += $env:ASIO_SDK_ARG }
-          cmake -S . -B build -A x64 @asio
+        run: cmake -S . -B build -A x64
       - name: Build
         run: cmake --build build --config Release --parallel
       - name: Test
