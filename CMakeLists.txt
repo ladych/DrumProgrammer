@@ -10,6 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(DRUMPROG_BUILD_APP "Build the JUCE desktop application" ON)
 option(DRUMPROG_BUILD_TESTS "Build the unit tests" ON)
 option(DRUMPROG_COVERAGE "Instrument the build for coverage (GCC/Clang)" OFF)
+set(DRUMPROG_ASIO_SDK_DIR "" CACHE PATH "Windows: Steinberg ASIO SDK directory (contains common/iasiodrv.h); empty builds without ASIO")
 set(DRUMPROG_SANITIZERS "" CACHE STRING "Comma-separated sanitizers, e.g. address,undefined or thread")
 
 include(cmake/DrumProgrammerOptions.cmake)

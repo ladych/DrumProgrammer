@@ -36,9 +36,18 @@ TEST(DriverChoiceTest, FAO03_WithoutAsioDriverWasapiComesFirst)
     EXPECT_EQ(driverTypesByPreference(drivers).front(), "Windows Audio");
 }
 
-TEST(DriverChoiceTest, FAO03_TheFailedTypeIsLeftOut)
+TEST(DriverChoiceTest, FAO03_TheFailedTypeComesLast)
 {
-    EXPECT_EQ(driverTypesByPreference(windowsWithAsio(), "ASIO").front(), "Windows Audio");
+    const auto types = driverTypesByPreference(windowsWithAsio(), "ASIO");
+    EXPECT_EQ(types.front(), "Windows Audio");
+    EXPECT_EQ(types.back(), "ASIO");
+}
+
+TEST(DriverChoiceTest, Q09_UnpluggedAlsaDeviceFallsBackToAnotherAlsaDeviceLast)
+{
+    const std::vector<DriverDevices> linux{{.type = "ALSA", .outputs = {"default", "Scarlett 2i2"}},
+                                           {.type = "JACK"}};
+    EXPECT_EQ(driverTypesByPreference(linux, "ALSA"), (Types{"ALSA"}));
 }
 
 TEST(DriverChoiceTest, FAO02_LinuxKeepsAlsaBeforeJack)

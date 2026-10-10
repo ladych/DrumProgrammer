@@ -1,5 +1,7 @@
 # Testable logic (E-02): everything in this library is measured by the coverage gate.
 add_library(drumprog_core STATIC
+    audio/DeviceRecovery.cpp
+    audio/DriverChoice.cpp
     engine/Clock.cpp
     engine/Downmix.cpp
     engine/EngineKit.cpp
@@ -72,6 +74,7 @@ endif()
 set(DRUMPROG_APP_SOURCES
     app/Main.cpp
     app/AppComposition.cpp
+    app/AudioDeviceSupervisor.cpp
     app/Dialogs.cpp
     app/JuceDocumentView.cpp
     app/JuceMidiExportView.cpp

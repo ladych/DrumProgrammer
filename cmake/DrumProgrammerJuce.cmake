@@ -38,6 +38,19 @@ target_compile_definitions(drumprog_juce PUBLIC
     $<$<PLATFORM_ID:Linux>:JUCE_JACK=1>
     $<$<PLATFORM_ID:Linux>:JUCE_ALSA=1>)
 
+# ASIO (F-AO-03): the Steinberg SDK is not in the repository (Q-12). It comes from a local directory or,
+# in CI, from the secret ASIO_SDK_URL; without it the Windows build offers WASAPI and DirectSound only.
+if(WIN32 AND DRUMPROG_BUILD_APP AND DRUMPROG_ASIO_SDK_DIR)
+    if(NOT EXISTS "${DRUMPROG_ASIO_SDK_DIR}/common/iasiodrv.h")
+        message(FATAL_ERROR "DRUMPROG_ASIO_SDK_DIR does not contain common/iasiodrv.h: ${DRUMPROG_ASIO_SDK_DIR}")
+    endif()
+    message(STATUS "ASIO enabled with the SDK in ${DRUMPROG_ASIO_SDK_DIR}")
+    target_compile_definitions(drumprog_juce PUBLIC JUCE_ASIO=1)
+    target_include_directories(drumprog_juce SYSTEM PUBLIC "${DRUMPROG_ASIO_SDK_DIR}/common")
+elseif(WIN32 AND DRUMPROG_BUILD_APP)
+    message(STATUS "ASIO disabled: DRUMPROG_ASIO_SDK_DIR is not set")
+endif()
+
 foreach(module IN LISTS DRUMPROG_JUCE_MODULES)
     target_compile_definitions(drumprog_juce PUBLIC $<TARGET_PROPERTY:${module},INTERFACE_COMPILE_DEFINITIONS>)
     target_include_directories(drumprog_juce SYSTEM PUBLIC $<TARGET_PROPERTY:${module},INTERFACE_INCLUDE_DIRECTORIES>)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/AudioDeviceSupervisor.h"
 #include "app/KitPanel.h"
 #include "app/NoteInspector.h"
 #include "app/PatternListPanel.h"
@@ -30,6 +31,7 @@ class MainComponent final : public juce::Component,
 public:
     MainComponent(engine::TestToneSource& testTone,
                   juce::AudioDeviceManager& deviceManager,
+                  const AudioDeviceSupervisor& deviceSupervisor,
                   ui::TransportPresenter& transport,
                   ui::TempoPresenter& tempo,
                   ui::KitPresenter& kitPresenter,
@@ -58,6 +60,8 @@ private:
 
     engine::TestToneSource& testTone_;
     juce::AudioDeviceManager& deviceManager_;
+    const AudioDeviceSupervisor& deviceSupervisor_;
+    int statusTicks_ = 0;
     ui::InputLedPresenter& inputLeds_;
     juce::ToggleButton testToneButton_{"Testton 440 Hz"};
     juce::TextButton settingsButton_{"Audio/MIDI-Einstellungen..."};

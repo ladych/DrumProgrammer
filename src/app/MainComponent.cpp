@@ -16,7 +16,8 @@ constexpr int kLedWidth = 90;
 constexpr int kSideWidth = 260;
 constexpr int kKitPanelHeight = 290;
 
-ui::AudioDeviceInfo deviceInfo(juce::AudioDeviceManager& deviceManager)
+ui::AudioDeviceInfo deviceInfo(juce::AudioDeviceManager& deviceManager,
+                               const AudioDeviceSupervisor& supervisor)
 {
     ui::AudioDeviceInfo info;
     if (auto* device = deviceManager.getCurrentAudioDevice())
@@ -31,6 +32,7 @@ ui::AudioDeviceInfo deviceInfo(juce::AudioDeviceManager& deviceManager)
     for (const auto& input : juce::MidiInput::getAvailableDevices())
         if (deviceManager.isMidiInputDeviceEnabled(input.identifier))
             info.midiInputs.push_back(input.name.toStdString());
+    supervisor.describe(info);
     return info;
 }
 
@@ -38,6 +40,7 @@ ui::AudioDeviceInfo deviceInfo(juce::AudioDeviceManager& deviceManager)
 
 MainComponent::MainComponent(engine::TestToneSource& testTone,
                              juce::AudioDeviceManager& deviceManager,
+                             const AudioDeviceSupervisor& deviceSupervisor,
                              ui::TransportPresenter& transport,
                              ui::TempoPresenter& tempo,
                              ui::KitPresenter& kitPresenter,
@@ -48,10 +51,10 @@ MainComponent::MainComponent(engine::TestToneSource& testTone,
                              ui::KeymapPresenter& keymapPresenter,
                              ui::InputLedPresenter& inputLeds,
                              const juce::String& sampleWildcard)
-    : testTone_(testTone), deviceManager_(deviceManager), inputLeds_(inputLeds), pianoRoll_(pianoRoll),
-      transportBar_(transport, tempo), pianoRollToolbar_(pianoRoll),
-      patternList_(patterns, std::move(patternDialogs)), songTimeline_(songTimeline, transport),
-      pianoRollView_(pianoRoll, transport), noteInspector_(pianoRoll),
+    : testTone_(testTone), deviceManager_(deviceManager), deviceSupervisor_(deviceSupervisor),
+      inputLeds_(inputLeds), pianoRoll_(pianoRoll), transportBar_(transport, tempo),
+      pianoRollToolbar_(pianoRoll), patternList_(patterns, std::move(patternDialogs)),
+      songTimeline_(songTimeline, transport), pianoRollView_(pianoRoll, transport), noteInspector_(pianoRoll),
       kitPanel_(kitPresenter, keymapPresenter, sampleWildcard)
 {
     testToneButton_.setToggleState(testTone_.isEnabled(), juce::dontSendNotification);
@@ -128,12 +131,19 @@ void MainComponent::timerCallback()
     inputLeds_.tick();
     repaint(ledArea_);
     editStatus_.setText(juce::String::fromUTF8(pianoRoll_.statusText().c_str()), juce::dontSendNotification);
+    // Dropouts and a hanging device change without a change message (Q-03, Q-09).
+    if (++statusTicks_ >= kTimerHz)
+    {
+        statusTicks_ = 0;
+        updateStatus();
+    }
 }
 
 void MainComponent::updateStatus()
 {
-    status_.setText(juce::String::fromUTF8(ui::audioStatusText(deviceInfo(deviceManager_)).c_str()),
-                    juce::dontSendNotification);
+    status_.setText(
+        juce::String::fromUTF8(ui::audioStatusText(deviceInfo(deviceManager_, deviceSupervisor_)).c_str()),
+        juce::dontSendNotification);
 }
 
 void MainComponent::paintLed(juce::Graphics& g,
