@@ -34,6 +34,13 @@ struct SongEntrySnapshot
     std::int64_t lengthTicks = 0; ///< played length: up to the next block at most
 };
 
+struct BackingTrackSnapshot
+{
+    std::int64_t offsetSamples = 0; ///< file frame at the song start (F-BT-05)
+    double gain = 1.0;
+};
+
+/// Linear gains of the faders "Mix (Referenz)" (F-BT-06).
 struct MixSnapshot
 {
     double backingGain = 1.0;
@@ -50,6 +57,7 @@ struct ProjectSnapshot
     std::vector<PatternSnapshot> patterns;
     std::vector<SongEntrySnapshot> song; ///< sorted by startTick
     std::int64_t songLengthTicks = 0;    ///< end of the last block
+    BackingTrackSnapshot backingTrack;
     MixSnapshot mix;
 };
 

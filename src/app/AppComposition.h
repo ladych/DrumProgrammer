@@ -1,12 +1,14 @@
 #pragma once
 
 #include "app/AudioCallback.h"
+#include "app/JuceBackingTrackLoader.h"
 #include "app/JuceDocumentView.h"
 #include "app/JuceMidiExportView.h"
 #include "app/JuceSampleLoader.h"
 #include "app/KeyboardInputGlue.h"
 #include "app/MainMenu.h"
 #include "app/MidiInputCallback.h"
+#include "engine/BackingTrackPlayer.h"
 #include "engine/KitBuilder.h"
 #include "engine/KitPublisher.h"
 #include "engine/Metronome.h"
@@ -25,15 +27,18 @@
 #include "io/StdFileSystem.h"
 #include "model/ProjectFactory.h"
 #include "model/SnapshotPublisher.h"
+#include "model/SongTakeRecorder.h"
 #include "model/TakeRecorder.h"
 #include "model/UuidGenerator.h"
 #include "ui/ActivePattern.h"
+#include "ui/BackingTrackPresenter.h"
 #include "ui/DocumentController.h"
 #include "ui/InputLedPresenter.h"
 #include "ui/KeyRouter.h"
 #include "ui/KeymapPresenter.h"
 #include "ui/KitPresenter.h"
 #include "ui/MidiExportController.h"
+#include "ui/MixPresenter.h"
 #include "ui/PatternListPresenter.h"
 #include "ui/PianoRollPresenter.h"
 #include "ui/SongTimelinePresenter.h"
@@ -82,6 +87,8 @@ private:
     void askPatternLength(int index);
     /// Asks first if the song uses the pattern (F-SO-05).
     void removePattern(int index);
+    /// File dialog of "Backing-Track laden" (F-BT-01).
+    void chooseBackingTrack();
     [[nodiscard]] EditActions editActions();
     [[nodiscard]] PatternActions patternActions();
     [[nodiscard]] SongActions songActions();
@@ -97,6 +104,10 @@ private:
     engine::KitBuilder kitBuilder_;
     engine::SampleEngine sampleEngine_;
     engine::KitPublisher kitPublisher_;
+    // Backing track (AP8): streamed from the disk on the loader's thread; the player keeps the streams, so
+    // it is destroyed before the loader and its thread.
+    JuceBackingTrackLoader backingTrackLoader_;
+    engine::BackingTrackPlayer backingTrackPlayer_;
     // Transport and sequencer (AP4): the audio thread reads snapshots_ through the renderer.
     model::ProjectSnapshotExchange snapshots_;
     engine::Sequencer sequencer_;
@@ -114,6 +125,7 @@ private:
     model::SnapshotPublisher snapshotPublisher_;
     ui::KitPresenter kitPresenter_;
     model::TakeRecorder takeRecorder_;
+    model::SongTakeRecorder songTakeRecorder_;
     ui::TransportPresenter transportPresenter_;
     ui::TempoPresenter tempoPresenter_;
 
@@ -138,6 +150,10 @@ private:
     ui::PianoRollPresenter pianoRollPresenter_;
     // Song (AP7): blocks reference patterns; the transport plays the timeline in the song mode.
     ui::SongTimelinePresenter songTimelinePresenter_;
+    // Backing track and mix (AP8).
+    ui::BackingTrackPresenter backingTrackPresenter_;
+    ui::MixPresenter mixPresenter_;
+    std::unique_ptr<juce::FileChooser> backingTrackChooser_;
 
     // MIDI export (AP6) of the active pattern.
     JuceMidiExportView midiExportView_;

@@ -14,6 +14,9 @@ struct AudioMenuActions
 {
     std::function<void()> showSettings;
     std::function<void()> showKeymap;
+    std::function<void()> loadBackingTrack;
+    std::function<void()> removeBackingTrack;
+    std::function<bool()> hasBackingTrack;
 };
 
 /// Actions of the menu "Kit": where the project's kit comes from.
@@ -116,8 +119,10 @@ private:
     [[nodiscard]] std::function<void()> patternActionFor(juce::CommandID commandID) const;
     [[nodiscard]] std::function<void()> songActionFor(juce::CommandID commandID) const;
     [[nodiscard]] std::function<void()> kitActionFor(juce::CommandID commandID) const;
+    [[nodiscard]] std::function<void()> audioActionFor(juce::CommandID commandID) const;
     /// Whether the command can run now; empty for commands that always can.
     [[nodiscard]] std::function<bool()> activeCheckFor(juce::CommandID commandID) const;
+    [[nodiscard]] std::function<bool()> projectCheckFor(juce::CommandID commandID) const;
 
     ui::DocumentController& document_;
     std::function<void()> quit_;

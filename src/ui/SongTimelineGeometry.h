@@ -26,6 +26,8 @@ public:
     [[nodiscard]] double xOfBar(double bar) const;
     /// Bar under x, never negative.
     [[nodiscard]] int barAt(double x) const;
+    /// Bar under x with its fraction, also before the song start, e.g. for the waveform.
+    [[nodiscard]] double exactBarAt(double x) const;
     [[nodiscard]] double pixelsPerBar() const noexcept { return pixelsPerBar_; }
 
     /// Both keep the bar at the left edge in place.

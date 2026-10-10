@@ -1,5 +1,8 @@
 #include "app/SongTimelineView.h"
 
+#include "app/Dialogs.h"
+#include "io/Utf8Path.h"
+
 #include <algorithm>
 #include <array>
 #include <utility>
@@ -14,6 +17,8 @@ constexpr int kHeaderHeight = 28;
 constexpr int kRulerHeight = 20;
 constexpr int kLabelWidth = 120;
 constexpr int kScrollBarSize = 12;
+constexpr int kBackingHeight = 52;
+constexpr int kThumbnailSamplesPerPoint = 512;
 
 const juce::Colour kPlayhead{0xFF22C55E};
 
@@ -53,7 +58,7 @@ public:
         for (const auto& block : owner_.presenter_.blocks())
             paintBlock(g, block);
         paintGhost(g);
-        paintPlayhead(g);
+        owner_.paintPlayhead(g, getHeight());
     }
 
     void mouseDown(const juce::MouseEvent& event) override
@@ -181,19 +186,6 @@ private:
             g.drawText("+", area.reduced(4.0F), juce::Justification::topRight);
     }
 
-    void paintPlayhead(juce::Graphics& g) const
-    {
-        if (!owner_.playhead_)
-            return;
-        const double bar =
-            static_cast<double>(*owner_.playhead_) / static_cast<double>(presenter().ticksPerBar());
-        g.setColour(kPlayhead);
-        g.fillRect(static_cast<float>(owner_.geometry_.xOfBar(bar)) - 1.0F,
-                   0.0F,
-                   2.0F,
-                   static_cast<float>(getHeight()));
-    }
-
     void showMenu(int block)
     {
         juce::PopupMenu menu;
@@ -214,13 +206,145 @@ private:
     SongTimelineView& owner_;
 };
 
+// ----- Backing track lane -------------------------------------------------------------------------
+
+class SongTimelineView::BackingLane final : public juce::Component
+{
+public:
+    BackingLane(SongTimelineView& owner, juce::AudioFormatManager& formats)
+        : owner_(owner), thumbnail_(kThumbnailSamplesPerPoint, formats, cache_)
+    {
+    }
+
+    /// Call when the presenter changed: follows a new file.
+    void update()
+    {
+        const auto file = backing().isMissing() ? std::filesystem::path{} : backing().file();
+        if (file == file_)
+            return;
+        file_ = file;
+        if (file_.empty())
+            thumbnail_.clear();
+        else
+            thumbnail_.setSource(new juce::FileInputSource(juce::File{utf8(io::utf8FromPath(file_))}));
+        repaint();
+    }
+
+    /// The thumbnail is built on a background thread; repaint until it is complete.
+    void repaintWhileLoading()
+    {
+        if (!file_.empty() && !thumbnail_.isFullyLoaded())
+            repaint();
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        g.fillAll(findColour(juce::ResizableWindow::backgroundColourId).darker(0.15F));
+        const auto text = findColour(juce::Label::textColourId);
+        if (!backing().hasTrack())
+        {
+            g.setColour(text.withAlpha(0.45F));
+            g.drawText(juce::String::fromUTF8(
+                           "Kein Backing-Track \xc2\xb7 Rechtsklick oder Men\xc3\xbc Audio zum Laden"),
+                       getLocalBounds().reduced(8, 0),
+                       juce::Justification::centredLeft);
+            return;
+        }
+        paintWaveform(g);
+        owner_.paintPlayhead(g, getHeight());
+    }
+
+    void mouseDown(const juce::MouseEvent& event) override
+    {
+        if (event.mods.isPopupMenu())
+        {
+            showMenu();
+            return;
+        }
+        dragStartX_ = event.position.x;
+        backing().beginOffsetDrag();
+    }
+
+    void mouseDrag(const juce::MouseEvent& event) override
+    {
+        backing().dragOffsetBy(static_cast<double>(event.position.x - dragStartX_) /
+                               owner_.geometry_.pixelsPerBar());
+        repaint();
+    }
+
+    void mouseUp(const juce::MouseEvent& /*event*/) override { backing().endOffsetDrag(); }
+
+private:
+    [[nodiscard]] ui::BackingTrackPresenter& backing() const { return owner_.backing_; }
+
+    void paintWaveform(juce::Graphics& g)
+    {
+        const auto& geometry = owner_.geometry_;
+        const double left = std::max(0.0, geometry.xOfBar(backing().startBar()));
+        const double right = std::min(static_cast<double>(getWidth()), geometry.xOfBar(backing().endBar()));
+        if (right <= left || file_.empty())
+            return;
+        const auto area = juce::Rectangle<double>(left, 4.0, right - left, getHeight() - 8.0).toNearestInt();
+        g.setColour(juce::Colour{0xFF3B82F6}.withAlpha(0.25F));
+        g.fillRect(area);
+        g.setColour(juce::Colour{0xFF60A5FA});
+        thumbnail_.drawChannels(g,
+                                area,
+                                backing().fileSecondsAtBar(geometry.exactBarAt(area.getX())),
+                                backing().fileSecondsAtBar(geometry.exactBarAt(area.getRight())),
+                                1.0F);
+    }
+
+    void showMenu()
+    {
+        juce::PopupMenu menu;
+        menu.addItem(1, "Backing-Track laden...");
+        menu.addItem(2, "Versatz eingeben...", !backing().isMissing() && backing().hasTrack());
+        menu.addItem(3,
+                     juce::String::fromUTF8("Versatz zur\xc3\xbc"
+                                            "cksetzen"),
+                     !backing().isMissing() && backing().hasTrack());
+        menu.addItem(4, "Backing-Track entfernen", backing().hasTrack());
+        menu.showMenuAsync(juce::PopupMenu::Options{}, [this](int result) { onMenu(result); });
+    }
+
+    void onMenu(int result)
+    {
+        if (result == 1 && owner_.loadBackingTrack_)
+            owner_.loadBackingTrack_();
+        else if (result == 2)
+            askForText("Versatz Backing-Track",
+                       juce::String::fromUTF8("Millisekunden der Datei vor Takt 1 (negativ: Track beginnt "
+                                              "sp\xc3\xa4ter)"),
+                       juce::String(backing().offsetMs(), 1),
+                       [this](const std::string& text)
+                       { backing().setOffsetMs(juce::String::fromUTF8(text.c_str()).getDoubleValue()); });
+        else if (result == 3)
+            backing().setOffsetMs(0.0);
+        else if (result == 4)
+            backing().remove();
+    }
+
+    SongTimelineView& owner_;
+    juce::AudioThumbnailCache cache_{1};
+    juce::AudioThumbnail thumbnail_;
+    std::filesystem::path file_;
+    float dragStartX_ = 0.0F;
+};
+
 // ----- Timeline -----------------------------------------------------------------------------------
 
-SongTimelineView::SongTimelineView(ui::SongTimelinePresenter& presenter, ui::TransportPresenter& transport)
-    : presenter_(presenter), transport_(transport), track_(std::make_unique<Track>(*this))
+SongTimelineView::SongTimelineView(ui::SongTimelinePresenter& presenter,
+                                   ui::TransportPresenter& transport,
+                                   ui::BackingTrackPresenter& backing,
+                                   juce::AudioFormatManager& formats,
+                                   std::function<void()> loadBackingTrack)
+    : presenter_(presenter), transport_(transport), backing_(backing),
+      loadBackingTrack_(std::move(loadBackingTrack)),
+      backingLane_(std::make_unique<BackingLane>(*this, formats)), track_(std::make_unique<Track>(*this))
 {
-    for (auto* component :
-         std::initializer_list<juce::Component*>{track_.get(), &scrollBar_, &zoomOutButton_, &zoomInButton_})
+    for (auto* component : std::initializer_list<juce::Component*>{
+             backingLane_.get(), track_.get(), &scrollBar_, &zoomOutButton_, &zoomInButton_})
     {
         component->setWantsKeyboardFocus(false);
         component->setMouseClickGrabsKeyboardFocus(false);
@@ -262,12 +386,49 @@ void SongTimelineView::paint(juce::Graphics& g)
                juce::Justification::centredLeft,
                true);
 
+    paintTrackLabels(g);
+    paintRuler(g);
+}
+
+void SongTimelineView::paintTrackLabels(juce::Graphics& g) const
+{
+    const auto text = findColour(juce::Label::textColourId);
+    auto backing = backingLabelArea_.reduced(8, 6);
+    g.setColour(text);
+    g.drawText("Backing", backing.removeFromTop(18), juce::Justification::topLeft);
+    g.setColour(backing_.isMissing() ? juce::Colours::orangered : text.withAlpha(0.6F));
+    g.setFont(juce::FontOptions(12.0F));
+    g.drawText(utf8(backing_.label()), backing.removeFromTop(16), juce::Justification::topLeft, true);
+
     auto label = trackLabelArea_.reduced(8, 6);
+    g.setFont(juce::FontOptions(15.0F));
     g.setColour(text);
     g.drawText("Drums", label.removeFromTop(18), juce::Justification::topLeft);
     g.setColour(text.withAlpha(0.6F));
     g.drawText("Pattern-Kette", label.removeFromTop(18), juce::Justification::topLeft);
-    paintRuler(g);
+}
+
+void SongTimelineView::mouseDown(const juce::MouseEvent& event)
+{
+    // Click on the ruler: the song continues from this bar (F-BT-07).
+    if (!rulerArea_.contains(event.getPosition()))
+        return;
+    const int bar = geometry_.barAt(event.position.x - static_cast<float>(rulerArea_.getX()));
+    transport_.locate(bar * presenter_.ticksPerBar());
+}
+
+void SongTimelineView::paintPlayhead(juce::Graphics& g, int height) const
+{
+    if (!playhead_)
+        return;
+    const double bar = static_cast<double>(*playhead_) / static_cast<double>(presenter_.ticksPerBar());
+    g.setColour(kPlayhead);
+    g.fillRect(static_cast<float>(geometry_.xOfBar(bar)) - 1.0F, 0.0F, 2.0F, static_cast<float>(height));
+}
+
+int SongTimelineView::contentBars() const
+{
+    return std::max(presenter_.songLengthBars(), backing_.lengthBars());
 }
 
 void SongTimelineView::resized()
@@ -279,6 +440,9 @@ void SongTimelineView::resized()
     zoomOutButton_.setBounds(zoomArea.removeFromRight(26));
     rulerArea_ = area.removeFromTop(kRulerHeight).withTrimmedLeft(kLabelWidth);
     scrollBar_.setBounds(area.removeFromBottom(kScrollBarSize).withTrimmedLeft(kLabelWidth));
+    auto backingRow = area.removeFromTop(kBackingHeight);
+    backingLabelArea_ = backingRow.removeFromLeft(kLabelWidth);
+    backingLane_->setBounds(backingRow);
     trackLabelArea_ = area.removeFromLeft(kLabelWidth);
     track_->setBounds(area);
     geometry_.setViewWidth(area.getWidth());
@@ -287,13 +451,16 @@ void SongTimelineView::resized()
 
 void SongTimelineView::timerCallback()
 {
-    if (presenter_.changeCount() != seenChangeCount_)
+    if (presenter_.changeCount() != seenChangeCount_ || backing_.changeCount() != seenBackingChangeCount_)
         contentChanged();
+    backing_.tick();
+    backingLane_->repaintWhileLoading();
     const auto playhead = transport_.songPlayheadTick();
     if (playhead != playhead_)
     {
         playhead_ = playhead;
         track_->repaint();
+        backingLane_->repaint();
     }
 }
 
@@ -320,7 +487,9 @@ void SongTimelineView::mouseWheelMove(const juce::MouseEvent& event, const juce:
 void SongTimelineView::contentChanged()
 {
     seenChangeCount_ = presenter_.changeCount();
-    geometry_.setSongLength(presenter_.songLengthBars());
+    seenBackingChangeCount_ = backing_.changeCount();
+    backingLane_->update();
+    geometry_.setSongLength(contentBars());
     updateScrollBar();
     repaint();
 }
@@ -328,8 +497,7 @@ void SongTimelineView::contentChanged()
 void SongTimelineView::updateScrollBar()
 {
     const double width =
-        static_cast<double>(presenter_.songLengthBars() + ui::SongTimelineGeometry::kExtraBars) *
-        geometry_.pixelsPerBar();
+        static_cast<double>(contentBars() + ui::SongTimelineGeometry::kExtraBars) * geometry_.pixelsPerBar();
     scrollBar_.setRangeLimits(0.0, std::max(width, 1.0), juce::dontSendNotification);
     scrollBar_.setCurrentRange(geometry_.scrollX(), track_->getWidth(), juce::dontSendNotification);
     zoomInButton_.setEnabled(geometry_.canZoomIn());

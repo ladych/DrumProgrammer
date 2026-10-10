@@ -1,5 +1,6 @@
 # Testable logic (E-02): everything in this library is measured by the coverage gate.
 add_library(drumprog_core STATIC
+    engine/BackingTrackPlayer.cpp
     engine/Clock.cpp
     engine/Downmix.cpp
     engine/EngineKit.cpp
@@ -37,6 +38,7 @@ add_library(drumprog_core STATIC
     model/SnapshotBuilder.cpp
     model/SnapshotPublisher.cpp
     model/SongLayout.cpp
+    model/SongTakeRecorder.cpp
     model/TakeRecorder.cpp
     model/TreeChangeListener.cpp
     model/TreeNode.cpp
@@ -44,12 +46,14 @@ add_library(drumprog_core STATIC
     ui/ActivePattern.cpp
     ui/ActivityLed.cpp
     ui/AudioStatus.cpp
+    ui/BackingTrackPresenter.cpp
     ui/DocumentController.cpp
     ui/InputLedPresenter.cpp
     ui/KeymapPresenter.cpp
     ui/KeyRouter.cpp
     ui/KitPresenter.cpp
     ui/MidiExportController.cpp
+    ui/MixPresenter.cpp
     ui/MusicalTime.cpp
     ui/PatternListPresenter.cpp
     ui/PianoRollGeometry.cpp
@@ -73,6 +77,7 @@ set(DRUMPROG_APP_SOURCES
     app/Main.cpp
     app/AppComposition.cpp
     app/Dialogs.cpp
+    app/JuceBackingTrackLoader.cpp
     app/JuceDocumentView.cpp
     app/JuceMidiExportView.cpp
     app/JuceSampleLoader.cpp
@@ -80,6 +85,7 @@ set(DRUMPROG_APP_SOURCES
     app/KitPanel.cpp
     app/MainComponent.cpp
     app/MainMenu.cpp
+    app/MixPanel.cpp
     app/NoteInspector.cpp
     app/PatternListPanel.cpp
     app/PianoRollToolbar.cpp
