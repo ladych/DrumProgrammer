@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace drumprog::model
 {
@@ -200,6 +201,12 @@ public:
     [[nodiscard]] Pattern pattern(int index) const;
     [[nodiscard]] std::optional<Pattern> findPattern(const std::string& id) const;
     Pattern addPattern(const std::string& id, const std::string& name, int lengthBars);
+    /// Adds the pattern together with its notes as one change of the tree, so listeners such as the
+    /// snapshot publisher react once instead of once per note (MIDI import of a whole song).
+    Pattern addPattern(const std::string& id,
+                       const std::string& name,
+                       int lengthBars,
+                       const std::vector<NoteData>& notes);
     /// Copies the pattern at index with all its notes under a new id and name and inserts the copy
     /// right after it.
     Pattern duplicatePattern(int index, const std::string& newId, const std::string& newName);

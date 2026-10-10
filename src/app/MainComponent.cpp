@@ -13,6 +13,7 @@ namespace
 constexpr int kTimerHz = 30;
 constexpr int kLedSize = 10;
 constexpr int kLedWidth = 90;
+constexpr int kMidiButtonWidth = 100;
 constexpr int kSideWidth = 260;
 constexpr int kKitPanelHeight = 290;
 
@@ -51,27 +52,25 @@ MainComponent::MainComponent(engine::TestToneSource& testTone,
                              juce::AudioFormatManager& backingFormats,
                              std::function<void()> loadBackingTrack,
                              ui::MixPresenter& mix,
+                             MidiActions midi,
                              ui::PianoRollPresenter& pianoRoll,
                              ui::KeymapPresenter& keymapPresenter,
                              ui::InputLedPresenter& inputLeds,
                              const juce::String& sampleWildcard)
     : testTone_(testTone), deviceManager_(deviceManager), deviceSupervisor_(deviceSupervisor),
-      inputLeds_(inputLeds), pianoRoll_(pianoRoll), transportBar_(transport, tempo),
+      inputLeds_(inputLeds), midi_(std::move(midi)), pianoRoll_(pianoRoll), transportBar_(transport, tempo),
       pianoRollToolbar_(pianoRoll), patternList_(patterns, std::move(patternDialogs)),
       songTimeline_(songTimeline, transport, backingTrack, backingFormats, std::move(loadBackingTrack)),
       pianoRollView_(pianoRoll, transport), noteInspector_(pianoRoll), mixPanel_(mix),
       kitPanel_(kitPresenter, keymapPresenter, sampleWildcard)
 {
-    testToneButton_.setToggleState(testTone_.isEnabled(), juce::dontSendNotification);
-    testToneButton_.onClick = [this] { testTone_.setEnabled(testToneButton_.getToggleState()); };
-    settingsButton_.onClick = [this] { showAudioSettingsDialog(deviceManager_, this); };
-
-    testToneButton_.setWantsKeyboardFocus(false);
-    settingsButton_.setWantsKeyboardFocus(false);
+    setUpButtons();
     editStatus_.setJustificationType(juce::Justification::centredRight);
     for (auto* component : std::initializer_list<juce::Component*>{&transportBar_,
                                                                    &testToneButton_,
                                                                    &settingsButton_,
+                                                                   &midiImportButton_,
+                                                                   &midiExportButton_,
                                                                    &pianoRollToolbar_,
                                                                    &patternList_,
                                                                    &songTimeline_,
@@ -86,6 +85,18 @@ MainComponent::MainComponent(engine::TestToneSource& testTone,
     updateStatus();
     startTimerHz(kTimerHz);
     setSize(1440, 960);
+}
+
+void MainComponent::setUpButtons()
+{
+    testToneButton_.setToggleState(testTone_.isEnabled(), juce::dontSendNotification);
+    testToneButton_.onClick = [this] { testTone_.setEnabled(testToneButton_.getToggleState()); };
+    settingsButton_.onClick = [this] { showAudioSettingsDialog(deviceManager_, this); };
+    midiImportButton_.onClick = [this] { midi_.importFile(); };
+    midiExportButton_.onClick = [this] { midi_.exportFile(); };
+    for (auto* button : std::initializer_list<juce::Button*>{
+             &testToneButton_, &settingsButton_, &midiImportButton_, &midiExportButton_})
+        button->setWantsKeyboardFocus(false);
 }
 
 MainComponent::~MainComponent()
@@ -114,6 +125,11 @@ void MainComponent::resized()
     auto row = area.removeFromTop(30);
     testToneButton_.setBounds(row.removeFromLeft(160));
     settingsButton_.setBounds(row.removeFromRight(220));
+    row.removeFromRight(8);
+    midiExportButton_.setBounds(row.removeFromRight(kMidiButtonWidth));
+    row.removeFromRight(4);
+    midiImportButton_.setBounds(row.removeFromRight(kMidiButtonWidth));
+    row.removeFromRight(8);
     ledArea_ = row.removeFromRight(2 * kLedWidth + 16);
     pianoRollToolbar_.setBounds(row.withTrimmedLeft(16));
     area.removeFromTop(8);
@@ -137,6 +153,7 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* /*source*/)
 void MainComponent::timerCallback()
 {
     inputLeds_.tick();
+    midiExportButton_.setEnabled(midi_.canExport());
     repaint(ledArea_);
     editStatus_.setText(juce::String::fromUTF8(pianoRoll_.statusText().c_str()), juce::dontSendNotification);
     // Dropouts and a hanging device change without a change message (Q-03, Q-09).

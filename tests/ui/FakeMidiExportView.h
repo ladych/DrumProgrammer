@@ -10,7 +10,7 @@
 namespace drumprog::ui
 {
 
-/// Answers the file dialog immediately with a preset answer and records what was shown.
+/// Answers the dialogs immediately with preset answers and records what was shown.
 class FakeMidiExportView final : public IMidiExportView
 {
 public:
@@ -20,8 +20,23 @@ public:
         std::string text;
     };
 
-    void chooseMidiFileToSave(const std::string& suggestedFileName, FileChosenCallback onChosen) override
+    struct KindChoice
     {
+        bool canExportPattern = false;
+        bool canExportSong = false;
+    };
+
+    void chooseExportKind(bool canExportPattern, bool canExportSong, ExportKindCallback onChosen) override
+    {
+        kindChoices.push_back({canExportPattern, canExportSong});
+        onChosen(kindToExport);
+    }
+
+    void chooseMidiFileToSave(const std::string& title,
+                              const std::string& suggestedFileName,
+                              FileChosenCallback onChosen) override
+    {
+        dialogTitles.push_back(title);
         suggestedNames.push_back(suggestedFileName);
         if (answerLater)
             pendingAnswer = std::move(onChosen);
@@ -34,12 +49,15 @@ public:
         messages.push_back({title, message});
     }
 
-    // Preset answer
+    // Preset answers
+    std::optional<MidiExportKind> kindToExport;
     std::optional<std::filesystem::path> fileToSave;
     bool answerLater = false;
     FileChosenCallback pendingAnswer;
 
     // Recorded calls
+    std::vector<KindChoice> kindChoices;
+    std::vector<std::string> dialogTitles;
     std::vector<std::string> suggestedNames;
     std::vector<Message> messages;
 };

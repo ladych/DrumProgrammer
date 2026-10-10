@@ -35,7 +35,8 @@ constexpr juce::CommandID patternDelete = 0x6005;
 constexpr juce::CommandID songInsert = 0x8001;
 constexpr juce::CommandID songRemoveBlock = 0x8002;
 constexpr juce::CommandID songClear = 0x8003;
-constexpr juce::CommandID midiExportPattern = 0x7001;
+constexpr juce::CommandID midiExport = 0x7001;
+constexpr juce::CommandID midiImport = 0x7002;
 constexpr juce::CommandID audioSettings = 0x3001;
 constexpr juce::CommandID audioKeymap = 0x3002;
 constexpr juce::CommandID audioLoadBackingTrack = 0x3003;
@@ -111,9 +112,11 @@ constexpr std::array kCommands{
         command::songInsert, "Pattern einfügen", "Aktives Pattern ans Ende des Songs setzen", "Song", 0, 0},
     CommandSpec{command::songRemoveBlock, "Block löschen", "Ausgewählten Song-Block löschen", "Song", 0, 0},
     CommandSpec{command::songClear, "Song leeren", "Alle Blöcke aus dem Song entfernen", "Song", 0, 0},
-    CommandSpec{command::midiExportPattern,
-                "Export Pattern...",
-                "Aktives Pattern als MIDI-Datei exportieren",
+    CommandSpec{
+        command::midiImport, "Import...", "MIDI-Datei als neues Pattern importieren", "MIDI", 'i', kCtrl},
+    CommandSpec{command::midiExport,
+                "Export...",
+                "Aktives Pattern oder Song als MIDI-Datei exportieren",
                 "MIDI",
                 'e',
                 kCtrl},
@@ -197,7 +200,7 @@ std::vector<juce::CommandID> menuCommands(int menuIndex)
     case 3:
         return {songInsert, songRemoveBlock, kSeparator, songClear};
     case 4:
-        return {midiExportPattern};
+        return {midiImport, midiExport};
     case 5:
         return {kitCopyToProject, kitUseGlobal, kSeparator, kitCopyToGlobal};
     default:
@@ -310,8 +313,8 @@ std::function<bool()> MainMenu::projectCheckFor(juce::CommandID commandID) const
         return song_.hasSelection;
     case command::songClear:
         return [this] { return !song_.isEmpty(); };
-    case command::midiExportPattern:
-        return midi_.canExportPattern;
+    case command::midiExport:
+        return midi_.canExport;
     case command::kitCopyToProject:
         return [this] { return !kit_.usesProjectKit(); };
     case command::kitUseGlobal:
@@ -353,8 +356,10 @@ std::function<void()> MainMenu::actionFor(juce::CommandID commandID)
         return [this] { document_.redo(); };
     case command::transportRecord:
         return transport_.toggleRecordArmed;
-    case command::midiExportPattern:
-        return midi_.exportPattern;
+    case command::midiImport:
+        return midi_.importFile;
+    case command::midiExport:
+        return midi_.exportFile;
     default:
         return editActionFor(commandID);
     }

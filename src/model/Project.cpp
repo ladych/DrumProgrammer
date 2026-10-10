@@ -455,15 +455,26 @@ std::optional<Pattern> Project::findPattern(const std::string& id) const
     return Pattern{patternTree, undoManager()};
 }
 
-Pattern Project::addPattern(const std::string& id, const std::string& name, int lengthBars)
+Pattern Project::addPattern(const std::string& id,
+                            const std::string& name,
+                            int lengthBars,
+                            const std::vector<NoteData>& notes)
 {
     juce::ValueTree patternTree{ids::pattern};
+    Pattern detached{patternTree, nullptr};
+    for (const auto& note : notes)
+        detached.addNote(note);
     patternTree.setProperty(ids::id, toUtf8String(id), nullptr);
     patternTree.setProperty(ids::name, toUtf8String(name), nullptr);
     patternTree.setProperty(ids::colour, kDefaultPatternColour, nullptr);
     patternTree.setProperty(ids::lengthBars, std::max(lengthBars, 1), nullptr);
     child(ids::patterns).appendChild(patternTree, undoManager());
     return {patternTree, undoManager()};
+}
+
+Pattern Project::addPattern(const std::string& id, const std::string& name, int lengthBars)
+{
+    return addPattern(id, name, lengthBars, {});
 }
 
 Pattern Project::duplicatePattern(int index, const std::string& newId, const std::string& newName)

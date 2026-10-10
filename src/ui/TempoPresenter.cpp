@@ -35,9 +35,13 @@ std::string TempoPresenter::bpmText() const
 
 void TempoPresenter::setBpm(double bpm)
 {
-    const double clamped = std::clamp(bpm, kMinBpm, kMaxBpm);
     undoManager_.beginNewTransaction("Tempo");
-    project().setBpm(std::round(clamped * kHundredths) / kHundredths);
+    project().setBpm(validBpm(bpm));
+}
+
+double TempoPresenter::validBpm(double bpm)
+{
+    return std::round(std::clamp(bpm, kMinBpm, kMaxBpm) * kHundredths) / kHundredths;
 }
 
 bool TempoPresenter::setBpmText(const std::string& text)
