@@ -7,6 +7,9 @@
 
 #include <juce_audio_devices/juce_audio_devices.h>
 
+#include <atomic>
+#include <cstdint>
+
 namespace drumprog::app
 {
 
@@ -33,6 +36,13 @@ public:
         // The tone overwrites the outputs (silence while disabled), the renderer adds to them.
         tone_.render(outputChannelData, numOutputChannels, numSamples);
         renderer_.render(snapshots_.acquire(), outputChannelData, numOutputChannels, numSamples, blockTime);
+        blocks_.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    /// Callbacks so far; the GUI sees from it whether the driver still runs (Q-09).
+    [[nodiscard]] std::uint64_t blockCount() const noexcept
+    {
+        return blocks_.load(std::memory_order_relaxed);
     }
 
     void audioDeviceAboutToStart(juce::AudioIODevice* device) override
@@ -48,6 +58,7 @@ private:
     engine::TestToneSource& tone_;
     engine::PlaybackRenderer& renderer_;
     model::ProjectSnapshotExchange& snapshots_;
+    std::atomic<std::uint64_t> blocks_{0};
 };
 
 } // namespace drumprog::app

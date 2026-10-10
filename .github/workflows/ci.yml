@@ -48,12 +48,19 @@ jobs:
       - uses: actions/checkout@v5
         with:
           submodules: recursive
+      # CMake downloads the ASIO SDK (GPLv3) from Steinberg, see cmake/DrumProgrammerJuce.cmake.
       - name: Configure
         run: cmake -S . -B build -A x64
       - name: Build
         run: cmake --build build --config Release --parallel
       - name: Test
         run: ctest --test-dir build -C Release --output-on-failure
+      # The program for tests on a Windows machine (AP10).
+      - name: Upload program
+        uses: actions/upload-artifact@v4
+        with:
+          name: DrumProgrammer-Windows
+          path: build/src/DrumProgrammer_artefacts/Release/
 
   coverage:
     name: Coverage gate (100 %)

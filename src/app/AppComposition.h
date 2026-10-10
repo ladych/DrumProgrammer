@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/AudioCallback.h"
+#include "app/AudioDeviceSupervisor.h"
 #include "app/JuceBackingTrackLoader.h"
 #include "app/JuceDocumentView.h"
 #include "app/JuceMidiExportView.h"
@@ -79,7 +80,6 @@ private:
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
     /// Saves changes of the global kit.
     void timerCallback() override;
-    void restoreDeviceSettings();
     void saveDeviceSettings();
     void updateSampleRate();
     void updateOutputLatency();
@@ -115,6 +115,8 @@ private:
     engine::PlaybackRenderer playbackRenderer_;
     AudioCallback audioCallback_;
     juce::AudioDeviceManager deviceManager_;
+    // Windows and ASIO (AP10): fallback driver and reopening after unplugging the interface.
+    AudioDeviceSupervisor deviceSupervisor_;
 
     // Project model (AP1). It is the only source of the notes, and of the kit together with the global
     // kit: the SnapshotPublisher hands every change to the engine.
