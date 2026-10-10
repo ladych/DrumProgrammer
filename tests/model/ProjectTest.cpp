@@ -3,6 +3,7 @@
 #include "model/FakeIdGenerator.h"
 #include "model/ModelIds.h"
 #include "model/ProjectFactory.h"
+#include "model/TreeChangeListener.h"
 
 #include <gtest/gtest.h>
 
@@ -386,6 +387,31 @@ TEST_F(ProjectTest, FPJ02_ReadsValuesStoredAsTextLikeAfterLoading)
     EXPECT_DOUBLE_EQ(project.bpm(), 133.5);
     EXPECT_EQ(project.timeSignature().numerator, 6);
     EXPECT_EQ(project.backingTrack().offsetSamples(), 5000000000LL);
+}
+
+TEST_F(ProjectTest, FMI03_AddsAPatternWithAllItsNotesInOneChange)
+{
+    int changes = 0;
+    const TreeChangeListener listener{tree, [&changes] { ++changes; }};
+    undoManager.beginNewTransaction();
+
+    const auto added = project.addPattern(
+        "p-2",
+        "Import",
+        3,
+        {{.slotNote = 36, .startTick = 0, .lengthTicks = 240, .velocity = 100},
+         {.slotNote = 38, .startTick = 960, .lengthTicks = 120, .velocity = 80, .origin = NoteOrigin::live}});
+
+    EXPECT_EQ(changes, 1);
+    EXPECT_EQ(added.id(), "p-2");
+    EXPECT_EQ(added.name(), "Import");
+    EXPECT_EQ(added.lengthBars(), 3);
+    ASSERT_EQ(added.numNotes(), 2);
+    EXPECT_EQ(added.note(1).slotNote(), 38);
+    EXPECT_EQ(added.note(1).startTick(), 960);
+    EXPECT_EQ(added.note(1).origin(), NoteOrigin::live);
+    undoManager.undo();
+    EXPECT_EQ(project.numPatterns(), 1);
 }
 
 } // namespace

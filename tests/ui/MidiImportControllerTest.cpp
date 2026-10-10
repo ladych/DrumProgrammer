@@ -128,7 +128,7 @@ TEST_F(MidiImportControllerTest, FMI03_TheImportIsOneUndoStep)
     EXPECT_EQ(activePattern.index(), 0);
 }
 
-TEST_F(MidiImportControllerTest, FMI03_TakesTheTempoOfTheFile)
+TEST_F(MidiImportControllerTest, FMI03_AsksWhetherToTakeTempoAndTimeSignatureOfTheFile)
 {
     midi.bpm = 87.5;
     midi.timeSigNumerator = 3;
@@ -137,12 +137,99 @@ TEST_F(MidiImportControllerTest, FMI03_TakesTheTempoOfTheFile)
 
     controller.importMidiFile();
 
+    ASSERT_EQ(view.questions.size(), 1U);
+    EXPECT_EQ(view.questions[0],
+              "Tempo der Datei: 87.50 BPM (Projekt: 120.00 BPM)\nTaktart der Datei: 3/4 (Projekt: 4/4)\n\n"
+              "Ins Projekt übernehmen?");
+}
+
+TEST_F(MidiImportControllerTest, FMI03_AsksOnlyAboutWhatDiffers)
+{
+    midi.bpm = 90.0;
+    midi.notes = {{.note = 36, .startTick = 0, .lengthTicks = 120, .velocity = 100}};
+    chooseFile("beat.mid");
+    controller.importMidiFile();
+
+    midi.bpm = 120.0;
+    midi.timeSigNumerator = 7;
+    midi.timeSigDenominator = 8;
+    chooseFile("odd.mid");
+    controller.importMidiFile();
+
+    midi.timeSigNumerator = 4;
+    chooseFile("eighths.mid");
+    controller.importMidiFile();
+
+    ASSERT_EQ(view.questions.size(), 3U);
+    EXPECT_EQ(view.questions[2], "Taktart der Datei: 4/8 (Projekt: 4/4)\n\nIns Projekt übernehmen?");
+    EXPECT_EQ(view.questions[0],
+              "Tempo der Datei: 90.00 BPM (Projekt: 120.00 BPM)\n\nIns Projekt übernehmen?");
+    EXPECT_EQ(view.questions[1], "Taktart der Datei: 7/8 (Projekt: 4/4)\n\nIns Projekt übernehmen?");
+}
+
+TEST_F(MidiImportControllerTest, FMI03_DoesNotAskIfTempoAndTimeSignatureMatch)
+{
+    midi.notes = {{.note = 36, .startTick = 0, .lengthTicks = 120, .velocity = 100}};
+    chooseFile("beat.mid");
+
+    controller.importMidiFile();
+
+    EXPECT_TRUE(view.questions.empty());
+    EXPECT_EQ(numPatterns(), 2);
+}
+
+TEST_F(MidiImportControllerTest, FMI03_DoesNotAskAboutAnInvalidTimeSignature)
+{
+    midi.timeSigNumerator = 5;
+    midi.timeSigDenominator = 2;
+    midi.notes = {{.note = 36, .startTick = 0, .lengthTicks = 120, .velocity = 100}};
+    chooseFile("beat.mid");
+    controller.importMidiFile();
+
+    midi.timeSigNumerator = 17;
+    midi.timeSigDenominator = 4;
+    chooseFile("long.mid");
+    controller.importMidiFile();
+
+    EXPECT_TRUE(view.questions.empty());
+}
+
+TEST_F(MidiImportControllerTest, FMI03_TakesTempoAndTimeSignatureIfTheUserAgrees)
+{
+    view.adoptTempo = true;
+    midi.bpm = 87.5;
+    midi.timeSigNumerator = 3;
+    midi.lengthTicks = 12 * 480;
+    midi.notes = {{.note = 36, .startTick = 0, .lengthTicks = 120, .velocity = 100}};
+    chooseFile("waltz.mid");
+
+    controller.importMidiFile();
+
     EXPECT_DOUBLE_EQ(project.bpm(), 87.5);
+    EXPECT_EQ(project.timeSignature().numerator, 3);
+    EXPECT_EQ(project.timeSignature().denominator, 4);
+    EXPECT_EQ(imported().lengthBars(), 4); // 12 quarters in 3/4
+}
+
+TEST_F(MidiImportControllerTest, FMI03_KeepsTempoAndTimeSignatureIfTheUserDeclines)
+{
+    midi.bpm = 87.5;
+    midi.timeSigNumerator = 3;
+    midi.lengthTicks = 12 * 480;
+    midi.notes = {{.note = 36, .startTick = 0, .lengthTicks = 120, .velocity = 100}};
+    chooseFile("waltz.mid");
+
+    controller.importMidiFile();
+
+    EXPECT_DOUBLE_EQ(project.bpm(), 120.0);
     EXPECT_EQ(project.timeSignature().numerator, 4);
+    EXPECT_EQ(numPatterns(), 2);
+    EXPECT_EQ(imported().lengthBars(), 3); // 12 quarters in 4/4
 }
 
 TEST_F(MidiImportControllerTest, FMI03_RoundsAndClampsTheTempoOfTheFile)
 {
+    view.adoptTempo = true;
     midi.bpm = 96.5; // stored as 621762 microseconds per quarter
     midi.notes = {{.note = 36, .startTick = 0, .lengthTicks = 120, .velocity = 100}};
     chooseFile("beat.mid");
@@ -165,13 +252,16 @@ TEST_F(MidiImportControllerTest, FMI03_KeepsTheProjectTempoIfTheFileHasNone)
 
     controller.importMidiFile();
 
+    EXPECT_TRUE(view.questions.empty());
     EXPECT_EQ(numPatterns(), 2);
     EXPECT_DOUBLE_EQ(project.bpm(), 120.0);
 }
 
-TEST_F(MidiImportControllerTest, FMI03_TheTempoChangeIsPartOfTheImportUndoStep)
+TEST_F(MidiImportControllerTest, FMI03_TheTakenTempoIsPartOfTheImportUndoStep)
 {
+    view.adoptTempo = true;
     midi.bpm = 90.0;
+    midi.timeSigNumerator = 3;
     midi.notes = {{.note = 36, .startTick = 0, .lengthTicks = 120, .velocity = 100}};
     chooseFile("beat.mid");
 
@@ -179,6 +269,7 @@ TEST_F(MidiImportControllerTest, FMI03_TheTempoChangeIsPartOfTheImportUndoStep)
     undoManager.undo();
 
     EXPECT_DOUBLE_EQ(project.bpm(), 120.0);
+    EXPECT_EQ(project.timeSignature().numerator, 4);
     EXPECT_EQ(numPatterns(), 1);
 }
 

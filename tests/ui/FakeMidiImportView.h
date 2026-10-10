@@ -3,6 +3,7 @@
 #include "ui/IMidiImportView.h"
 
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <string>
 #include <vector>
@@ -26,6 +27,12 @@ public:
         onChosen(fileToOpen);
     }
 
+    void askToAdoptTempo(const std::string& question, std::function<void(bool)> onAnswer) override
+    {
+        questions.push_back(question);
+        onAnswer(adoptTempo);
+    }
+
     void showMessage(const std::string& title, const std::string& message) override
     {
         messages.push_back({title, message});
@@ -33,9 +40,11 @@ public:
 
     // Preset answer
     std::optional<std::filesystem::path> fileToOpen;
+    bool adoptTempo = false;
 
     // Recorded calls
     int numFileDialogs = 0;
+    std::vector<std::string> questions;
     std::vector<Message> messages;
 };
 

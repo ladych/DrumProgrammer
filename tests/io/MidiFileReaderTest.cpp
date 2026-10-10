@@ -110,6 +110,24 @@ TEST(MidiFileReaderTest, FMI03_AFileWithoutTempoHasNone)
     EXPECT_DOUBLE_EQ(readMidiFile(header(0, 1, 96) + track(kEndOfTrack))->bpm, 0.0);
 }
 
+TEST(MidiFileReaderTest, FMI03_ReadsTheFirstTimeSignature)
+{
+    const auto file = header(0, 1, 96) + track(bytes({0x00, 0xFF, 0x58, 0x01, 0x03,              // too short
+                                                      0x00, 0xFF, 0x58, 0x04, 6,    3, 24, 8,    // 6/8
+                                                      0x00, 0xFF, 0x58, 0x04, 4,    2, 24, 8}) + // 4/4
+                                               kEndOfTrack);
+
+    const auto content = readMidiFile(file);
+
+    EXPECT_EQ(content->timeSigNumerator, 6);
+    EXPECT_EQ(content->timeSigDenominator, 8);
+}
+
+TEST(MidiFileReaderTest, FMI03_AFileWithoutTimeSignatureHasNone)
+{
+    EXPECT_EQ(readMidiFile(header(0, 1, 96) + track(kEndOfTrack))->timeSigNumerator, 0);
+}
+
 TEST(MidiFileReaderTest, FMI03_MergesTheTracksOfAType1File)
 {
     const auto file =
