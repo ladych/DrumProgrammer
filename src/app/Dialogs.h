@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ui/AboutInfo.h"
 #include "ui/KeymapPresenter.h"
 #include "ui/KitPresenter.h"
 
@@ -27,6 +28,9 @@ juce::DialogWindow* showKitDialog(ui::KitPresenter& kit,
                                   const juce::String& sampleWildcard,
                                   const std::vector<juce::KeyListener*>& keyListeners,
                                   juce::Component* centreAround);
+
+/// Info: program, license, source code and third-party components with their licenses (Q-12).
+void showAboutDialog(const ui::AboutInfo& info, juce::Component* centreAround);
 
 /// Asks for one line of text, e.g. a pattern name; onOk gets the text unless the user cancels.
 void askForText(const juce::String& title,

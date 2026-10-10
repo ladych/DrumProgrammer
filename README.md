@@ -53,4 +53,4 @@ Beim ersten Start spielt das Programm mit dem Default-Kit: den GM-Slots 35 bis 5
 
 GNU Affero General Public License v3.0, siehe [LICENSE](LICENSE). Die Lizenz folgt aus der Open-Source-Lizenz von JUCE.
 
-Die Samples des Default-Kits stehen unter [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) (AVL Drumkits, Glen MacArthur), siehe [resources/DefaultKit/LIESMICH.txt](resources/DefaultKit/LIESMICH.txt).
+Die Samples des Default-Kits stehen unter [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) (AVL Drumkits, Glen MacArthur), siehe [resources/DefaultKit/LIESMICH.txt](resources/DefaultKit/LIESMICH.txt). Alle Komponenten von Drittanbietern mit ihren Lizenzen zeigt das Programm unter **Hilfe → Info und Lizenzen...**.

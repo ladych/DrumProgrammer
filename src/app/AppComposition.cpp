@@ -3,6 +3,7 @@
 #include "DefaultKitData.h"
 #include "app/Dialogs.h"
 #include "app/MainComponent.h"
+#include "ui/AboutInfo.h"
 #include "ui/AudioStatus.h"
 
 #include <filesystem>
@@ -20,6 +21,11 @@ constexpr double kTestToneFrequencyHz = 440.0;
 constexpr float kTestToneGain = 0.2F;
 constexpr int kNumOutputChannels = 2;
 constexpr int kGlobalKitSaveIntervalMs = 1000;
+#if defined(JUCE_ASIO) && JUCE_ASIO
+constexpr bool kWithAsio = true;
+#else
+constexpr bool kWithAsio = false;
+#endif
 
 std::filesystem::path settingsFile(const char* name)
 {
@@ -112,6 +118,11 @@ AppComposition::AppComposition()
                  .loadBackingTrack = [this] { chooseBackingTrack(); },
                  .removeBackingTrack = [this] { backingTrackPresenter_.remove(); },
                  .hasBackingTrack = [this] { return backingTrackPresenter_.hasTrack(); }},
+                {.showAbout =
+                     [this] {
+                         showAboutDialog(ui::makeAboutInfo(JUCE_APPLICATION_VERSION_STRING, kWithAsio),
+                                         dialogParent_);
+                     }},
                 {.toggleRecordArmed = [this] { transportPresenter_.toggleRecordArmed(); }})
 {
     activePattern_.addOnChange([this](int index) { transportPresenter_.setActivePattern(index); });

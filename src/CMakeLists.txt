@@ -46,6 +46,7 @@ add_library(drumprog_core STATIC
     model/TreeChangeListener.cpp
     model/TreeNode.cpp
     model/UuidGenerator.cpp
+    ui/AboutInfo.cpp
     ui/ActivePattern.cpp
     ui/ActivityLed.cpp
     ui/AudioStatus.cpp
@@ -78,6 +79,7 @@ endif()
 # Humble objects (E-03): JUCE glue without logic, listed in coverage-exclusions.txt.
 set(DRUMPROG_APP_SOURCES
     app/Main.cpp
+    app/AboutDialog.cpp
     app/AppComposition.cpp
     app/AudioDeviceSupervisor.cpp
     app/Dialogs.cpp

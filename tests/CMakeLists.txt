@@ -45,6 +45,7 @@ add_executable(drumprog_tests
     model/TakeRecorderTest.cpp
     model/TreeChangeListenerTest.cpp
     model/UuidGeneratorTest.cpp
+    ui/AboutInfoTest.cpp
     ui/ActivePatternTest.cpp
     ui/ActivityLedTest.cpp
     ui/AudioStatusTest.cpp

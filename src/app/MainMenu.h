@@ -30,6 +30,12 @@ struct KitMenuActions
     std::function<bool()> usesProjectKit;
 };
 
+/// Actions of the menu "Hilfe".
+struct HelpActions
+{
+    std::function<void()> showAbout;
+};
+
 /// Editing commands of the piano roll in the menu "Bearbeiten" (F-PR-02, F-PR-03, F-PR-05).
 struct EditActions
 {
@@ -80,10 +86,10 @@ struct TransportActions
     std::function<void()> toggleRecordArmed;
 };
 
-/// Humble object (E-03): menus "Datei", "Bearbeiten", "Pattern", "Song", "MIDI", "Kit" and "Audio" with their
-/// shortcuts (Pflichtenheft 6.2), forwarding every command to the DocumentController or the actions.
-/// Shortcuts use Strg only, so letter keys stay free for drum triggers (6.4), except Entf; the space bar for
-/// play/stop is handled by ui::KeyRouter.
+/// Humble object (E-03): menus "Datei", "Bearbeiten", "Pattern", "Song", "MIDI", "Kit", "Audio" and "Hilfe"
+/// with their shortcuts (Pflichtenheft 6.2), forwarding every command to the DocumentController or the
+/// actions. Shortcuts use Strg only, so letter keys stay free for drum triggers (6.4), except Entf; the space
+/// bar for play/stop is handled by ui::KeyRouter.
 class MainMenu final : public juce::MenuBarModel, public juce::ApplicationCommandTarget
 {
 public:
@@ -95,6 +101,7 @@ public:
              MidiActions midi,
              KitMenuActions kit,
              AudioMenuActions audio,
+             HelpActions help,
              TransportActions transport);
     ~MainMenu() override;
 
@@ -134,6 +141,7 @@ private:
     MidiActions midi_;
     KitMenuActions kit_;
     AudioMenuActions audio_;
+    HelpActions help_;
     TransportActions transport_;
     juce::ApplicationCommandManager commands_;
 };

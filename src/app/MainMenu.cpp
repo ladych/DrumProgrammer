@@ -46,6 +46,7 @@ constexpr juce::CommandID kitCopyToGlobal = 0x5003;
 constexpr juce::CommandID kitShow = 0x5004;
 constexpr juce::CommandID kitResetToDefault = 0x5005;
 constexpr juce::CommandID transportRecord = 0x4001;
+constexpr juce::CommandID helpAbout = 0x9001;
 } // namespace command
 
 constexpr int kCtrl = juce::ModifierKeys::commandModifier;
@@ -168,6 +169,12 @@ constexpr std::array kCommands{
                 "Kit",
                 0,
                 0},
+    CommandSpec{command::helpAbout,
+                "Info und Lizenzen...",
+                "Version, Lizenz, Quellcode und Komponenten von Drittanbietern",
+                "Hilfe",
+                0,
+                0},
     CommandSpec{command::transportRecord,
                 "Aufnahme scharf",
                 "Aufnahme scharf schalten oder entschärfen",
@@ -221,8 +228,10 @@ std::vector<juce::CommandID> menuCommands(int menuIndex)
                 kitCopyToGlobal,
                 kSeparator,
                 kitResetToDefault};
-    default:
+    case 6:
         return {audioSettings, audioKeymap, kSeparator, audioLoadBackingTrack, audioRemoveBackingTrack};
+    default:
+        return {helpAbout};
     }
 }
 
@@ -244,10 +253,11 @@ MainMenu::MainMenu(ui::DocumentController& document,
                    MidiActions midi,
                    KitMenuActions kit,
                    AudioMenuActions audio,
+                   HelpActions help,
                    TransportActions transport)
     : document_(document), quit_(std::move(quit)), edit_(std::move(edit)), pattern_(std::move(pattern)),
       song_(std::move(song)), midi_(std::move(midi)), kit_(std::move(kit)), audio_(std::move(audio)),
-      transport_(std::move(transport))
+      help_(std::move(help)), transport_(std::move(transport))
 {
     commands_.registerAllCommandsForTarget(this);
     commands_.setFirstCommandTarget(this);
@@ -261,7 +271,7 @@ MainMenu::~MainMenu()
 
 juce::StringArray MainMenu::getMenuBarNames()
 {
-    return {"Datei", "Bearbeiten", "Pattern", "Song", "MIDI", "Kit", "Audio"};
+    return {"Datei", "Bearbeiten", "Pattern", "Song", "MIDI", "Kit", "Audio", "Hilfe"};
 }
 
 juce::PopupMenu MainMenu::getMenuForIndex(int menuIndex, const juce::String& /*menuName*/)
@@ -473,6 +483,8 @@ std::function<void()> MainMenu::audioActionFor(juce::CommandID commandID) const
         return audio_.loadBackingTrack;
     case command::audioRemoveBackingTrack:
         return audio_.removeBackingTrack;
+    case command::helpAbout:
+        return help_.showAbout;
     default:
         return {};
     }

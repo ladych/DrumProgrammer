@@ -1,5 +1,6 @@
 #include "app/Dialogs.h"
 
+#include "app/AboutDialog.h"
 #include "app/KeymapDialog.h"
 #include "app/KitPanel.h"
 
@@ -65,6 +66,14 @@ juce::DialogWindow* showKitDialog(ui::KitPresenter& kit,
     for (auto* listener : keyListeners)
         window->addKeyListener(listener);
     return window;
+}
+
+void showAboutDialog(const ui::AboutInfo& info, juce::Component* centreAround)
+{
+    launch(std::make_unique<AboutDialog>(info),
+           juce::String::fromUTF8("Info über Drum Programmer"),
+           centreAround,
+           true);
 }
 
 void askForText(const juce::String& title,
