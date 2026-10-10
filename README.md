@@ -30,6 +30,10 @@ cmake --build --preset debug
 ctest --preset debug
 ```
 
+**Windows mit ASIO:** Steinberg stellt das ASIO-SDK seit Oktober 2025 unter GPLv3 bereit, das ist mit unserer AGPLv3 vereinbar. CMake lädt die festgelegte Version (2.3.4, mit SHA-256 geprüft) beim Konfigurieren von Steinberg; sie liegt nicht im Repository. Ohne Internet: SDK selbst entpacken und `-DDRUMPROG_ASIO_SDK_DIR=C:/pfad/zum/asiosdk` angeben (das Verzeichnis mit `common/iasiodrv.h`); `-DDRUMPROG_ASIO=OFF` baut ohne ASIO. Die CI stellt das fertige Windows-Programm als Artefakt `DrumProgrammer-Windows` bereit.
+
+Beim ersten Start wählt das Programm ASIO, falls ein ASIO-Treiber installiert ist, sonst WASAPI (unter Linux ALSA). Fällt das gewählte Gerät aus (z. B. Interface abgezogen), spielt es über den nächsten Treiber weiter und kehrt zum gewählten Gerät zurück, sobald es wieder da ist; die Statusleiste zeigt das an.
+
 CLion liest `CMakePresets.json` direkt; die Presets `coverage`, `asan` und `tsan` bauen nur die Tests.
 
 ## Qualitätsregeln

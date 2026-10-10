@@ -38,6 +38,29 @@ target_compile_definitions(drumprog_juce PUBLIC
     $<$<PLATFORM_ID:Linux>:JUCE_JACK=1>
     $<$<PLATFORM_ID:Linux>:JUCE_ALSA=1>)
 
+# ASIO (F-AO-03): Steinberg publishes the ASIO SDK under GPLv3 since October 2025, which is compatible
+# with our AGPLv3 (section 13). The build downloads the pinned release from Steinberg instead of keeping a
+# copy in the repository; DRUMPROG_ASIO_SDK_DIR uses a local copy instead (e.g. for offline builds).
+if(WIN32 AND DRUMPROG_BUILD_APP AND DRUMPROG_ASIO)
+    if(NOT DRUMPROG_ASIO_SDK_DIR)
+        include(FetchContent)
+        FetchContent_Declare(asiosdk
+            URL https://download.steinberg.net/sdk_downloads/ASIO-SDK_2.3.4_2025-10-15.zip
+            URL_HASH SHA256=d5ebf0c20dd2c5f43771fd0c1418f4b361bf52434ee670097cfa6b3a335e2eca
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+            # The SDK has no CMake project of its own; only its headers and sources are used.
+            SOURCE_SUBDIR no-cmake-project)
+        FetchContent_MakeAvailable(asiosdk)
+        set(DRUMPROG_ASIO_SDK_DIR "${asiosdk_SOURCE_DIR}")
+    endif()
+    if(NOT EXISTS "${DRUMPROG_ASIO_SDK_DIR}/common/iasiodrv.h")
+        message(FATAL_ERROR "The ASIO SDK in ${DRUMPROG_ASIO_SDK_DIR} has no common/iasiodrv.h")
+    endif()
+    message(STATUS "ASIO enabled with the SDK in ${DRUMPROG_ASIO_SDK_DIR}")
+    target_compile_definitions(drumprog_juce PUBLIC JUCE_ASIO=1)
+    target_include_directories(drumprog_juce SYSTEM PUBLIC "${DRUMPROG_ASIO_SDK_DIR}/common")
+endif()
+
 foreach(module IN LISTS DRUMPROG_JUCE_MODULES)
     target_compile_definitions(drumprog_juce PUBLIC $<TARGET_PROPERTY:${module},INTERFACE_COMPILE_DEFINITIONS>)
     target_include_directories(drumprog_juce SYSTEM PUBLIC $<TARGET_PROPERTY:${module},INTERFACE_INCLUDE_DIRECTORIES>)

@@ -42,13 +42,21 @@ double hitToSoundLatencyMs(const AudioDeviceInfo& info)
 
 std::string audioStatusText(const AudioDeviceInfo& info)
 {
+    const std::string warning = info.stalled ? "Audio-Gerät antwortet nicht, neuer Versuch läuft | " : "";
     if (!info.open || info.sampleRate <= 0.0)
-        return "Kein Audio-Gerät geöffnet | " + midiText(info.midiInputs);
+        return warning + "Kein Audio-Gerät geöffnet | " + midiText(info.midiInputs);
+    std::string replaced;
+    if (!info.replacedDevice.empty())
+        replaced = "Ersatz für " + info.replacedDevice + " | ";
+    std::string xruns;
+    if (info.xruns >= 0)
+        xruns = "XRuns: " + std::to_string(info.xruns) + " | ";
     const double bufferMs = info.bufferSize * kMsPerSecond / info.sampleRate;
-    return info.driver + " | " + info.device + " | " + std::to_string(std::llround(info.sampleRate)) +
-           " Hz | Buffer " + std::to_string(info.bufferSize) + " (" + formatMs(bufferMs) + ") | Latenz " +
-           formatMs(outputLatencyMs(info)) + ", Anschlag bis Ton max. " +
-           formatMs(hitToSoundLatencyMs(info)) + " | " + midiText(info.midiInputs);
+    return warning + replaced + info.driver + " | " + info.device + " | " +
+           std::to_string(std::llround(info.sampleRate)) + " Hz | Buffer " + std::to_string(info.bufferSize) +
+           " (" + formatMs(bufferMs) + ") | Latenz " + formatMs(outputLatencyMs(info)) +
+           ", Anschlag bis Ton max. " + formatMs(hitToSoundLatencyMs(info)) + " | " + xruns +
+           midiText(info.midiInputs);
 }
 
 } // namespace drumprog::ui

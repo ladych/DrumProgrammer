@@ -61,7 +61,7 @@ Zielgruppe sind Hobby-Schlagzeuger und Musiker, die Drum-Spuren einspielen und b
 | Betriebssysteme | Linux (primär, Entwicklung auf Linux Mint), Windows 10/11 64 Bit |
 | Framework | JUCE 8 (AGPLv3), C++17 oder höher |
 | Build | CMake, CLion; CI über GitHub Actions (ubuntu-latest, windows-latest mit MSVC) |
-| Audio-Treiber | Linux: ALSA, JACK; Windows: ASIO (Steinberg-SDK lokal/als CI-Secret, nicht im Repo), WASAPI als Fallback |
+| Audio-Treiber | Linux: ALSA, JACK; Windows: ASIO (Steinberg-SDK unter GPLv3, von CMake geladen, nicht im Repo), WASAPI als Fallback |
 | MIDI | Jedes vom Betriebssystem erkannte USB-MIDI-Gerät (Referenz im Entwurf: Alesis Nitro Mesh) |
 | Referenz-Hardware | Audio-Interface mit ASIO/JACK-Treiber (Referenz im Entwurf: Focusrite Scarlett 2i2, 48 kHz) |
 | Mindest-Auflösung | 1280 × 800 Pixel; Entwurf ausgelegt für 1920 × 1080 |
@@ -296,7 +296,7 @@ Die Latenz ist das wichtigste Qualitätsziel: ein Anschlag muss sich beim Einspi
 | Q-09 | Robustheit | Absturz- und Datenverlustfreiheit bei fehlenden Dateien, abgezogenem MIDI-Gerät oder Wechsel des Audio-Geräts | Muss (v1.0) |
 | Q-10 | Datensicherheit | Speichern schreibt erst in eine temporäre Datei und benennt dann um; automatische Sicherung alle 5 Minuten | Soll |
 | Q-11 | Bedienbarkeit | Ein Einsteiger legt ohne Anleitung ein 2-Takt-Pattern an und spielt es ab (≤ 5 Minuten) | Muss (v1.0) |
-| Q-12 | Lizenz | Nur Open-Source-Bibliotheken; ASIO-SDK nicht im Repository; Lizenzhinweise im Über-Dialog | Muss (MVP) |
+| Q-12 | Lizenz | Nur Open-Source-Bibliotheken; ASIO-SDK (GPLv3 seit 10/2025) wird beim Bauen geladen, nicht im Repository; Lizenzhinweise im Über-Dialog | Muss (MVP) |
 | Q-13 | Portabilität | Gleicher Quellcode für Linux und Windows; plattformspezifischer Code nur in klar getrennten Dateien | Muss (MVP) |
 | Q-14 | Wartbarkeit | Modul-Struktur nach Kapitel 3; Entwicklungsvorgaben E-01 bis E-09 (TDD, 100 % Abdeckung, Clean Code, Constructor Injection) | Muss (MVP) |
 
@@ -334,7 +334,7 @@ Die Umsetzung ist in 12 Arbeitspakete mit zusammen 242 Stunden gegliedert; mit 2
 | AP7 | Song-Arrangement | Timeline-Komponente, Drag & Drop aus Liste, Referenz-Blöcke, Song-Modus im Sequencer, Zoom | F-TR-05, F-SO-02 bis 07 | 20 | 24,0 |
 | AP8 | Backing-Track und Aufnahme zum Track | Streaming mit Resampling, gemeinsamer Transport, AudioThumbnail, Offset, Mix-Regler; Aufnahme im Song-Modus, Take als neues Pattern und Block auf der Drums-Spur | F-BT-01 bis 09 | 20 | 24,0 |
 | AP9 | MIDI-Import und Song-Export | .mid lesen, Slot-Zuordnung, Song zu einer Datei rendern, Export-Dialog | F-MI-02 bis 05 | 8 | 9,6 |
-| AP10 | Windows und ASIO | ASIO-SDK als CI-Secret, WASAPI-Fallback, Tests auf Windows-Rechner, Gerätewechsel und Abziehen | F-AO-03, Q-03, Q-09 | 22 | 26,4 |
+| AP10 | Windows und ASIO | ASIO-SDK (GPLv3) beim Bauen laden, WASAPI-Fallback, Tests auf Windows-Rechner, Gerätewechsel und Abziehen | F-AO-03, Q-03, Q-09 | 22 | 26,4 |
 | AP11 | Stabilisierung und Release | Bugfixing, Performance-Messung, helles Theme, README, Release-Pakete (AppImage, Windows-Installer) | Q-05 bis Q-11 | 30 | 36,0 |
 |  | **Summe** |  |  | **242** | **290,4** |
 

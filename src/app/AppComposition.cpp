@@ -37,8 +37,9 @@ AppComposition::AppComposition()
       testTone_(kTestToneFrequencyHz, kTestToneGain), kitBuilder_(sampleLoader_),
       kitPublisher_(kitBuilder_, sampleEngine_),
       playbackRenderer_(sequencer_, sampleEngine_, metronome_, backingTrackPlayer_),
-      audioCallback_(testTone_, playbackRenderer_, snapshots_), projectFactory_(idGenerator_),
-      project_(projectFactory_.createDefault()),
+      audioCallback_(testTone_, playbackRenderer_, snapshots_),
+      deviceSupervisor_(deviceManager_, deviceSettings_, audioCallback_, kNumOutputChannels),
+      projectFactory_(idGenerator_), project_(projectFactory_.createDefault()),
       snapshotPublisher_(project_, globalKit_.tree(), snapshots_, kitPublisher_),
       kitPresenter_(project_, globalKit_.tree(), undoManager_, kitPublisher_, sampleEngine_),
       takeRecorder_(project_, globalKit_.tree(), undoManager_),
@@ -86,7 +87,7 @@ AppComposition::AppComposition()
     activePattern_.addOnChange([this](int index) { transportPresenter_.setActivePattern(index); });
     // A take recorded in the song mode opens in the piano roll (F-BT-08).
     transportPresenter_.setOnSongTake([this](int index) { activePattern_.select(index); });
-    restoreDeviceSettings();
+    deviceSupervisor_.open();
     updateSampleRate();
     updateOutputLatency();
     deviceManager_.addAudioCallback(&audioCallback_);
@@ -112,6 +113,7 @@ std::unique_ptr<juce::Component> AppComposition::createMainComponent()
     return std::make_unique<MainComponent>(
         testTone_,
         deviceManager_,
+        deviceSupervisor_,
         transportPresenter_,
         tempoPresenter_,
         kitPresenter_,
@@ -140,15 +142,6 @@ void AppComposition::changeListenerCallback(juce::ChangeBroadcaster* /*source*/)
 void AppComposition::timerCallback()
 {
     globalKit_.saveIfChanged();
-}
-
-void AppComposition::restoreDeviceSettings()
-{
-    const auto savedState = deviceSettings_.load();
-    const auto xml = savedState ? juce::parseXML(juce::String::fromUTF8(savedState->c_str())) : nullptr;
-    const auto error = deviceManager_.initialise(0, kNumOutputChannels, xml.get(), true);
-    if (error.isNotEmpty())
-        juce::Logger::writeToLog("Audio device could not be opened: " + error);
 }
 
 void AppComposition::saveDeviceSettings()
