@@ -35,13 +35,16 @@ AppComposition::AppComposition()
       recordOffsetSettings_(fileSystem_, settingsFile("recording-offset.txt")),
       globalKitSettings_(fileSystem_, settingsFile("kit.xml")), globalKit_(globalKitSettings_, fileSystem_),
       testTone_(kTestToneFrequencyHz, kTestToneGain), kitBuilder_(sampleLoader_),
-      kitPublisher_(kitBuilder_, sampleEngine_), playbackRenderer_(sequencer_, sampleEngine_, metronome_),
+      kitPublisher_(kitBuilder_, sampleEngine_),
+      playbackRenderer_(sequencer_, sampleEngine_, metronome_, backingTrackPlayer_),
       audioCallback_(testTone_, playbackRenderer_, snapshots_), projectFactory_(idGenerator_),
       project_(projectFactory_.createDefault()),
       snapshotPublisher_(project_, globalKit_.tree(), snapshots_, kitPublisher_),
       kitPresenter_(project_, globalKit_.tree(), undoManager_, kitPublisher_, sampleEngine_),
       takeRecorder_(project_, globalKit_.tree(), undoManager_),
-      transportPresenter_(project_, sequencer_, metronome_, takeRecorder_, recordOffsetSettings_),
+      songTakeRecorder_(project_, globalKit_.tree(), undoManager_, idGenerator_),
+      transportPresenter_(
+          project_, sequencer_, metronome_, takeRecorder_, songTakeRecorder_, recordOffsetSettings_),
       tempoPresenter_(project_, undoManager_), keymap_(input::Keymap::fromText(keymapSettings_.load())),
       keymapPresenter_(keymap_, keymapSettings_, keyNames_, kitPresenter_),
       guiNoteSink_(sampleEngine_, &engine::steadyClockSeconds),
@@ -57,6 +60,8 @@ AppComposition::AppComposition()
                           activePattern_,
                           [this](int slot) { return keymapPresenter_.keyLabel(slot); }),
       songTimelinePresenter_(project_, undoManager_, activePattern_),
+      backingTrackPresenter_(project_, undoManager_, backingTrackLoader_, backingTrackPlayer_),
+      mixPresenter_(project_, undoManager_),
       midiExportController_(project_, activePattern_, fileSystem_, midiExportView_),
       projectRepository_(fileSystem_),
       documentController_(project_, undoManager_, projectRepository_, projectFactory_, documentView_),
@@ -72,10 +77,15 @@ AppComposition::AppComposition()
                  .copyProjectKitToGlobal = [this] { kitPresenter_.copyProjectKitToGlobal(); },
                  .usesProjectKit = [this] { return kitPresenter_.usesProjectKit(); }},
                 {.showSettings = [this] { showAudioSettingsDialog(deviceManager_, dialogParent_); },
-                 .showKeymap = [this] { showKeymapDialog(keymapPresenter_, dialogParent_); }},
+                 .showKeymap = [this] { showKeymapDialog(keymapPresenter_, dialogParent_); },
+                 .loadBackingTrack = [this] { chooseBackingTrack(); },
+                 .removeBackingTrack = [this] { backingTrackPresenter_.remove(); },
+                 .hasBackingTrack = [this] { return backingTrackPresenter_.hasTrack(); }},
                 {.toggleRecordArmed = [this] { transportPresenter_.toggleRecordArmed(); }})
 {
     activePattern_.addOnChange([this](int index) { transportPresenter_.setActivePattern(index); });
+    // A take recorded in the song mode opens in the piano roll (F-BT-08).
+    transportPresenter_.setOnSongTake([this](int index) { activePattern_.select(index); });
     restoreDeviceSettings();
     updateSampleRate();
     updateOutputLatency();
@@ -110,6 +120,10 @@ std::unique_ptr<juce::Component> AppComposition::createMainComponent()
                        .setLength = [this](int index) { askPatternLength(index); },
                        .remove = [this](int index) { removePattern(index); }},
         songTimelinePresenter_,
+        backingTrackPresenter_,
+        backingTrackLoader_.formats(),
+        [this] { chooseBackingTrack(); },
+        mixPresenter_,
         pianoRollPresenter_,
         keymapPresenter_,
         inputLeds_,
@@ -198,6 +212,26 @@ void AppComposition::removePattern(int index)
                  juce::String::fromUTF8(question.c_str()),
                  juce::String::fromUTF8("L\xc3\xb6schen"),
                  [this, index] { patternListPresenter_.remove(index); });
+}
+
+void AppComposition::chooseBackingTrack()
+{
+    backingTrackChooser_ = std::make_unique<juce::FileChooser>(
+        "Backing-Track laden", juce::File{}, backingTrackLoader_.wildcardPattern());
+    backingTrackChooser_->launchAsync(
+        juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        [this](const juce::FileChooser& chooser)
+        {
+            const auto file = chooser.getResult();
+            if (file == juce::File{})
+                return;
+            const auto utf8 = file.getFullPathName().toStdString();
+            if (!backingTrackPresenter_.load(std::u8string{utf8.begin(), utf8.end()}))
+                juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
+                                                       "Backing-Track laden",
+                                                       "Die Datei konnte nicht gelesen werden:\n" +
+                                                           file.getFullPathName());
+        });
 }
 
 EditActions AppComposition::editActions()

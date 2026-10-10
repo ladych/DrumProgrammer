@@ -77,6 +77,7 @@ set(DRUMPROG_APP_SOURCES
     app/Main.cpp
     app/AppComposition.cpp
     app/Dialogs.cpp
+    app/JuceBackingTrackLoader.cpp
     app/JuceDocumentView.cpp
     app/JuceMidiExportView.cpp
     app/JuceSampleLoader.cpp
@@ -84,6 +85,7 @@ set(DRUMPROG_APP_SOURCES
     app/KitPanel.cpp
     app/MainComponent.cpp
     app/MainMenu.cpp
+    app/MixPanel.cpp
     app/NoteInspector.cpp
     app/PatternListPanel.cpp
     app/PianoRollToolbar.cpp
