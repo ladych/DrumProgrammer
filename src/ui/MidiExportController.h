@@ -26,7 +26,9 @@ public:
     [[nodiscard]] bool canExportPattern() const noexcept { return activePattern_.index() >= 0; }
     /// The song needs at least one block.
     [[nodiscard]] bool canExportSong() const;
-    [[nodiscard]] bool canExport() const { return canExportPattern() || canExportSong(); }
+    /// A song block always has its pattern in the project, so there is something to export whenever a
+    /// pattern is active.
+    [[nodiscard]] bool canExport() const noexcept { return canExportPattern(); }
 
     /// Export dialog (F-MI-05): the choice between pattern and song, then the file.
     void exportMidi();

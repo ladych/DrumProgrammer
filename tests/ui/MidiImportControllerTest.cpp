@@ -31,7 +31,11 @@ constexpr std::int64_t kBar = 3840;
 class MidiImportControllerTest : public ::testing::Test
 {
 protected:
-    MidiImportControllerTest() { midi.ticksPerQuarter = 480; }
+    MidiImportControllerTest()
+    {
+        midi.ticksPerQuarter = 480;
+        midi.lengthTicks = 4 * 480;
+    }
 
     /// Lets the file dialog choose a file whose content is the MIDI file of `midi`.
     void chooseFile(const fs::path& file)

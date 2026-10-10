@@ -4,7 +4,7 @@
 #include "app/AudioDeviceSupervisor.h"
 #include "app/JuceBackingTrackLoader.h"
 #include "app/JuceDocumentView.h"
-#include "app/JuceMidiExportView.h"
+#include "app/JuceMidiDialogs.h"
 #include "app/JuceSampleLoader.h"
 #include "app/KeyboardInputGlue.h"
 #include "app/MainMenu.h"
@@ -39,6 +39,7 @@
 #include "ui/KeymapPresenter.h"
 #include "ui/KitPresenter.h"
 #include "ui/MidiExportController.h"
+#include "ui/MidiImportController.h"
 #include "ui/MixPresenter.h"
 #include "ui/PatternListPresenter.h"
 #include "ui/PianoRollPresenter.h"
@@ -92,6 +93,7 @@ private:
     [[nodiscard]] EditActions editActions();
     [[nodiscard]] PatternActions patternActions();
     [[nodiscard]] SongActions songActions();
+    [[nodiscard]] MidiActions midiActions();
 
     io::StdFileSystem fileSystem_;
     io::SettingsStore deviceSettings_;
@@ -157,9 +159,10 @@ private:
     ui::MixPresenter mixPresenter_;
     std::unique_ptr<juce::FileChooser> backingTrackChooser_;
 
-    // MIDI export (AP6) of the active pattern.
-    JuceMidiExportView midiExportView_;
+    // MIDI export of the active pattern or the song (AP6, AP9) and import as a new pattern (AP9).
+    JuceMidiDialogs midiDialogs_;
     ui::MidiExportController midiExportController_;
+    ui::MidiImportController midiImportController_;
 
     io::ProjectRepository projectRepository_;
     JuceDocumentView documentView_;

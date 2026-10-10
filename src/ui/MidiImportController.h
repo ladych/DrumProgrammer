@@ -1,6 +1,8 @@
 #pragma once
 
 #include "io/IFileSystem.h"
+#include "io/MidiFileReader.h"
+#include "io/MidiImport.h"
 #include "model/IIdGenerator.h"
 #include "ui/ActivePattern.h"
 #include "ui/IMidiImportView.h"
@@ -8,6 +10,8 @@
 #include <juce_data_structures/juce_data_structures.h>
 
 #include <filesystem>
+#include <optional>
+#include <string>
 
 namespace drumprog::ui
 {
@@ -33,6 +37,10 @@ public:
 
 private:
     void import(const std::filesystem::path& file);
+    /// std::nullopt if the file cannot be read or is no MIDI file.
+    [[nodiscard]] std::optional<io::MidiFileContent> read(const std::filesystem::path& file) const;
+    /// One undo step; the new pattern becomes active.
+    void addPattern(const std::string& name, const io::ImportedPattern& imported);
 
     juce::ValueTree project_;
     juce::ValueTree globalKit_;

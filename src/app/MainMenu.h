@@ -65,11 +65,12 @@ struct SongActions
     std::function<bool()> isEmpty;
 };
 
-/// Actions of the menu "MIDI" (F-MI-01).
+/// Actions of the menu "MIDI" (F-MI-01 to 05), also behind the toolbar buttons.
 struct MidiActions
 {
-    std::function<void()> exportPattern;
-    std::function<bool()> canExportPattern;
+    std::function<void()> importFile;
+    std::function<void()> exportFile;
+    std::function<bool()> canExport;
 };
 
 /// Transport commands that only have a shortcut, no menu entry (F-TR-07).

@@ -37,7 +37,9 @@ protected:
     {
         const auto content = readMidiFile(writeMidiFile(midi));
         EXPECT_TRUE(content.has_value());
-        return importedPatternOf(content.value_or(MidiFileContent{}), project, kit);
+        if (!content)
+            return {};
+        return importedPatternOf(*content, project, kit);
     }
 
     model::FakeIdGenerator ids;

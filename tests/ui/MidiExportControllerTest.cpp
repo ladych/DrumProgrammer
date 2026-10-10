@@ -206,6 +206,16 @@ TEST_F(MidiExportControllerTest, FMI02_ExportsTheSongAsItIsWhenTheFileIsWritten)
     EXPECT_EQ(noteOns(), (std::vector<std::string>{"38@480", "36@3840"}));
 }
 
+TEST_F(MidiExportControllerTest, FMI02_WritesNoSongWhenTheDialogIsCancelled)
+{
+    project.song().addEntry("p-2", 0);
+
+    controller.exportSong();
+
+    EXPECT_EQ(view.dialogTitles, std::vector<std::string>{"Song als MIDI exportieren"});
+    EXPECT_TRUE(view.messages.empty());
+}
+
 TEST_F(MidiExportControllerTest, FMI02_ReportsASongThatCannotBeWritten)
 {
     project.song().addEntry("p-2", 0);

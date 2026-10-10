@@ -86,7 +86,7 @@ set(DRUMPROG_APP_SOURCES
     app/Dialogs.cpp
     app/JuceBackingTrackLoader.cpp
     app/JuceDocumentView.cpp
-    app/JuceMidiExportView.cpp
+    app/JuceMidiDialogs.cpp
     app/JuceSampleLoader.cpp
     app/KeymapDialog.cpp
     app/KitPanel.cpp
