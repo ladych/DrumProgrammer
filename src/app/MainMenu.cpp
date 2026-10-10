@@ -32,9 +32,10 @@ constexpr juce::CommandID patternDuplicate = 0x6002;
 constexpr juce::CommandID patternRename = 0x6003;
 constexpr juce::CommandID patternLength = 0x6004;
 constexpr juce::CommandID patternDelete = 0x6005;
-constexpr juce::CommandID songInsert = 0x7001;
-constexpr juce::CommandID songRemoveBlock = 0x7002;
-constexpr juce::CommandID songClear = 0x7003;
+constexpr juce::CommandID songInsert = 0x8001;
+constexpr juce::CommandID songRemoveBlock = 0x8002;
+constexpr juce::CommandID songClear = 0x8003;
+constexpr juce::CommandID midiExportPattern = 0x7001;
 constexpr juce::CommandID audioSettings = 0x3001;
 constexpr juce::CommandID audioKeymap = 0x3002;
 constexpr juce::CommandID kitCopyToProject = 0x5001;
@@ -108,6 +109,12 @@ constexpr std::array kCommands{
         command::songInsert, "Pattern einfügen", "Aktives Pattern ans Ende des Songs setzen", "Song", 0, 0},
     CommandSpec{command::songRemoveBlock, "Block löschen", "Ausgewählten Song-Block löschen", "Song", 0, 0},
     CommandSpec{command::songClear, "Song leeren", "Alle Blöcke aus dem Song entfernen", "Song", 0, 0},
+    CommandSpec{command::midiExportPattern,
+                "Export Pattern...",
+                "Aktives Pattern als MIDI-Datei exportieren",
+                "MIDI",
+                'e',
+                kCtrl},
     CommandSpec{command::audioSettings,
                 "Einstellungen...",
                 "Audio-Treiber, Gerät, Buffer und MIDI-Eingang wählen",
@@ -143,6 +150,24 @@ constexpr std::array kCommands{
 
 constexpr juce::CommandID kSeparator = 0;
 
+std::vector<juce::CommandID> editMenuCommands()
+{
+    using namespace command;
+    return {editUndo,
+            editRedo,
+            kSeparator,
+            editCut,
+            editCopy,
+            editPaste,
+            editDuplicate,
+            editDelete,
+            editSelectAll,
+            kSeparator,
+            toolDraw,
+            toolSelect,
+            toolErase};
+}
+
 /// Entries of the menus in the order of getMenuBarNames(); kSeparator draws a line.
 std::vector<juce::CommandID> menuCommands(int menuIndex)
 {
@@ -152,24 +177,14 @@ std::vector<juce::CommandID> menuCommands(int menuIndex)
     case 0:
         return {fileNew, fileOpen, kSeparator, fileSave, fileSaveAs, kSeparator, fileQuit};
     case 1:
-        return {editUndo,
-                editRedo,
-                kSeparator,
-                editCut,
-                editCopy,
-                editPaste,
-                editDuplicate,
-                editDelete,
-                editSelectAll,
-                kSeparator,
-                toolDraw,
-                toolSelect,
-                toolErase};
+        return editMenuCommands();
     case 2:
         return {patternNew, patternDuplicate, patternRename, patternLength, patternDelete};
     case 3:
         return {songInsert, songRemoveBlock, kSeparator, songClear};
     case 4:
+        return {midiExportPattern};
+    case 5:
         return {kitCopyToProject, kitUseGlobal, kSeparator, kitCopyToGlobal};
     default:
         return {audioSettings, audioKeymap};
@@ -191,11 +206,13 @@ MainMenu::MainMenu(ui::DocumentController& document,
                    EditActions edit,
                    PatternActions pattern,
                    SongActions song,
+                   MidiActions midi,
                    KitMenuActions kit,
                    AudioMenuActions audio,
                    TransportActions transport)
     : document_(document), quit_(std::move(quit)), edit_(std::move(edit)), pattern_(std::move(pattern)),
-      song_(std::move(song)), kit_(std::move(kit)), audio_(std::move(audio)), transport_(std::move(transport))
+      song_(std::move(song)), midi_(std::move(midi)), kit_(std::move(kit)), audio_(std::move(audio)),
+      transport_(std::move(transport))
 {
     commands_.registerAllCommandsForTarget(this);
     commands_.setFirstCommandTarget(this);
@@ -209,7 +226,7 @@ MainMenu::~MainMenu()
 
 juce::StringArray MainMenu::getMenuBarNames()
 {
-    return {"Datei", "Bearbeiten", "Pattern", "Song", "Kit", "Audio"};
+    return {"Datei", "Bearbeiten", "Pattern", "Song", "MIDI", "Kit", "Audio"};
 }
 
 juce::PopupMenu MainMenu::getMenuForIndex(int menuIndex, const juce::String& /*menuName*/)
@@ -270,6 +287,8 @@ std::function<bool()> MainMenu::activeCheckFor(juce::CommandID commandID) const
         return song_.hasSelection;
     case command::songClear:
         return [this] { return !song_.isEmpty(); };
+    case command::midiExportPattern:
+        return midi_.canExportPattern;
     case command::kitCopyToProject:
         return [this] { return !kit_.usesProjectKit(); };
     case command::kitUseGlobal:
@@ -313,6 +332,8 @@ std::function<void()> MainMenu::actionFor(juce::CommandID commandID)
         return audio_.showKeymap;
     case command::transportRecord:
         return transport_.toggleRecordArmed;
+    case command::midiExportPattern:
+        return midi_.exportPattern;
     default:
         return editActionFor(commandID);
     }

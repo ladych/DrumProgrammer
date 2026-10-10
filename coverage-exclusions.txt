@@ -9,6 +9,8 @@ src/app/AppComposition.h        # composition root (E-05), wiring only
 src/app/AppComposition.cpp      # composition root (E-05), wiring only
 src/app/JuceDocumentView.h      # JUCE message boxes and file choosers, no logic
 src/app/JuceDocumentView.cpp    # JUCE message boxes and file choosers, no logic
+src/app/JuceMidiExportView.h    # JUCE save dialog and message box for ui::MidiExportController, no logic
+src/app/JuceMidiExportView.cpp  # JUCE save dialog and message box for ui::MidiExportController, no logic
 src/app/MainMenu.h              # JUCE menu bar and shortcuts forwarding to ui::DocumentController
 src/app/MainMenu.cpp            # JUCE menu bar and shortcuts forwarding to ui::DocumentController
 src/app/MainComponent.h         # JUCE component layout, no logic

@@ -2,6 +2,7 @@
 
 #include "app/AudioCallback.h"
 #include "app/JuceDocumentView.h"
+#include "app/JuceMidiExportView.h"
 #include "app/JuceSampleLoader.h"
 #include "app/KeyboardInputGlue.h"
 #include "app/MainMenu.h"
@@ -32,6 +33,7 @@
 #include "ui/KeyRouter.h"
 #include "ui/KeymapPresenter.h"
 #include "ui/KitPresenter.h"
+#include "ui/MidiExportController.h"
 #include "ui/PatternListPresenter.h"
 #include "ui/PianoRollPresenter.h"
 #include "ui/SongTimelinePresenter.h"
@@ -136,6 +138,10 @@ private:
     ui::PianoRollPresenter pianoRollPresenter_;
     // Song (AP7): blocks reference patterns; the transport plays the timeline in the song mode.
     ui::SongTimelinePresenter songTimelinePresenter_;
+
+    // MIDI export (AP6) of the active pattern.
+    JuceMidiExportView midiExportView_;
+    ui::MidiExportController midiExportController_;
 
     io::ProjectRepository projectRepository_;
     JuceDocumentView documentView_;

@@ -62,13 +62,20 @@ struct SongActions
     std::function<bool()> isEmpty;
 };
 
+/// Actions of the menu "MIDI" (F-MI-01).
+struct MidiActions
+{
+    std::function<void()> exportPattern;
+    std::function<bool()> canExportPattern;
+};
+
 /// Transport commands that only have a shortcut, no menu entry (F-TR-07).
 struct TransportActions
 {
     std::function<void()> toggleRecordArmed;
 };
 
-/// Humble object (E-03): menus "Datei", "Bearbeiten", "Pattern", "Song", "Kit" and "Audio" with their
+/// Humble object (E-03): menus "Datei", "Bearbeiten", "Pattern", "Song", "MIDI", "Kit" and "Audio" with their
 /// shortcuts (Pflichtenheft 6.2), forwarding every command to the DocumentController or the actions.
 /// Shortcuts use Strg only, so letter keys stay free for drum triggers (6.4), except Entf; the space bar for
 /// play/stop is handled by ui::KeyRouter.
@@ -80,6 +87,7 @@ public:
              EditActions edit,
              PatternActions pattern,
              SongActions song,
+             MidiActions midi,
              KitMenuActions kit,
              AudioMenuActions audio,
              TransportActions transport);
@@ -116,6 +124,7 @@ private:
     EditActions edit_;
     PatternActions pattern_;
     SongActions song_;
+    MidiActions midi_;
     KitMenuActions kit_;
     AudioMenuActions audio_;
     TransportActions transport_;
