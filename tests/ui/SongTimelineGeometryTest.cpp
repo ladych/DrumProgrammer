@@ -46,6 +46,14 @@ TEST_F(SongTimelineGeometryTest, FSO02_ScrollsInsideTheSongPlusRoomForNewBlocks)
     EXPECT_DOUBLE_EQ(geometry.scrollX(), 0.0);
 }
 
+TEST_F(SongTimelineGeometryTest, FBT04_ExactBarIncludesTheFractionAndNegativeBars)
+{
+    EXPECT_DOUBLE_EQ(geometry.exactBarAt(60.0), 1.25);
+    EXPECT_DOUBLE_EQ(geometry.exactBarAt(-24.0), -0.5);
+    geometry.scrollBy(96.0);
+    EXPECT_DOUBLE_EQ(geometry.exactBarAt(12.0), 2.25);
+}
+
 TEST_F(SongTimelineGeometryTest, FSO02_ShorterSongOrWiderViewPullsTheScrollBack)
 {
     geometry.scrollBy(10000.0);
