@@ -135,5 +135,112 @@ TEST_F(MidiExportControllerTest, FMI01_CanExportOnlyWhileAPatternIsActive)
     EXPECT_TRUE(view.suggestedNames.empty());
 }
 
+TEST_F(MidiExportControllerTest, FMI01_TheFileDialogNamesThePattern)
+{
+    controller.exportActivePattern();
+
+    EXPECT_EQ(view.dialogTitles, std::vector<std::string>{"Pattern als MIDI exportieren"});
+}
+
+TEST_F(MidiExportControllerTest, FMI05_AsksWhetherToExportThePatternOrTheSong)
+{
+    controller.exportMidi();
+    project.song().addEntry("p-2", 0);
+    controller.exportMidi();
+
+    ASSERT_EQ(view.kindChoices.size(), 2U);
+    EXPECT_TRUE(view.kindChoices[0].canExportPattern);
+    EXPECT_FALSE(view.kindChoices[0].canExportSong);
+    EXPECT_TRUE(view.kindChoices[1].canExportPattern);
+    EXPECT_TRUE(view.kindChoices[1].canExportSong);
+}
+
+TEST_F(MidiExportControllerTest, FMI05_CancellingTheChoiceWritesNothing)
+{
+    controller.exportMidi();
+
+    EXPECT_EQ(view.kindChoices.size(), 1U);
+    EXPECT_TRUE(view.suggestedNames.empty());
+}
+
+TEST_F(MidiExportControllerTest, FMI05_ThePatternChoiceExportsTheActivePattern)
+{
+    activePattern.select(1);
+    view.kindToExport = MidiExportKind::pattern;
+    view.fileToSave = fs::path{"Fill.mid"};
+    EXPECT_CALL(fileSystem, writeText(_, _)).WillOnce(DoAll(SaveArg<1>(&written), Return(true)));
+
+    controller.exportMidi();
+
+    EXPECT_EQ(view.suggestedNames, std::vector<std::string>{"Fill.mid"});
+    EXPECT_EQ(noteOns(), std::vector<std::string>{"38@480"});
+}
+
+TEST_F(MidiExportControllerTest, FMI02_TheSongChoiceExportsTheSongUnderTheProjectName)
+{
+    project.setName("Mein Song");
+    project.song().addEntry("p-2", 1);
+    view.kindToExport = MidiExportKind::song;
+    view.fileToSave = fs::path{"export"} / "Mein Song";
+    EXPECT_CALL(fileSystem, writeText(fs::path{"export"} / "Mein Song.mid", _))
+        .WillOnce(DoAll(SaveArg<1>(&written), Return(true)));
+
+    controller.exportMidi();
+
+    EXPECT_EQ(view.dialogTitles, std::vector<std::string>{"Song als MIDI exportieren"});
+    EXPECT_EQ(view.suggestedNames, std::vector<std::string>{"Mein Song.mid"});
+    EXPECT_EQ(noteOns(), std::vector<std::string>{"38@" + std::to_string(3840 + 480)});
+    EXPECT_TRUE(view.messages.empty());
+}
+
+TEST_F(MidiExportControllerTest, FMI02_ExportsTheSongAsItIsWhenTheFileIsWritten)
+{
+    project.song().addEntry("p-2", 0);
+    view.answerLater = true;
+    controller.exportSong();
+    project.song().addEntry(project.pattern(0).id(), 1);
+    EXPECT_CALL(fileSystem, writeText(_, _)).WillOnce(DoAll(SaveArg<1>(&written), Return(true)));
+
+    view.pendingAnswer(fs::path{"Song.mid"});
+
+    EXPECT_EQ(noteOns(), (std::vector<std::string>{"38@480", "36@3840"}));
+}
+
+TEST_F(MidiExportControllerTest, FMI02_ReportsASongThatCannotBeWritten)
+{
+    project.song().addEntry("p-2", 0);
+    view.fileToSave = fs::path{"readonly"} / "Song.mid";
+    EXPECT_CALL(fileSystem, writeText(_, _)).WillOnce(Return(false));
+
+    controller.exportSong();
+
+    ASSERT_EQ(view.messages.size(), 1U);
+    EXPECT_EQ(view.messages[0].title, "Export fehlgeschlagen");
+    EXPECT_THAT(view.messages[0].text, HasSubstr("Der Song"));
+    EXPECT_THAT(view.messages[0].text, HasSubstr("Song.mid"));
+}
+
+TEST_F(MidiExportControllerTest, FMI02_CanExportTheSongOnlyWithABlockOfAKnownPattern)
+{
+    EXPECT_FALSE(controller.canExportSong());
+    project.song().addEntry("deleted", 0);
+    EXPECT_FALSE(controller.canExportSong());
+    controller.exportSong();
+    EXPECT_TRUE(view.suggestedNames.empty());
+
+    project.song().addEntry("p-2", 0);
+    EXPECT_TRUE(controller.canExportSong());
+}
+
+TEST_F(MidiExportControllerTest, FMI05_OffersNothingWithoutPatternAndSong)
+{
+    tree.getChildWithName(model::ids::patterns).removeAllChildren(nullptr);
+
+    controller.exportMidi();
+
+    EXPECT_FALSE(controller.canExport());
+    EXPECT_TRUE(view.kindChoices.empty());
+}
+
 } // namespace
 } // namespace drumprog::ui
