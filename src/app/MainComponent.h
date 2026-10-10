@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/AudioDeviceSupervisor.h"
+#include "app/MainMenu.h"
 #include "app/MixPanel.h"
 #include "app/NoteInspector.h"
 #include "app/PatternListPanel.h"
@@ -17,11 +18,11 @@ namespace drumprog::app
 {
 
 /// Humble object (E-03): main window content (Pflichtenheft 6.1) with the transport bar (F-TR-01 to 09),
-/// the piano roll tools, the test tone switch, the input LEDs "MIDI In" and "Tastatur" (F-IN-05), the
-/// pattern list (F-SO-01), the song timeline (F-SO-02 to 07), the piano roll with velocity lane (F-PR-01 to
-/// 11), the note inspector with the mix faders (F-BT-06) and a status line with device and latency
-/// (Q-02) and, on the right, snap and selection. The song timeline includes the backing track lane
-/// (F-BT-01 to 05).
+/// the piano roll tools, the test tone switch, the input LEDs "MIDI In" and "Tastatur" (F-IN-05), the buttons
+/// "MIDI Import" and "MIDI Export" (F-MI-01 to 05), the pattern list (F-SO-01), the song timeline (F-SO-02 to
+/// 07), the piano roll with velocity lane (F-PR-01 to 11), the note inspector with the mix faders (F-BT-06)
+/// and a status line with device and latency (Q-02) and, on the right, snap and selection. The
+/// song timeline includes the backing track lane (F-BT-01 to 05).
 class MainComponent final : public juce::Component,
                             public juce::DragAndDropContainer,
                             private juce::ChangeListener,
@@ -40,6 +41,7 @@ public:
                   juce::AudioFormatManager& backingFormats,
                   std::function<void()> loadBackingTrack,
                   ui::MixPresenter& mix,
+                  MidiActions midi,
                   ui::PianoRollPresenter& pianoRoll,
                   ui::InputLedPresenter& inputLeds);
     ~MainComponent() override;
@@ -55,6 +57,7 @@ public:
 private:
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
     void timerCallback() override;
+    void setUpButtons();
     void updateStatus();
     void paintLed(juce::Graphics& g, juce::Rectangle<int> area, const juce::String& label, bool on) const;
 
@@ -65,6 +68,9 @@ private:
     ui::InputLedPresenter& inputLeds_;
     juce::ToggleButton testToneButton_{"Testton 440 Hz"};
     juce::TextButton settingsButton_{"Audio/MIDI-Einstellungen..."};
+    MidiActions midi_;
+    juce::TextButton midiImportButton_{"MIDI Import"};
+    juce::TextButton midiExportButton_{"MIDI Export"};
     ui::PianoRollPresenter& pianoRoll_;
     juce::Rectangle<int> ledArea_;
     TransportBar transportBar_;

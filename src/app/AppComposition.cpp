@@ -97,7 +97,9 @@ AppComposition::AppComposition()
       songTimelinePresenter_(project_, undoManager_, activePattern_),
       backingTrackPresenter_(project_, undoManager_, backingTrackLoader_, backingTrackPlayer_),
       mixPresenter_(project_, undoManager_),
-      midiExportController_(project_, activePattern_, fileSystem_, midiExportView_),
+      midiExportController_(project_, activePattern_, fileSystem_, midiDialogs_),
+      midiImportController_(
+          project_, globalKit_.tree(), undoManager_, idGenerator_, activePattern_, fileSystem_, midiDialogs_),
       projectRepository_(fileSystem_),
       documentController_(project_, undoManager_, projectRepository_, projectFactory_, documentView_),
       mainMenu_(documentController_,
@@ -105,8 +107,7 @@ AppComposition::AppComposition()
                 editActions(),
                 patternActions(),
                 songActions(),
-                {.exportPattern = [this] { midiExportController_.exportActivePattern(); },
-                 .canExportPattern = [this] { return midiExportController_.canExportPattern(); }},
+                midiActions(),
                 {.showKit = [this] { showKit(); },
                  .resetToDefault = [this] { resetKitToDefault(); },
                  .copyGlobalKitToProject = [this] { kitPresenter_.copyGlobalKitToProject(); },
@@ -168,6 +169,7 @@ std::unique_ptr<juce::Component> AppComposition::createMainComponent()
         backingTrackLoader_.formats(),
         [this] { chooseBackingTrack(); },
         mixPresenter_,
+        midiActions(),
         pianoRollPresenter_,
         inputLeds_);
 }
@@ -322,6 +324,13 @@ SongActions AppComposition::songActions()
             .clear = [&song] { song.clear(); },
             .hasSelection = [&song] { return song.selectedBlock() >= 0; },
             .isEmpty = [&song] { return song.isEmpty(); }};
+}
+
+MidiActions AppComposition::midiActions()
+{
+    return {.importFile = [this] { midiImportController_.importMidiFile(); },
+            .exportFile = [this] { midiExportController_.exportMidi(); },
+            .canExport = [this] { return midiExportController_.canExport(); }};
 }
 
 } // namespace drumprog::app

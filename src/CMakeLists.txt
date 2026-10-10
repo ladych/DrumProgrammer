@@ -29,12 +29,15 @@ add_library(drumprog_core STATIC
     input/Scancode.cpp
     io/DefaultKit.cpp
     io/GlobalKit.cpp
+    io/MidiFileReader.cpp
     io/MidiFileWriter.cpp
+    io/MidiImport.cpp
     io/MissingSamples.cpp
     io/PatternMidiExport.cpp
     io/ProjectRepository.cpp
     io/ProjectSerializer.cpp
     io/SettingsStore.cpp
+    io/SongMidiExport.cpp
     io/StdFileSystem.cpp
     model/Project.cpp
     model/ProjectFactory.cpp
@@ -57,6 +60,7 @@ add_library(drumprog_core STATIC
     ui/KeyRouter.cpp
     ui/KitPresenter.cpp
     ui/MidiExportController.cpp
+    ui/MidiImportController.cpp
     ui/MixPresenter.cpp
     ui/MusicalTime.cpp
     ui/PatternListPresenter.cpp
@@ -85,7 +89,7 @@ set(DRUMPROG_APP_SOURCES
     app/Dialogs.cpp
     app/JuceBackingTrackLoader.cpp
     app/JuceDocumentView.cpp
-    app/JuceMidiExportView.cpp
+    app/JuceMidiDialogs.cpp
     app/JuceSampleLoader.cpp
     app/KeymapDialog.cpp
     app/KitPanel.cpp
