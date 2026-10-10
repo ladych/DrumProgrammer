@@ -74,6 +74,9 @@ public:
     void useGlobalKit();
     /// Makes the project's own kit the global kit for all projects without their own kit.
     void copyProjectKitToGlobal();
+    /// Replaces the active kit with the default kit (io::DefaultKit): samples, MIDI notes, gain and pitch of
+    /// every slot.
+    void resetToDefaultKit(const juce::ValueTree& defaultKit);
 
     /// Call from the GUI timer: updates LED states and frees retired kits.
     void tick();

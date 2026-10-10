@@ -43,6 +43,8 @@ constexpr juce::CommandID audioRemoveBackingTrack = 0x3004;
 constexpr juce::CommandID kitCopyToProject = 0x5001;
 constexpr juce::CommandID kitUseGlobal = 0x5002;
 constexpr juce::CommandID kitCopyToGlobal = 0x5003;
+constexpr juce::CommandID kitShow = 0x5004;
+constexpr juce::CommandID kitResetToDefault = 0x5005;
 constexpr juce::CommandID transportRecord = 0x4001;
 } // namespace command
 
@@ -136,6 +138,12 @@ constexpr std::array kCommands{
                 "Audio",
                 0,
                 0},
+    CommandSpec{command::kitShow,
+                "Kit bearbeiten...",
+                "Samples, Lautstärke, Pitch, MIDI-Note und Taste der Slots einstellen",
+                "Kit",
+                'k',
+                kCtrl},
     CommandSpec{command::kitCopyToProject,
                 "Kit ins Projekt übernehmen",
                 "Das Projekt bekommt ein eigenes Kit, das das Programm-Kit überschreibt",
@@ -151,6 +159,12 @@ constexpr std::array kCommands{
     CommandSpec{command::kitCopyToGlobal,
                 "Projekt-Kit als Programm-Kit übernehmen",
                 "Das Kit des Projekts wird das Kit für alle Projekte ohne eigenes Kit",
+                "Kit",
+                0,
+                0},
+    CommandSpec{command::kitResetToDefault,
+                "Default zurücksetzen",
+                "Das angezeigte Kit auf das Default-Kit mit seinen Samples zurücksetzen",
                 "Kit",
                 0,
                 0},
@@ -199,7 +213,14 @@ std::vector<juce::CommandID> menuCommands(int menuIndex)
     case 4:
         return {midiExportPattern};
     case 5:
-        return {kitCopyToProject, kitUseGlobal, kSeparator, kitCopyToGlobal};
+        return {kitShow,
+                kSeparator,
+                kitCopyToProject,
+                kitUseGlobal,
+                kSeparator,
+                kitCopyToGlobal,
+                kSeparator,
+                kitResetToDefault};
     default:
         return {audioSettings, audioKeymap, kSeparator, audioLoadBackingTrack, audioRemoveBackingTrack};
     }
@@ -425,6 +446,10 @@ std::function<void()> MainMenu::kitActionFor(juce::CommandID commandID) const
 {
     switch (commandID)
     {
+    case command::kitShow:
+        return kit_.showKit;
+    case command::kitResetToDefault:
+        return kit_.resetToDefault;
     case command::kitCopyToProject:
         return kit_.copyGlobalKitToProject;
     case command::kitUseGlobal:

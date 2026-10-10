@@ -1,11 +1,13 @@
 #pragma once
 
 #include "ui/KeymapPresenter.h"
+#include "ui/KitPresenter.h"
 
 #include <juce_audio_utils/juce_audio_utils.h>
 
 #include <functional>
 #include <string>
+#include <vector>
 
 namespace drumprog::app
 {
@@ -17,6 +19,14 @@ void showAudioSettingsDialog(juce::AudioDeviceManager& deviceManager, juce::Comp
 
 /// Keyboard mapping with learning mode (F-IN-02).
 void showKeymapDialog(ui::KeymapPresenter& presenter, juce::Component* centreAround);
+
+/// Kit: slots with samples, gain, pitch, MIDI note and key (F-SE-04 to F-SE-10). The drum keys and the
+/// shortcuts of the main window also work in it. Returns the window, which deletes itself when closed.
+juce::DialogWindow* showKitDialog(ui::KitPresenter& kit,
+                                  ui::KeymapPresenter& keymap,
+                                  const juce::String& sampleWildcard,
+                                  const std::vector<juce::KeyListener*>& keyListeners,
+                                  juce::Component* centreAround);
 
 /// Asks for one line of text, e.g. a pattern name; onOk gets the text unless the user cancels.
 void askForText(const juce::String& title,

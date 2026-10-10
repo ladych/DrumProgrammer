@@ -364,6 +364,38 @@ TEST_F(KitPresenterTest, FPJ05_KitSourceChangesAreUndoSteps)
     EXPECT_FALSE(presenter.usesProjectKit());
 }
 
+TEST_F(KitPresenterTest, FSE04_ResetRestoresTheDefaultKitAsOneUndoStep)
+{
+    auto defaultKit = model::ProjectFactory::createDefaultKit();
+    model::Kit{defaultKit, nullptr}.slot(kSnare).setFilePath("/kits/snare.wav");
+    presenter.select(kSnare);
+    presenter.setPitch(4);
+    presenter.setMidiNote(60);
+
+    presenter.resetToDefaultKit(defaultKit);
+
+    EXPECT_EQ(global().slot(kSnare).filePath(), "/kits/snare.wav");
+    EXPECT_EQ(global().slot(kSnare).pitch(), 0.0);
+    EXPECT_EQ(global().slot(kSnare).midiNote(), 38);
+    engine.queueTrigger(38, 127);
+    EXPECT_FLOAT_EQ(renderFrame(), 1.0F);
+    undoManager.undo();
+    EXPECT_EQ(global().slot(kSnare).pitch(), 4.0);
+    EXPECT_FALSE(global().slot(kSnare).hasSample());
+}
+
+TEST_F(KitPresenterTest, FSE05_ResetChangesOnlyTheProjectKitIfTheProjectHasOne)
+{
+    auto defaultKit = model::ProjectFactory::createDefaultKit();
+    model::Kit{defaultKit, nullptr}.slot(kSnare).setFilePath("/kits/snare.wav");
+    presenter.copyGlobalKitToProject();
+
+    presenter.resetToDefaultKit(defaultKit);
+
+    EXPECT_EQ(project.kit().slot(kSnare).filePath(), "/kits/snare.wav");
+    EXPECT_FALSE(global().slot(kSnare).hasSample());
+}
+
 TEST_F(KitPresenterTest, FSE09_LedLightsAfterHitAndGoesOffAfterHoldTime)
 {
     presenter.select(kSnare);

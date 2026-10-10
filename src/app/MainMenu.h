@@ -19,9 +19,11 @@ struct AudioMenuActions
     std::function<bool()> hasBackingTrack;
 };
 
-/// Actions of the menu "Kit": where the project's kit comes from.
+/// Actions of the menu "Kit": the kit dialog, where the project's kit comes from and the default kit.
 struct KitMenuActions
 {
+    std::function<void()> showKit;
+    std::function<void()> resetToDefault;
     std::function<void()> copyGlobalKitToProject;
     std::function<void()> useGlobalKit;
     std::function<void()> copyProjectKitToGlobal;

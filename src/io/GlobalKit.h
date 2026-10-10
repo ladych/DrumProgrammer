@@ -7,6 +7,7 @@
 
 #include <juce_data_structures/juce_data_structures.h>
 
+#include <functional>
 #include <vector>
 
 namespace drumprog::io
@@ -14,14 +15,17 @@ namespace drumprog::io
 
 /// The global kit: a program setting every project plays with unless it has its own kit. It is a KIT
 /// tree like a project's kit, kept as XML with absolute sample paths in the settings directory.
-/// Without a saved kit, or with an unreadable one, it starts as the GM default kit (F-SE-04).
+/// Without a saved kit, or with an unreadable one, it starts as the default kit (F-SE-04), the GM kit with
+/// the built-in samples (io::DefaultKit).
 ///
 /// Changes are only remembered; saveIfChanged() writes them, so dragging a slider does not write the
 /// file for every step. GUI thread only.
 class GlobalKit
 {
 public:
-    GlobalKit(SettingsStore& store, const IFileSystem& fileSystem);
+    using KitFactory = std::function<juce::ValueTree()>;
+
+    GlobalKit(SettingsStore& store, const IFileSystem& fileSystem, const KitFactory& createDefaultKit);
 
     /// The kit tree; it lives as long as this object, so listeners can stay attached.
     [[nodiscard]] const juce::ValueTree& tree() const noexcept { return kit_; }
@@ -35,7 +39,7 @@ public:
     [[nodiscard]] static std::string toXml(const juce::ValueTree& kit);
 
 private:
-    [[nodiscard]] static juce::ValueTree load(const SettingsStore& store);
+    [[nodiscard]] static juce::ValueTree load(const SettingsStore& store, const KitFactory& createDefaultKit);
 
     SettingsStore& store_;
     juce::ValueTree kit_;

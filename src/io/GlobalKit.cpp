@@ -3,13 +3,13 @@
 #include "io/MissingSamples.h"
 #include "model/ModelIds.h"
 #include "model/Project.h"
-#include "model/ProjectFactory.h"
 
 namespace drumprog::io
 {
 
-GlobalKit::GlobalKit(SettingsStore& store, const IFileSystem& fileSystem)
-    : store_(store), kit_(load(store)), missing_(markMissingSamples(model::Kit{kit_, nullptr}, fileSystem)),
+GlobalKit::GlobalKit(SettingsStore& store, const IFileSystem& fileSystem, const KitFactory& createDefaultKit)
+    : store_(store), kit_(load(store, createDefaultKit)),
+      missing_(markMissingSamples(model::Kit{kit_, nullptr}, fileSystem)),
       listener_(kit_, [this] { changed_ = true; })
 {
 }
@@ -32,7 +32,7 @@ std::string GlobalKit::toXml(const juce::ValueTree& kit)
     return copy.toXmlString().toStdString();
 }
 
-juce::ValueTree GlobalKit::load(const SettingsStore& store)
+juce::ValueTree GlobalKit::load(const SettingsStore& store, const KitFactory& createDefaultKit)
 {
     if (const auto xml = store.load())
     {
@@ -40,7 +40,7 @@ juce::ValueTree GlobalKit::load(const SettingsStore& store)
         if (kit.hasType(model::ids::kit))
             return kit;
     }
-    return model::ProjectFactory::createDefaultKit();
+    return createDefaultKit();
 }
 
 } // namespace drumprog::io

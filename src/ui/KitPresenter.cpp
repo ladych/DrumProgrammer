@@ -188,6 +188,13 @@ void KitPresenter::copyProjectKitToGlobal()
     globalKit_.copyPropertiesAndChildrenFrom(project().kit().tree(), &undoManager_);
 }
 
+void KitPresenter::resetToDefaultKit(const juce::ValueTree& defaultKit)
+{
+    undoManager_.beginNewTransaction(juce::String::fromUTF8("Kit auf Default zurücksetzen"));
+    auto kit = activeKit().tree();
+    kit.copyPropertiesAndChildrenFrom(defaultKit, &undoManager_);
+}
+
 void KitPresenter::tick()
 {
     engine_.collectGarbage();

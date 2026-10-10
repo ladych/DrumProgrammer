@@ -12,9 +12,9 @@
 namespace drumprog::app
 {
 
-/// Humble object (E-03): drum kit list with trigger LEDs (F-SE-04, F-SE-09) and the
-/// sample part of the inspector (F-SE-05 to F-SE-07, F-SE-10) with the slot's key (F-IN-02). All
-/// logic is in ui::KitPresenter and ui::KeymapPresenter.
+/// Humble object (E-03), content of the kit dialog: drum kit list with trigger LEDs (F-SE-04, F-SE-09) and
+/// the sample part of the inspector (F-SE-05 to F-SE-07, F-SE-10) with the slot's key (F-IN-02). All logic is
+/// in ui::KitPresenter and ui::KeymapPresenter.
 class KitPanel final : public juce::Component, private juce::ListBoxModel, private juce::Timer
 {
 public:

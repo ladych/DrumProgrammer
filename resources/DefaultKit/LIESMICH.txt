@@ -1,0 +1,28 @@
+Default-Kit von Drum Programmer
+===============================
+
+Die Samples in diesem Ordner stammen aus dem Kit "Black Pearl" der AVL Drumkits
+(Repack 2023), aufgenommen und zusammengestellt von Glen MacArthur:
+http://www.bandshed.net/avldrumkits/
+
+Lizenz: Creative Commons Namensnennung - Weitergabe unter gleichen Bedingungen 3.0
+Unported (CC BY-SA 3.0), https://creativecommons.org/licenses/by-sa/3.0/
+
+Drum Programmer verwendet pro Instrument nur das Sample der höchsten
+Velocity-Stufe (Dateien "*-5.wav") und liefert sie unverändert aus. Die
+Zuordnung zu den GM-Noten 35 bis 59 steht in src/io/DefaultKit.cpp.
+
+
+Default kit of Drum Programmer
+==============================
+
+The samples in this folder are taken from the "Black Pearl" kit of the AVL
+Drumkits (2023 repack), recorded and arranged by Glen MacArthur:
+http://www.bandshed.net/avldrumkits/
+
+License: Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0),
+https://creativecommons.org/licenses/by-sa/3.0/
+
+Drum Programmer uses only the sample of the highest velocity layer of each
+instrument (files "*-5.wav") and ships them unchanged. Their mapping to the GM
+notes 35 to 59 is in src/io/DefaultKit.cpp.

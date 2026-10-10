@@ -22,6 +22,7 @@
 #include "input/KeyboardInput.h"
 #include "input/Keymap.h"
 #include "input/MidiInputHandler.h"
+#include "io/DefaultKit.h"
 #include "io/GlobalKit.h"
 #include "io/ProjectRepository.h"
 #include "io/SettingsStore.h"
@@ -89,6 +90,10 @@ private:
     void removePattern(int index);
     /// File dialog of "Backing-Track laden" (F-BT-01).
     void chooseBackingTrack();
+    /// Opens the kit dialog, or brings it to the front if it is open.
+    void showKit();
+    /// Copies the default kit's samples again if they were deleted, then resets the shown kit.
+    void resetKitToDefault();
     [[nodiscard]] EditActions editActions();
     [[nodiscard]] PatternActions patternActions();
     [[nodiscard]] SongActions songActions();
@@ -98,6 +103,9 @@ private:
     io::SettingsStore keymapSettings_;
     io::SettingsStore recordOffsetSettings_;
     io::SettingsStore globalKitSettings_;
+    // Default kit (AP13): its samples are copied into the settings directory before the global kit is loaded,
+    // so the global kit starts with them at the first start.
+    io::DefaultKit defaultKit_;
     io::GlobalKit globalKit_;
     engine::TestToneSource testTone_;
     JuceSampleLoader sampleLoader_;
@@ -165,6 +173,7 @@ private:
     JuceDocumentView documentView_;
     ui::DocumentController documentController_;
     juce::Component* dialogParent_ = nullptr;
+    juce::Component::SafePointer<juce::DialogWindow> kitDialog_;
     MainMenu mainMenu_;
 };
 

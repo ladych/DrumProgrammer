@@ -28,6 +28,7 @@ add_executable(drumprog_tests
     input/KeymapTest.cpp
     input/MidiInputHandlerTest.cpp
     input/ScancodeTest.cpp
+    io/DefaultKitTest.cpp
     io/GlobalKitTest.cpp
     io/MidiFileWriterTest.cpp
     io/PatternMidiExportTest.cpp

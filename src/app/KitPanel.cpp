@@ -9,7 +9,7 @@ namespace
 
 constexpr int kTimerHz = 30;
 constexpr int kRowHeight = 24;
-constexpr int kListWidth = 340;
+constexpr int kInspectorWidth = 280;
 constexpr int kLedSize = 10;
 
 } // namespace
@@ -73,8 +73,8 @@ KitPanel::~KitPanel()
 
 void KitPanel::resized()
 {
-    auto area = getLocalBounds();
-    auto list = area.removeFromLeft(kListWidth);
+    auto area = getLocalBounds().reduced(12);
+    auto list = area.removeFromLeft(area.getWidth() - kInspectorWidth);
     kitSource_.setBounds(list.removeFromTop(24));
     showAllButton_.setBounds(list.removeFromBottom(28));
     slotList_.setBounds(list);
