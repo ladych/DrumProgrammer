@@ -23,6 +23,9 @@ constexpr std::uint8_t kMeta = 0xFF;
 constexpr std::uint8_t kMetaTrackName = 0x03;
 constexpr std::uint8_t kMetaEndOfTrack = 0x2F;
 constexpr std::uint8_t kMetaTempo = 0x51;
+constexpr std::uint8_t kMetaTimeSignature = 0x58;
+constexpr std::size_t kTimeSignatureLength = 2; // numerator and denominator; clocks follow
+constexpr int kMaxDenominatorPower = 7;
 constexpr std::size_t kTempoLength = 3;
 constexpr double kMicrosecondsPerMinute = 60'000'000.0;
 constexpr int kDrumChannel = 9; // channel 10, counted from 0
@@ -120,6 +123,8 @@ struct Collected
 {
     std::string name;
     double bpm = 0.0;
+    int timeSigNumerator = 0;
+    int timeSigDenominator = 0;
     std::int64_t lengthTicks = 0;
     std::vector<ChannelNote> notes;
 };
@@ -174,6 +179,12 @@ private:
             collected_.name = data;
         if (type == kMetaTempo && data.size() == kTempoLength && collected_.bpm == 0.0)
             readTempo(data);
+        if (type == kMetaTimeSignature && data.size() >= kTimeSignatureLength &&
+            collected_.timeSigNumerator == 0)
+        {
+            collected_.timeSigNumerator = static_cast<std::uint8_t>(data[0]);
+            collected_.timeSigDenominator = 1 << (static_cast<std::uint8_t>(data[1]) & kMaxDenominatorPower);
+        }
         ended_ = type == kMetaEndOfTrack;
     }
 
@@ -283,6 +294,8 @@ std::optional<MidiFileContent> readMidiFile(const std::string& bytes)
     content.name = std::move(collected.name);
     content.ticksPerQuarter = division;
     content.bpm = collected.bpm;
+    content.timeSigNumerator = collected.timeSigNumerator;
+    content.timeSigDenominator = collected.timeSigDenominator;
     content.lengthTicks = collected.lengthTicks;
     content.notes = drumNotes(collected.notes);
     return content;

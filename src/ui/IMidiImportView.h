@@ -2,6 +2,7 @@
 
 #include "ui/IDocumentView.h"
 
+#include <functional>
 #include <string>
 
 namespace drumprog::ui
@@ -15,6 +16,8 @@ public:
 
     /// Reports std::nullopt if the user cancels.
     virtual void chooseMidiFileToOpen(FileChosenCallback onChosen) = 0;
+    /// Asks whether the project takes tempo and time signature of the file; reports the answer.
+    virtual void askToAdoptTempo(const std::string& question, std::function<void(bool)> onAnswer) = 0;
     virtual void showMessage(const std::string& title, const std::string& message) = 0;
 
 protected:

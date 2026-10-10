@@ -5,6 +5,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -21,7 +22,10 @@ public:
     void chooseMidiFileToSave(const std::string& title,
                               const std::string& suggestedFileName,
                               ui::FileChosenCallback onChosen) override;
+    /// Shows the wait cursor while the chosen file is imported.
     void chooseMidiFileToOpen(ui::FileChosenCallback onChosen) override;
+    /// Shows the wait cursor while the pattern is added after the answer.
+    void askToAdoptTempo(const std::string& question, std::function<void(bool)> onAnswer) override;
     void showMessage(const std::string& title, const std::string& message) override;
 
 private:

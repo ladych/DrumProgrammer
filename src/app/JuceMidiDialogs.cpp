@@ -66,7 +66,28 @@ void JuceMidiDialogs::chooseMidiFileToOpen(ui::FileChosenCallback onChosen)
     launch("MIDI-Datei als Pattern importieren",
            directory_,
            juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
-           std::move(onChosen));
+           [onChosen = std::move(onChosen)](std::optional<std::filesystem::path> file)
+           {
+               juce::MouseCursor::showWaitCursor();
+               onChosen(std::move(file));
+               juce::MouseCursor::hideWaitCursor();
+           });
+}
+
+void JuceMidiDialogs::askToAdoptTempo(const std::string& question, std::function<void(bool)> onAnswer)
+{
+    juce::AlertWindow::showAsync(
+        juce::MessageBoxOptions::makeOptionsOkCancel(juce::MessageBoxIconType::QuestionIcon,
+                                                     "Tempo und Taktart",
+                                                     fromUtf8(question),
+                                                     juce::String::fromUTF8("Übernehmen"),
+                                                     "Beibehalten"),
+        [onAnswer = std::move(onAnswer)](int result)
+        {
+            juce::MouseCursor::showWaitCursor();
+            onAnswer(result == 1);
+            juce::MouseCursor::hideWaitCursor();
+        });
 }
 
 void JuceMidiDialogs::launch(const juce::String& title,

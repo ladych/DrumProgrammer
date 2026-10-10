@@ -4,6 +4,7 @@
 #include "io/MidiFileReader.h"
 #include "io/MidiImport.h"
 #include "model/IIdGenerator.h"
+#include "model/Project.h"
 #include "ui/ActivePattern.h"
 #include "ui/IMidiImportView.h"
 
@@ -27,6 +28,14 @@ class MidiImportController
 public:
     static constexpr const char* kUndoName = "MIDI-Import";
 
+    /// What the project takes from the file; empty parts stay as they are.
+    struct FileTempo
+    {
+        double bpm = 0.0;         ///< 0: keep the project's tempo
+        int timeSigNumerator = 0; ///< 0: keep the project's time signature
+        int timeSigDenominator = 0;
+    };
+
     MidiImportController(juce::ValueTree project,
                          juce::ValueTree globalKit,
                          juce::UndoManager& undoManager,
@@ -41,9 +50,11 @@ private:
     void import(const std::filesystem::path& file);
     /// std::nullopt if the file cannot be read or is no MIDI file.
     [[nodiscard]] std::optional<io::MidiFileContent> read(const std::filesystem::path& file) const;
-    /// One undo step with the tempo of the file (bpm 0: none); the new pattern becomes active and, in an
-    /// empty song, its first block.
-    void addPattern(const std::string& name, const io::ImportedPattern& imported, double bpm);
+    /// One undo step with the tempo taken from the file; the new pattern becomes active and, in an empty
+    /// song, its first block.
+    void addPattern(const io::MidiFileContent& content, const FileTempo& tempo);
+    /// Adds the file kept while the question is open, with or without its tempo.
+    void addPending(bool adoptTempo);
 
     juce::ValueTree project_;
     juce::ValueTree globalKit_;
@@ -52,6 +63,8 @@ private:
     ActivePattern& activePattern_;
     io::IFileSystem& fileSystem_;
     IMidiImportView& view_;
+    io::MidiFileContent pending_;
+    FileTempo pendingTempo_;
 };
 
 } // namespace drumprog::ui

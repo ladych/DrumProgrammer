@@ -13,9 +13,11 @@ namespace drumprog::io
 /// The notes of a Standard MIDI File, in the file's own resolution.
 struct MidiFileContent
 {
-    std::string name;             ///< first track name in the file, UTF-8 as stored; empty if there is none
-    int ticksPerQuarter = 0;      ///< division of the file
-    double bpm = 0.0;             ///< first tempo in the file; 0 if it has none
+    std::string name;         ///< first track name in the file, UTF-8 as stored; empty if there is none
+    int ticksPerQuarter = 0;  ///< division of the file
+    double bpm = 0.0;         ///< first tempo in the file; 0 if it has none
+    int timeSigNumerator = 0; ///< first time signature in the file; 0 if it has none
+    int timeSigDenominator = 0;
     std::int64_t lengthTicks = 0; ///< latest end of track
     std::vector<MidiNote> notes;  ///< sorted by start
 };
