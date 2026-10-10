@@ -4,6 +4,7 @@
 #include "io/MidiImport.h"
 #include "io/Utf8Path.h"
 #include "model/Project.h"
+#include "ui/TempoPresenter.h"
 
 #include <optional>
 #include <string>
@@ -93,7 +94,7 @@ void MidiImportController::import(const std::filesystem::path& file)
     std::string name = content->name;
     if (name.empty())
         name = io::utf8FromPath(file.stem());
-    addPattern(name, imported);
+    addPattern(name, imported, content->bpm);
     if (imported.numUnmatched > 0)
         view_.showMessage("MIDI-Import", unmatchedText(imported));
 }
@@ -106,13 +107,21 @@ std::optional<io::MidiFileContent> MidiImportController::read(const std::filesys
     return io::readMidiFile(*bytes);
 }
 
-void MidiImportController::addPattern(const std::string& name, const io::ImportedPattern& imported)
+void MidiImportController::addPattern(const std::string& name,
+                                      const io::ImportedPattern& imported,
+                                      double bpm)
 {
     model::Project project{project_, &undoManager_};
     undoManager_.beginNewTransaction(kUndoName);
-    auto pattern = project.addPattern(idGenerator_.next(), name, imported.lengthBars);
+    if (bpm > 0.0)
+        project.setBpm(TempoPresenter::validBpm(bpm));
+    const auto id = idGenerator_.next();
+    auto pattern = project.addPattern(id, name, imported.lengthBars);
     for (const auto& note : imported.notes)
         pattern.addNote(note);
+    auto song = project.song();
+    if (song.numEntries() == 0)
+        song.addEntry(id, 0);
     undoManager_.beginNewTransaction();
     activePattern_.select(project.numPatterns() - 1);
 }

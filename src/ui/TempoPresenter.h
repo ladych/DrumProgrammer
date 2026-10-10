@@ -25,6 +25,8 @@ public:
     [[nodiscard]] std::string bpmText() const;
     /// Clamped to 30..300 and rounded to two decimals.
     void setBpm(double bpm);
+    /// The tempo setBpm stores: clamped to 30..300 and rounded to two decimals.
+    [[nodiscard]] static double validBpm(double bpm);
     /// Accepts "97.5" and "97,5"; false and no change if the text is no number.
     bool setBpmText(const std::string& text);
 

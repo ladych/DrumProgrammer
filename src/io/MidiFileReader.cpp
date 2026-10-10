@@ -22,6 +22,9 @@ constexpr std::uint8_t kSystemExclusiveEscape = 0xF7;
 constexpr std::uint8_t kMeta = 0xFF;
 constexpr std::uint8_t kMetaTrackName = 0x03;
 constexpr std::uint8_t kMetaEndOfTrack = 0x2F;
+constexpr std::uint8_t kMetaTempo = 0x51;
+constexpr std::size_t kTempoLength = 3;
+constexpr double kMicrosecondsPerMinute = 60'000'000.0;
 constexpr int kDrumChannel = 9; // channel 10, counted from 0
 constexpr int kMaxVariableLengthBytes = 4;
 constexpr int kSevenBits = 7;
@@ -116,6 +119,7 @@ struct ChannelNote
 struct Collected
 {
     std::string name;
+    double bpm = 0.0;
     std::int64_t lengthTicks = 0;
     std::vector<ChannelNote> notes;
 };
@@ -168,7 +172,19 @@ private:
         const auto data = track_.text(track_.variableLength());
         if (type == kMetaTrackName && collected_.name.empty())
             collected_.name = data;
+        if (type == kMetaTempo && data.size() == kTempoLength && collected_.bpm == 0.0)
+            readTempo(data);
         ended_ = type == kMetaEndOfTrack;
+    }
+
+    /// Microseconds per quarter note, big endian; 0 is no tempo.
+    void readTempo(const std::string& data)
+    {
+        std::uint32_t microseconds = 0;
+        for (const char byte : data)
+            microseconds = (microseconds << kBitsPerByte) | static_cast<std::uint8_t>(byte);
+        if (microseconds > 0)
+            collected_.bpm = kMicrosecondsPerMinute / microseconds;
     }
 
     void readChannelMessage(std::uint8_t status)
@@ -266,6 +282,7 @@ std::optional<MidiFileContent> readMidiFile(const std::string& bytes)
     MidiFileContent content;
     content.name = std::move(collected.name);
     content.ticksPerQuarter = division;
+    content.bpm = collected.bpm;
     content.lengthTicks = collected.lengthTicks;
     content.notes = drumNotes(collected.notes);
     return content;
