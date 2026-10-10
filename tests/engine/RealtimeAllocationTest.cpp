@@ -1,4 +1,6 @@
 #include "engine/PlaybackRenderer.h"
+
+#include "engine/FakeAudioFileStream.h"
 #include "engine/SampleEngine.h"
 
 #include "engine/RenderHelpers.h"
@@ -129,7 +131,8 @@ TEST(RealtimeAllocationTest, Q04_FTR06_FIN07_SequencerPlaybackAndRecordingDoNotA
     Sequencer sequencer;
     SampleEngine engine;
     Metronome metronome;
-    PlaybackRenderer renderer{sequencer, engine, metronome};
+    BackingTrackPlayer backing;
+    PlaybackRenderer renderer{sequencer, engine, metronome, backing};
     renderer.prepare(48000.0);
     engine.setKit(makeKit());
     sequencer.setMetronome(true, true);
@@ -141,6 +144,38 @@ TEST(RealtimeAllocationTest, Q04_FTR06_FIN07_SequencerPlaybackAndRecordingDoNotA
     {
         engine.queueLiveTrigger(36, 100, 0.001 * block);
         renderer.render(&snapshot, out.channels.data(), 2, 128, 0.001 * block);
+    }
+    countAllocations = false;
+
+    EXPECT_EQ(allocationCount, 0);
+    RecordedHit hit;
+    EXPECT_TRUE(sequencer.popRecordedHit(hit));
+}
+
+TEST(RealtimeAllocationTest, Q04_FBT02_FBT07_BackingTrackAndSongRecordingDoNotAllocate)
+{
+    ProjectSnapshot snapshot;
+    snapshot.bpm = 120.0;
+    snapshot.ticksPerQuarter = 960;
+    snapshot.patterns.push_back({3840, {NoteSnapshot{0, 0, 240, 100}}});
+    snapshot.song.push_back({0, 0, 3840});
+    snapshot.songLengthTicks = 3840;
+    Sequencer sequencer;
+    SampleEngine engine;
+    Metronome metronome;
+    BackingTrackPlayer backing;
+    PlaybackRenderer renderer{sequencer, engine, metronome, backing};
+    renderer.prepare(48000.0);
+    engine.setKit(makeKit());
+    backing.setStream(FakeAudioFileStream::ramp(44100.0, 100000));
+    sequencer.play({.take = 1, .countInBars = 1, .song = true});
+    StereoOutput out(1024);
+
+    countAllocations = true;
+    for (int block = 0; block < 400; ++block)
+    {
+        engine.queueLiveTrigger(36, 100, 0.02 * block);
+        renderer.render(&snapshot, out.channels.data(), 2, 1024, 0.02 * block);
     }
     countAllocations = false;
 

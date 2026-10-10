@@ -38,6 +38,8 @@ constexpr juce::CommandID songClear = 0x8003;
 constexpr juce::CommandID midiExportPattern = 0x7001;
 constexpr juce::CommandID audioSettings = 0x3001;
 constexpr juce::CommandID audioKeymap = 0x3002;
+constexpr juce::CommandID audioLoadBackingTrack = 0x3003;
+constexpr juce::CommandID audioRemoveBackingTrack = 0x3004;
 constexpr juce::CommandID kitCopyToProject = 0x5001;
 constexpr juce::CommandID kitUseGlobal = 0x5002;
 constexpr juce::CommandID kitCopyToGlobal = 0x5003;
@@ -122,6 +124,18 @@ constexpr std::array kCommands{
                 0,
                 0},
     CommandSpec{command::audioKeymap, "Tastatur-Mapping...", "Tasten den Drum-Slots zuordnen", "Audio", 0, 0},
+    CommandSpec{command::audioLoadBackingTrack,
+                "Backing-Track laden...",
+                "WAV-Datei als Backing-Track über der Drums-Spur importieren",
+                "Audio",
+                0,
+                0},
+    CommandSpec{command::audioRemoveBackingTrack,
+                "Backing-Track entfernen",
+                "Backing-Track aus dem Projekt entfernen",
+                "Audio",
+                0,
+                0},
     CommandSpec{command::kitCopyToProject,
                 "Kit ins Projekt übernehmen",
                 "Das Projekt bekommt ein eigenes Kit, das das Programm-Kit überschreibt",
@@ -187,7 +201,7 @@ std::vector<juce::CommandID> menuCommands(int menuIndex)
     case 5:
         return {kitCopyToProject, kitUseGlobal, kSeparator, kitCopyToGlobal};
     default:
-        return {audioSettings, audioKeymap};
+        return {audioSettings, audioKeymap, kSeparator, audioLoadBackingTrack, audioRemoveBackingTrack};
     }
 }
 
@@ -281,6 +295,15 @@ std::function<bool()> MainMenu::activeCheckFor(juce::CommandID commandID) const
         return edit_.hasSelection;
     case command::editPaste:
         return edit_.canPaste;
+    default:
+        return projectCheckFor(commandID);
+    }
+}
+
+std::function<bool()> MainMenu::projectCheckFor(juce::CommandID commandID) const
+{
+    switch (commandID)
+    {
     case command::patternDelete:
         return pattern_.canRemove;
     case command::songRemoveBlock:
@@ -294,6 +317,8 @@ std::function<bool()> MainMenu::activeCheckFor(juce::CommandID commandID) const
     case command::kitUseGlobal:
     case command::kitCopyToGlobal:
         return kit_.usesProjectKit;
+    case command::audioRemoveBackingTrack:
+        return audio_.hasBackingTrack;
     default:
         return {};
     }
@@ -326,10 +351,6 @@ std::function<void()> MainMenu::actionFor(juce::CommandID commandID)
         return [this] { document_.undo(); };
     case command::editRedo:
         return [this] { document_.redo(); };
-    case command::audioSettings:
-        return audio_.showSettings;
-    case command::audioKeymap:
-        return audio_.showKeymap;
     case command::transportRecord:
         return transport_.toggleRecordArmed;
     case command::midiExportPattern:
@@ -410,6 +431,23 @@ std::function<void()> MainMenu::kitActionFor(juce::CommandID commandID) const
         return kit_.useGlobalKit;
     case command::kitCopyToGlobal:
         return kit_.copyProjectKitToGlobal;
+    default:
+        return audioActionFor(commandID);
+    }
+}
+
+std::function<void()> MainMenu::audioActionFor(juce::CommandID commandID) const
+{
+    switch (commandID)
+    {
+    case command::audioSettings:
+        return audio_.showSettings;
+    case command::audioKeymap:
+        return audio_.showKeymap;
+    case command::audioLoadBackingTrack:
+        return audio_.loadBackingTrack;
+    case command::audioRemoveBackingTrack:
+        return audio_.removeBackingTrack;
     default:
         return {};
     }

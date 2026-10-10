@@ -47,6 +47,17 @@ TEST_F(SnapshotBuilderTest, FPJ02_CopiesTempoTimeSignatureAndMix)
     EXPECT_EQ(snapshot->mix, (engine::MixSnapshot{0.25, 0.5, 0.75}));
 }
 
+TEST_F(SnapshotBuilderTest, FBT05_CopiesOffsetAndGainOfTheBackingTrack)
+{
+    project.backingTrack().setOffsetSamples(-4410);
+    project.backingTrack().setGain(0.8);
+
+    const auto snapshot = SnapshotBuilder::build(project, activeKit());
+
+    EXPECT_EQ(snapshot->backingTrack.offsetSamples, -4410);
+    EXPECT_DOUBLE_EQ(snapshot->backingTrack.gain, 0.8);
+}
+
 TEST_F(SnapshotBuilderTest, FSE04_KitDescriptionEqualsTheGmDefaultKitForANewProject)
 {
     const auto kit = SnapshotBuilder::buildKit(activeKit());

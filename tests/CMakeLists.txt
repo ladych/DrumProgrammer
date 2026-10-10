@@ -1,6 +1,7 @@
 add_executable(drumprog_tests
     audio/DeviceRecoveryTest.cpp
     audio/DriverChoiceTest.cpp
+    engine/BackingTrackPlayerTest.cpp
     engine/ClockTest.cpp
     engine/DownmixTest.cpp
     engine/EngineKitTest.cpp
@@ -39,18 +40,21 @@ add_executable(drumprog_tests
     model/SnapshotBuilderTest.cpp
     model/SnapshotPublisherTest.cpp
     model/SongLayoutTest.cpp
+    model/SongTakeRecorderTest.cpp
     model/TakeRecorderTest.cpp
     model/TreeChangeListenerTest.cpp
     model/UuidGeneratorTest.cpp
     ui/ActivePatternTest.cpp
     ui/ActivityLedTest.cpp
     ui/AudioStatusTest.cpp
+    ui/BackingTrackPresenterTest.cpp
     ui/DocumentControllerTest.cpp
     ui/InputLedPresenterTest.cpp
     ui/KeymapPresenterTest.cpp
     ui/KeyRouterTest.cpp
     ui/KitPresenterTest.cpp
     ui/MidiExportControllerTest.cpp
+    ui/MixPresenterTest.cpp
     ui/MusicalTimeTest.cpp
     ui/PatternListPresenterTest.cpp
     ui/PianoRollGeometryTest.cpp

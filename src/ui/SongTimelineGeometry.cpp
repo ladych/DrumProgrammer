@@ -28,6 +28,11 @@ int SongTimelineGeometry::barAt(double x) const
     return std::max(0, static_cast<int>(std::floor((x + scrollX_) / pixelsPerBar_)));
 }
 
+double SongTimelineGeometry::exactBarAt(double x) const
+{
+    return (x + scrollX_) / pixelsPerBar_;
+}
+
 void SongTimelineGeometry::zoomIn()
 {
     zoomTo(pixelsPerBar_ * kZoomFactor);

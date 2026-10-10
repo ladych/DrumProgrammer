@@ -18,6 +18,10 @@ src/app/MainComponent.cpp       # JUCE component layout and dialog launch, no lo
 src/app/AudioDeviceSupervisor.h # drives juce::AudioDeviceManager, decisions in audio::DeviceRecovery and audio::driverTypesByPreference
 src/app/AudioDeviceSupervisor.cpp # drives juce::AudioDeviceManager, decisions in audio::DeviceRecovery and audio::driverTypesByPreference
 src/app/AudioCallback.h         # driver callback forwarding to engine::TestToneSource and engine::PlaybackRenderer
+src/app/JuceBackingTrackLoader.h    # IBackingTrackLoader on top of juce::BufferingAudioReader, no logic
+src/app/JuceBackingTrackLoader.cpp  # IBackingTrackLoader on top of juce::BufferingAudioReader, no logic
+src/app/MixPanel.h              # JUCE faders of the mix, logic in ui::MixPresenter
+src/app/MixPanel.cpp            # JUCE faders of the mix, logic in ui::MixPresenter
 src/app/JuceSampleLoader.h      # ISampleLoader on top of juce::AudioFormatManager
 src/app/JuceSampleLoader.cpp    # ISampleLoader on top of juce::AudioFormatManager, decoding only
 src/app/KitPanel.h              # JUCE kit list and inspector widgets, logic in ui::KitPresenter
@@ -36,8 +40,8 @@ src/app/PianoRollToolbar.h      # JUCE snap and tool buttons, logic in ui::Piano
 src/app/PianoRollToolbar.cpp    # JUCE snap and tool buttons, logic in ui::PianoRollPresenter
 src/app/NoteInspector.h         # JUCE labels and slider of the note inspector, logic in ui::PianoRollPresenter
 src/app/NoteInspector.cpp       # JUCE labels and slider of the note inspector, logic in ui::PianoRollPresenter
-src/app/SongTimelineView.h      # JUCE painting, mouse and drag & drop forwarding, logic in ui::SongTimelinePresenter and ui::SongTimelineGeometry
-src/app/SongTimelineView.cpp    # JUCE painting, mouse and drag & drop forwarding, logic in ui::SongTimelinePresenter and ui::SongTimelineGeometry
+src/app/SongTimelineView.h      # JUCE painting, mouse and drag & drop forwarding, logic in ui::SongTimelinePresenter, ui::BackingTrackPresenter and ui::SongTimelineGeometry
+src/app/SongTimelineView.cpp    # JUCE painting, mouse and drag & drop forwarding, logic in ui::SongTimelinePresenter, ui::BackingTrackPresenter and ui::SongTimelineGeometry
 src/app/KeyboardInputGlue.h     # JUCE key listener forwarding to ui::KeyRouter, OS key names
 src/app/MidiInputCallback.h     # JUCE MIDI callback forwarding raw bytes to input::MidiInputHandler
 src/app/NativeKeyboard.h        # declarations of the platform keyboard access

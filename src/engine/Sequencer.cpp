@@ -12,6 +12,8 @@ namespace
 {
 
 constexpr int kSixteenthsPerQuarter = 4;
+/// Length of the song while it records: it never loops or ends by itself.
+constexpr std::int64_t kEndlessTicks = std::numeric_limits<std::int64_t>::max() / 4;
 
 void addNote(SequencerBlock& block, const SequencedNote& note) noexcept
 {
@@ -39,7 +41,12 @@ bool Sequencer::stop() noexcept
 
 bool Sequencer::rewind() noexcept
 {
-    return commands_.push({CommandType::rewind, {}});
+    return locate(0);
+}
+
+bool Sequencer::locate(std::int64_t tick) noexcept
+{
+    return commands_.push({CommandType::locate, {}, tick});
 }
 
 void Sequencer::setLoop(bool loop) noexcept
@@ -78,6 +85,11 @@ std::uint32_t Sequencer::activeTake() const noexcept
     return publishedTake_.load();
 }
 
+std::int64_t Sequencer::recordStart() const noexcept
+{
+    return publishedRecordStart_.load();
+}
+
 bool Sequencer::popRecordedHit(RecordedHit& hit) noexcept
 {
     return recorded_.pop(hit);
@@ -88,11 +100,16 @@ void Sequencer::prepare(double sampleRate) noexcept
     sampleRate_ = sampleRate;
 }
 
-void Sequencer::process(const ProjectSnapshot* snapshot, int numSamples, SequencerBlock& block) noexcept
+void Sequencer::process(const ProjectSnapshot* snapshot,
+                        int numSamples,
+                        SequencerBlock& block,
+                        std::int64_t backingSamples) noexcept
 {
     block.numNotes = 0;
     block.numClicks = 0;
+    block.numSongSpans = 0;
     blockTake_ = 0;
+    backingSamples_ = backingSamples;
     if (snapshot == nullptr)
         return;
     applyCommands(*snapshot);
@@ -119,7 +136,11 @@ void Sequencer::record(std::span<const LiveHit> hits, double blockTimeSeconds) n
         const double tick = blockStartTick_ - (blockTimeSeconds - hit.timeSeconds + latency) * ticksPerSecond;
         if (tick < static_cast<double>(countInEnd_ - blockTolerance_))
             continue; // played during the count-in
-        recorded_.push({blockTake_, hit.slotIndex, hit.velocity, wrapTick(std::llround(tick), blockLength_)});
+        const std::int64_t rounded = std::llround(tick);
+        recorded_.push({blockTake_,
+                        hit.slotIndex,
+                        hit.velocity,
+                        blockSong_ ? rounded : wrapTick(rounded, blockLength_)});
     }
 }
 
@@ -134,7 +155,7 @@ Sequencer::Timeline Sequencer::timelineOf(const ProjectSnapshot& snapshot) const
     timeline.sixteenthTicks = snapshot.ticksPerQuarter / kSixteenthsPerQuarter;
     timeline.length = timeline.barTicks;
     if (song_)
-        timeline.length = std::max(snapshot.songLengthTicks, timeline.barTicks);
+        timeline.length = take_ != 0 ? kEndlessTicks : songLength(snapshot, timeline.barTicks);
     else if (patternIndex_ >= 0 && static_cast<std::size_t>(patternIndex_) < snapshot.patterns.size())
     {
         timeline.pattern = &snapshot.patterns[static_cast<std::size_t>(patternIndex_)];
@@ -153,7 +174,7 @@ void Sequencer::applyCommands(const ProjectSnapshot& snapshot) noexcept
         else if (command.type == CommandType::stop)
             halt(snapshot);
         else
-            rewindToStart();
+            locateTo(command.tick, snapshot);
     }
 }
 
@@ -163,7 +184,7 @@ void Sequencer::start(const PlayRequest& request, const ProjectSnapshot& snapsho
         return;
     patternIndex_ = request.patternIndex;
     song_ = request.song;
-    take_ = song_ ? 0 : request.take;
+    take_ = request.take;
     const Timeline timeline = timelineOf(snapshot);
     const int countInBars = take_ != 0 ? std::clamp(request.countInBars, 0, kMaxCountInBars) : 0;
     countInEnd_ = wrapTick(pausedTick_, timeline.length);
@@ -171,6 +192,7 @@ void Sequencer::start(const PlayRequest& request, const ProjectSnapshot& snapsho
     samplesSinceAnchor_ = 0;
     samplesPerTick_ = samplesPerTick(snapshot.bpm, snapshot.ticksPerQuarter, sampleRate_);
     state_ = countInBars > 0 ? TransportState::countIn : TransportState::playing;
+    publishedRecordStart_.store(countInEnd_);
 }
 
 void Sequencer::halt(const ProjectSnapshot& snapshot) noexcept
@@ -182,18 +204,19 @@ void Sequencer::halt(const ProjectSnapshot& snapshot) noexcept
     take_ = 0;
 }
 
-void Sequencer::rewindToStart() noexcept
+void Sequencer::locateTo(std::int64_t tick, const ProjectSnapshot& snapshot) noexcept
 {
+    const std::int64_t target = std::max<std::int64_t>(tick, 0);
     if (state_ == TransportState::stopped)
     {
-        pausedTick_ = 0;
+        pausedTick_ = target;
         return;
     }
     // A running count-in keeps the time it has left.
     const double countInLeft = std::max(0.0, static_cast<double>(countInEnd_) - tickAt(0));
-    anchorTick_ = -countInLeft;
+    countInEnd_ = wrapTick(target, timelineOf(snapshot).length);
+    anchorTick_ = static_cast<double>(countInEnd_) - countInLeft;
     samplesSinceAnchor_ = 0;
-    countInEnd_ = 0;
 }
 
 void Sequencer::updateTempo(const ProjectSnapshot& snapshot) noexcept
@@ -214,11 +237,14 @@ void Sequencer::schedule(const Timeline& timeline, int numSamples, SequencerBloc
     blockStartTick_ = tickAt(0);
     blockLength_ = timeline.length;
     blockTolerance_ = timeline.sixteenthTicks;
+    blockSong_ = timeline.song;
     // One tick of margin on both sides; sampleOffsetOf() decides exactly.
     const std::pair range{static_cast<std::int64_t>(std::floor(blockStartTick_)) - 1,
                           static_cast<std::int64_t>(std::ceil(tickAt(numSamples))) + 1};
     scheduleNotes(timeline, range, numSamples, block);
     scheduleClicks(timeline, range, numSamples, block);
+    if (timeline.song)
+        scheduleSongSpans(timeline, numSamples, block);
 }
 
 void Sequencer::scheduleNotes(const Timeline& timeline,
@@ -293,6 +319,50 @@ void Sequencer::scheduleClicks(const Timeline& timeline,
             continue;
         addClick(block, {wrapTick(beat, timeline.barTicks) == 0, static_cast<int>(offset)});
     }
+}
+
+void Sequencer::scheduleSongSpans(const Timeline& timeline,
+                                  int numSamples,
+                                  SequencerBlock& block) const noexcept
+{
+    const std::int64_t end = passEnd(timeline.length);
+    const auto tick = static_cast<std::int64_t>(std::floor(tickAt(0)));
+    // The count-in belongs to the pass it leads into, so it plays the song before its start.
+    std::int64_t pass = floorDiv(std::max(tick, countInEnd_), timeline.length);
+    for (std::int64_t from = 0; from < numSamples && block.numSongSpans < SequencerBlock::kMaxSongSpans;
+         ++pass)
+    {
+        const std::int64_t passStart = pass * timeline.length;
+        const std::int64_t passStop = std::min(passStart + timeline.length, end);
+        // The endless song of a recording ends far beyond any block.
+        const bool endsInBlock = static_cast<double>(passStop) <= tickAt(numSamples) + 1.0;
+        const std::int64_t to =
+            endsInBlock ? std::clamp<std::int64_t>(sampleOffsetOf(passStop), from, numSamples) : numSamples;
+        if (to > from)
+        {
+            const auto anchorSample = static_cast<std::int64_t>(
+                std::floor((anchorTick_ - static_cast<double>(passStart)) * samplesPerTick_));
+            block.songSpans.at(block.numSongSpans++) = {static_cast<int>(from),
+                                                        static_cast<int>(to - from),
+                                                        anchorSample + samplesSinceAnchor_ + from};
+        }
+        if (passStop >= end)
+            break; // without loop the song ends here
+        from = to;
+    }
+}
+
+std::int64_t Sequencer::songLength(const ProjectSnapshot& snapshot, std::int64_t barTicks) const noexcept
+{
+    std::int64_t length = std::max(snapshot.songLengthTicks, barTicks);
+    if (backingSamples_ > 0)
+    {
+        const double ticks = static_cast<double>(backingSamples_) /
+                             samplesPerTick(snapshot.bpm, snapshot.ticksPerQuarter, sampleRate_);
+        const auto bars = static_cast<std::int64_t>(std::ceil(ticks / static_cast<double>(barTicks)));
+        length = std::max(length, bars * barTicks);
+    }
+    return length;
 }
 
 void Sequencer::advance(const Timeline& timeline, int numSamples) noexcept

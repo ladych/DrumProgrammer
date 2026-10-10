@@ -11,6 +11,7 @@
 
 #include <array>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace drumprog::ui
@@ -54,11 +55,12 @@ protected:
     juce::ValueTree globalKit = model::ProjectFactory::createDefaultKit();
     juce::UndoManager undoManager;
     model::TakeRecorder recorder{tree, globalKit, undoManager};
+    model::SongTakeRecorder songRecorder{tree, globalKit, undoManager, ids};
     NiceMock<io::MockFileSystem> fileSystem;
     io::SettingsStore offsetSettings{fileSystem, "recording-offset.txt"};
     engine::Sequencer sequencer;
     engine::Metronome metronome;
-    TransportPresenter transport{tree, sequencer, metronome, recorder, offsetSettings};
+    TransportPresenter transport{tree, sequencer, metronome, recorder, songRecorder, offsetSettings};
     std::unique_ptr<const engine::ProjectSnapshot> snapshot;
     engine::SequencerBlock block;
 };
@@ -165,9 +167,10 @@ protected:
 TEST_F(TransportPresenterSongTest, FTR05_SongModePlaysTheTimeline)
 {
     EXPECT_EQ(transport.playMode(), PlayMode::pattern);
+    EXPECT_FALSE(transport.songPlayheadTick().has_value());
     transport.setPlayMode(PlayMode::song);
     EXPECT_EQ(transport.playMode(), PlayMode::song);
-    EXPECT_FALSE(transport.songPlayheadTick().has_value());
+    EXPECT_EQ(transport.songPlayheadTick(), 0); // the stopped position
 
     transport.play();
     audioBlock((3840 + 960) * kTick);
@@ -216,18 +219,97 @@ TEST_F(TransportPresenterSongTest, FTR05_SwitchingTheModeRestartsFromTheStart)
     EXPECT_EQ(transport.positionText(), "001.1.000");
 }
 
-TEST_F(TransportPresenterSongTest, FTR05_SongModeOnlyPlaysEvenWithRecArmed)
+TEST_F(TransportPresenterSongTest, FBT07_FBT08_RecInTheSongModeRecordsATakeFromTheSongPosition)
+{
+    std::optional<int> taken;
+    transport.setOnSongTake([&taken](int index) { taken = index; });
+    transport.setPlayMode(PlayMode::song);
+    transport.locate(4 * 3840);
+    transport.toggleRecordArmed();
+    transport.play();
+    audioBlock(3000 * kTick); // count-in of one bar
+    EXPECT_TRUE(transport.isRecording());
+    EXPECT_TRUE(transport.isCountingIn());
+    audioBlock((840 + 960) * kTick);
+    audioBlockWithHit(0); // song tick 4 bars + 960
+    transport.tick();
+    EXPECT_EQ(model::Project(tree, nullptr).numPatterns(), 2); // written at the end
+
+    transport.stop();
+    audioBlock();
+    EXPECT_FALSE(transport.isRecording());
+    const model::Project project{tree, nullptr};
+    ASSERT_EQ(project.numPatterns(), 3);
+    const auto take = project.pattern(2);
+    EXPECT_EQ(take.name(), "Take 1");
+    EXPECT_EQ(take.lengthBars(), 1);
+    ASSERT_EQ(take.numNotes(), 1);
+    EXPECT_EQ(take.note(0).startTick(), 960);
+    EXPECT_EQ(project.song().entry(2).startBar(), 4);
+    EXPECT_EQ(project.song().entry(2).patternId(), take.id());
+    EXPECT_EQ(taken, 2);
+    EXPECT_EQ(pattern().numNotes(), 0); // the other patterns stay as they are
+}
+
+TEST_F(TransportPresenterSongTest, FBT08_ASongTakeWithoutHitsAddsNoPattern)
+{
+    bool called = false;
+    transport.setOnSongTake([&called](int /*index*/) { called = true; });
+    transport.setPlayMode(PlayMode::song);
+    transport.setCountInBars(0);
+    transport.toggleRecordArmed();
+    transport.play();
+    audioBlock();
+    transport.stop();
+    audioBlock();
+    EXPECT_FALSE(called);
+    EXPECT_EQ(model::Project(tree, nullptr).numPatterns(), 2);
+
+    transport.setOnSongTake(nullptr);
+    transport.play();
+    audioBlockWithHit(0);
+    transport.tick();
+    transport.stop();
+    EXPECT_EQ(model::Project(tree, nullptr).numPatterns(), 3);
+}
+
+TEST_F(TransportPresenterSongTest, FBT07_RewindAndLocateWaitUntilTheSongTakeEnds)
 {
     transport.setPlayMode(PlayMode::song);
     transport.setCountInBars(0);
     transport.toggleRecordArmed();
     transport.play();
-    audioBlockWithHit(0);
-    transport.tick();
+    audioBlock(1000 * kTick);
+    transport.rewind();
+    transport.locate(0);
+    audioBlock(0);
+    EXPECT_EQ(transport.songPlayheadTick(), 1000);
+    transport.stop();
+    transport.rewind();
+    audioBlock(0);
+    EXPECT_EQ(transport.songPlayheadTick(), 0);
+}
 
+TEST_F(TransportPresenterSongTest, FBT07_LocateMovesTheSongPositionAndSwitchesToTheSongMode)
+{
+    transport.locate(5000);
+    audioBlock(0);
+    EXPECT_EQ(transport.playMode(), PlayMode::song);
+    EXPECT_FALSE(transport.isPlaying());
+    EXPECT_EQ(transport.songPlayheadTick(), 5000);
+
+    transport.setPlayMode(PlayMode::pattern);
+    transport.play();
+    audioBlock(100 * kTick);
+    transport.locate(2000);
+    audioBlock(100 * kTick);
+    EXPECT_EQ(transport.playMode(), PlayMode::song);
     EXPECT_TRUE(transport.isPlaying());
-    EXPECT_FALSE(transport.isRecording());
-    EXPECT_EQ(pattern().numNotes(), 0);
+    EXPECT_EQ(transport.songPlayheadTick(), 2100);
+
+    transport.locate(7000);
+    audioBlock(0);
+    EXPECT_EQ(transport.songPlayheadTick(), 7000);
 }
 
 TEST_F(TransportPresenterSongTest, FTR05_TheModeCannotChangeDuringARecording)
@@ -424,7 +506,7 @@ TEST_F(TransportPresenterTest, FIN08_RecordOffsetIsLoadedFromTheSettings)
         NiceMock<io::MockFileSystem> files;
         ON_CALL(files, readText(_)).WillByDefault(Return(std::string{saved}));
         io::SettingsStore store{files, "recording-offset.txt"};
-        const TransportPresenter loaded{tree, sequencer, metronome, recorder, store};
+        const TransportPresenter loaded{tree, sequencer, metronome, recorder, songRecorder, store};
         EXPECT_DOUBLE_EQ(loaded.recordOffsetMs(), expected) << saved;
     }
 }

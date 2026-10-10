@@ -28,6 +28,16 @@ struct Event
     bool operator==(const Event&) const = default;
 };
 
+/// A SongSpan with its absolute sample.
+struct Span
+{
+    std::int64_t sample = 0;
+    int numSamples = 0;
+    std::int64_t songSample = 0;
+
+    bool operator==(const Span&) const = default;
+};
+
 ProjectSnapshot makeSnapshot(std::vector<NoteSnapshot> notes, std::int64_t lengthTicks = kBarTicks)
 {
     ProjectSnapshot snapshot;
@@ -53,7 +63,12 @@ protected:
         for (std::int64_t done = 0; done < numSamples; done += blockSize)
         {
             const int size = static_cast<int>(std::min<std::int64_t>(blockSize, numSamples - done));
-            sequencer.process(&snapshot, size, block);
+            sequencer.process(&snapshot, size, block, backingSamples);
+            for (std::size_t index = 0; index < block.numSongSpans; ++index)
+            {
+                const auto& span = block.songSpans.at(index);
+                spans.push_back({now + span.sampleOffset, span.numSamples, span.songSample});
+            }
             for (std::size_t index = 0; index < block.numNotes; ++index)
                 notes.push_back({now + block.notes.at(index).sampleOffset, block.notes.at(index).slotIndex});
             for (std::size_t index = 0; index < block.numClicks; ++index)
@@ -65,7 +80,7 @@ protected:
 
     void processBlock(int size = 128)
     {
-        sequencer.process(&snapshot, size, block);
+        sequencer.process(&snapshot, size, block, backingSamples);
         now += size;
     }
 
@@ -84,6 +99,8 @@ protected:
     std::int64_t now = 0;
     std::vector<Event> notes;
     std::vector<Event> clicks;
+    std::vector<Span> spans;
+    std::int64_t backingSamples = 0;
 };
 
 TEST_F(SequencerTest, FTR01_StoppedTransportPlaysNothing)
@@ -608,14 +625,153 @@ TEST_F(SequencerSongTest, FTR05_AnEmptySongPlaysOneSilentBar)
     EXPECT_EQ(sequencer.state(), TransportState::stopped);
 }
 
-TEST_F(SequencerSongTest, FTR05_TheSongModeNeverRecords)
+TEST_F(SequencerSongTest, FBT07_TheSongModeRecordsWithSongTicks)
 {
+    sequencer.locate(4 * kBarTicks);
     sequencer.play({.take = 4, .countInBars = 1, .song = true});
-    processBlock();
+    run(kBar - 480);
+    EXPECT_EQ(sequencer.state(), TransportState::countIn);
+    EXPECT_EQ(sequencer.recordStart(), 4 * kBarTicks);
+    processBlock(480);
+    sequencer.record(std::array{LiveHit{0, 100, 100.0}}, 100.0); // 19.2 ticks early: still counts
+    run(kBar / 2);
+    processBlock(480);
+    sequencer.record(std::array{LiveHit{1, 90, 100.0}}, 100.0);
+
     EXPECT_EQ(sequencer.state(), TransportState::playing);
-    EXPECT_EQ(sequencer.activeTake(), 0U);
-    sequencer.record(std::array{LiveHit{0, 100, 0.0}}, 0.0);
-    EXPECT_TRUE(recordedHits().empty());
+    EXPECT_EQ(sequencer.activeTake(), 4U);
+    const auto hits = recordedHits();
+    ASSERT_EQ(hits.size(), 2U);
+    EXPECT_EQ(hits[0].take, 4U);
+    EXPECT_EQ(hits[0].tick, 4 * kBarTicks - 19); // beyond the 3 bars of the song, not folded
+    EXPECT_EQ(hits[1].slotIndex, 1);
+    EXPECT_EQ(hits[1].tick, 4 * kBarTicks + kBarTicks / 2);
+}
+
+TEST_F(SequencerSongTest, FBT07_ARecordingRunsPastTheSongEndUntilStop)
+{
+    for (const bool loop : {true, false})
+    {
+        notes.clear();
+        sequencer.setLoop(loop);
+        sequencer.rewind();
+        sequencer.play({.take = 1, .song = true});
+        run(5 * kBar);
+        EXPECT_EQ(notes.size(), 5U); // the song plays once
+        EXPECT_EQ(sequencer.state(), TransportState::playing);
+        EXPECT_EQ(sequencer.position(), 5 * kBarTicks);
+        sequencer.stop();
+        processBlock();
+        EXPECT_EQ(sequencer.position(), 5 * kBarTicks); // kept for the next start
+    }
+}
+
+TEST_F(SequencerSongTest, FBT07_LocateMovesTheStoppedAndTheRunningTransport)
+{
+    sequencer.locate(kBarTicks + 960);
+    processBlock();
+    EXPECT_EQ(sequencer.position(), kBarTicks + 960);
+    sequencer.locate(-5);
+    processBlock();
+    EXPECT_EQ(sequencer.position(), 0);
+
+    const std::int64_t start = now;
+    sequencer.play({.song = true});
+    run(kBeat);
+    sequencer.locate(2 * kBarTicks);
+    run(kBeat / 2);
+    EXPECT_EQ(notes, (std::vector<Event>{{start, 1}, {start + kBeat, 0}}));
+
+    sequencer.locate(4 * kBarTicks); // folded into the song of 3 bars
+    processBlock(kBeat);
+    EXPECT_EQ(sequencer.position(), kBarTicks + 960);
+}
+
+TEST_F(SequencerSongTest, FBT03_SongSpansFollowThePositionAndTheLoop)
+{
+    sequencer.play({.song = true});
+    run(256);
+    EXPECT_EQ(spans, (std::vector<Span>{{0, 128, 0}, {128, 128, 128}}));
+    spans.clear();
+    run(3 * kBar - 256 - 64);
+    spans.clear();
+    run(128); // the song loops after 64 samples
+    EXPECT_EQ(spans, (std::vector<Span>{{3 * kBar - 64, 64, 3 * kBar - 64}, {3 * kBar, 64, 0}}));
+}
+
+TEST_F(SequencerSongTest, FBT03_WithoutLoopTheSpansEndWithTheSong)
+{
+    sequencer.setLoop(false);
+    sequencer.play({.song = true});
+    run(3 * kBar - 64);
+    spans.clear();
+    run(128);
+    EXPECT_EQ(spans, (std::vector<Span>{{3 * kBar - 64, 64, 3 * kBar - 64}}));
+}
+
+TEST_F(SequencerSongTest, FBT07_TheCountInPlaysTheSongBeforeTheStart)
+{
+    sequencer.locate(kBarTicks);
+    sequencer.play({.take = 1, .countInBars = 1, .song = true});
+    run(128);
+    EXPECT_EQ(spans, (std::vector<Span>{{0, 128, 0}}));
+    spans.clear();
+    sequencer.stop();
+    processBlock();
+    sequencer.rewind();
+    sequencer.play({.take = 1, .countInBars = 1, .song = true});
+    run(128);
+    EXPECT_EQ(spans, (std::vector<Span>{{128 + 128, 128, -kBar}}));
+}
+
+TEST_F(SequencerSongTest, FBT03_ABlockHasAtMostFourSpans)
+{
+    setSong({{0, 0, kBarTicks}});
+    sequencer.play({.song = true});
+    processBlock(static_cast<int>(5 * kBar));
+    EXPECT_EQ(block.numSongSpans, SequencerBlock::kMaxSongSpans);
+}
+
+TEST_F(SequencerSongTest, FBT03_ALoopOnTheFirstSampleOfABlockStartsTheNextPass)
+{
+    // 97 BPM at 44.1 kHz: a bar is 109113.4 samples, so the block at sample 109113 still starts in bar 1.
+    snapshot.bpm = 97.0;
+    sequencer.prepare(44100.0);
+    setSong({{0, 0, kBarTicks}});
+    sequencer.play({.song = true});
+    processBlock(109113);
+    processBlock(128);
+    ASSERT_EQ(block.numSongSpans, 1U);
+    EXPECT_EQ(block.songSpans[0].sampleOffset, 0);
+    EXPECT_EQ(block.songSpans[0].numSamples, 128);
+    EXPECT_EQ(block.songSpans[0].songSample, -1); // less than a sample before the song start
+}
+
+TEST_F(SequencerSongTest, FBT03_ThePatternModeHasNoSpans)
+{
+    sequencer.play({});
+    run(128);
+    EXPECT_TRUE(spans.empty());
+}
+
+TEST_F(SequencerSongTest, FBT03_TheBackingTrackExtendsTheSongToWholeBars)
+{
+    setSong({});
+    backingSamples = 2 * kBar + 1;
+    sequencer.setLoop(false);
+    sequencer.play({.song = true});
+    run(3 * kBar - 128);
+    EXPECT_EQ(sequencer.state(), TransportState::playing);
+    run(256);
+    EXPECT_EQ(sequencer.state(), TransportState::stopped);
+
+    backingSamples = kBar / 2; // shorter than the song: no effect
+    setSong({{0, 0, kBarTicks}, {1, kBarTicks, kBarTicks}});
+    sequencer.play({.song = true});
+    run(2 * kBar - 128);
+    EXPECT_EQ(sequencer.state(), TransportState::playing);
+    run(256);
+    EXPECT_EQ(sequencer.state(), TransportState::stopped);
 }
 
 TEST_F(SequencerSongTest, FTR05_ThePatternModeIgnoresTheSong)
