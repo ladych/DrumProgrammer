@@ -36,6 +36,7 @@
 #include "ui/MidiExportController.h"
 #include "ui/PatternListPresenter.h"
 #include "ui/PianoRollPresenter.h"
+#include "ui/SongTimelinePresenter.h"
 #include "ui/TempoPresenter.h"
 #include "ui/TransportPresenter.h"
 
@@ -79,8 +80,11 @@ private:
     void updateOutputLatency();
     void renamePattern(int index);
     void askPatternLength(int index);
+    /// Asks first if the song uses the pattern (F-SO-05).
+    void removePattern(int index);
     [[nodiscard]] EditActions editActions();
     [[nodiscard]] PatternActions patternActions();
+    [[nodiscard]] SongActions songActions();
 
     io::StdFileSystem fileSystem_;
     io::SettingsStore deviceSettings_;
@@ -132,6 +136,8 @@ private:
     ui::ActivePattern activePattern_;
     ui::PatternListPresenter patternListPresenter_;
     ui::PianoRollPresenter pianoRollPresenter_;
+    // Song (AP7): blocks reference patterns; the transport plays the timeline in the song mode.
+    ui::SongTimelinePresenter songTimelinePresenter_;
 
     // MIDI export (AP6) of the active pattern.
     JuceMidiExportView midiExportView_;

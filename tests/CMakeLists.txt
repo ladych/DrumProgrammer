@@ -36,6 +36,7 @@ add_executable(drumprog_tests
     model/ProjectTest.cpp
     model/SnapshotBuilderTest.cpp
     model/SnapshotPublisherTest.cpp
+    model/SongLayoutTest.cpp
     model/TakeRecorderTest.cpp
     model/TreeChangeListenerTest.cpp
     model/UuidGeneratorTest.cpp
@@ -53,6 +54,8 @@ add_executable(drumprog_tests
     ui/PianoRollGeometryTest.cpp
     ui/PianoRollPresenterTest.cpp
     ui/SnapGridTest.cpp
+    ui/SongTimelineGeometryTest.cpp
+    ui/SongTimelinePresenterTest.cpp
     ui/TempoPresenterTest.cpp
     ui/TransportPresenterTest.cpp
 )

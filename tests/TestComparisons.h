@@ -20,7 +20,8 @@ inline bool operator==(const NoteSnapshot& a, const NoteSnapshot& b)
 
 inline bool operator==(const SongEntrySnapshot& a, const SongEntrySnapshot& b)
 {
-    return std::tie(a.patternIndex, a.startTick) == std::tie(b.patternIndex, b.startTick);
+    return std::tie(a.patternIndex, a.startTick, a.lengthTicks) ==
+           std::tie(b.patternIndex, b.startTick, b.lengthTicks);
 }
 
 inline bool operator==(const MixSnapshot& a, const MixSnapshot& b)

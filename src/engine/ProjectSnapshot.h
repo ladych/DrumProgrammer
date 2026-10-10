@@ -31,6 +31,7 @@ struct SongEntrySnapshot
 {
     int patternIndex = 0;
     std::int64_t startTick = 0;
+    std::int64_t lengthTicks = 0; ///< played length: up to the next block at most
 };
 
 struct MixSnapshot
@@ -48,6 +49,7 @@ struct ProjectSnapshot
     int ticksPerQuarter = 0;
     std::vector<PatternSnapshot> patterns;
     std::vector<SongEntrySnapshot> song; ///< sorted by startTick
+    std::int64_t songLengthTicks = 0;    ///< end of the last block
     MixSnapshot mix;
 };
 

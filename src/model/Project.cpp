@@ -282,6 +282,11 @@ void Song::removeEntriesFor(const std::string& patternId)
             removeEntry(index);
 }
 
+void Song::clear()
+{
+    mutableTree().removeAllChildren(undoManager());
+}
+
 // ----- BackingTrack and Mix -----------------------------------------------------------------------
 
 BackingTrack::BackingTrack(juce::ValueTree tree, juce::UndoManager* undoManager)

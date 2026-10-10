@@ -43,14 +43,16 @@ MainComponent::MainComponent(engine::TestToneSource& testTone,
                              ui::KitPresenter& kitPresenter,
                              ui::PatternListPresenter& patterns,
                              PatternDialogs patternDialogs,
+                             ui::SongTimelinePresenter& songTimeline,
                              ui::PianoRollPresenter& pianoRoll,
                              ui::KeymapPresenter& keymapPresenter,
                              ui::InputLedPresenter& inputLeds,
                              const juce::String& sampleWildcard)
     : testTone_(testTone), deviceManager_(deviceManager), inputLeds_(inputLeds), pianoRoll_(pianoRoll),
       transportBar_(transport, tempo), pianoRollToolbar_(pianoRoll),
-      patternList_(patterns, std::move(patternDialogs)), pianoRollView_(pianoRoll, transport),
-      noteInspector_(pianoRoll), kitPanel_(kitPresenter, keymapPresenter, sampleWildcard)
+      patternList_(patterns, std::move(patternDialogs)), songTimeline_(songTimeline, transport),
+      pianoRollView_(pianoRoll, transport), noteInspector_(pianoRoll),
+      kitPanel_(kitPresenter, keymapPresenter, sampleWildcard)
 {
     testToneButton_.setToggleState(testTone_.isEnabled(), juce::dontSendNotification);
     testToneButton_.onClick = [this] { testTone_.setEnabled(testToneButton_.getToggleState()); };
@@ -64,6 +66,7 @@ MainComponent::MainComponent(engine::TestToneSource& testTone,
                                                                    &settingsButton_,
                                                                    &pianoRollToolbar_,
                                                                    &patternList_,
+                                                                   &songTimeline_,
                                                                    &pianoRollView_,
                                                                    &noteInspector_,
                                                                    &kitPanel_,
@@ -110,6 +113,8 @@ void MainComponent::resized()
     patternList_.setBounds(area.removeFromLeft(kSideWidth));
     area.removeFromLeft(8);
     noteInspector_.setBounds(area.removeFromRight(kSideWidth).withTrimmedLeft(8));
+    songTimeline_.setBounds(area.removeFromTop(SongTimelineView::kPreferredHeight));
+    area.removeFromTop(8);
     pianoRollView_.setBounds(area);
 }
 

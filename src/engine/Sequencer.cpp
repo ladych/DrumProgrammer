@@ -126,12 +126,16 @@ void Sequencer::record(std::span<const LiveHit> hits, double blockTimeSeconds) n
 Sequencer::Timeline Sequencer::timelineOf(const ProjectSnapshot& snapshot) const noexcept
 {
     Timeline timeline;
+    timeline.snapshot = &snapshot;
+    timeline.song = song_;
     timeline.barTicks =
         ticksPerBar(snapshot.ticksPerQuarter, snapshot.timeSigNumerator, snapshot.timeSigDenominator);
     timeline.beatTicks = ticksPerBeat(snapshot.ticksPerQuarter, snapshot.timeSigDenominator);
     timeline.sixteenthTicks = snapshot.ticksPerQuarter / kSixteenthsPerQuarter;
     timeline.length = timeline.barTicks;
-    if (patternIndex_ >= 0 && static_cast<std::size_t>(patternIndex_) < snapshot.patterns.size())
+    if (song_)
+        timeline.length = std::max(snapshot.songLengthTicks, timeline.barTicks);
+    else if (patternIndex_ >= 0 && static_cast<std::size_t>(patternIndex_) < snapshot.patterns.size())
     {
         timeline.pattern = &snapshot.patterns[static_cast<std::size_t>(patternIndex_)];
         timeline.length = std::max(timeline.pattern->lengthTicks, timeline.barTicks);
@@ -158,7 +162,8 @@ void Sequencer::start(const PlayRequest& request, const ProjectSnapshot& snapsho
     if (state_ != TransportState::stopped)
         return;
     patternIndex_ = request.patternIndex;
-    take_ = request.take;
+    song_ = request.song;
+    take_ = song_ ? 0 : request.take;
     const Timeline timeline = timelineOf(snapshot);
     const int countInBars = take_ != 0 ? std::clamp(request.countInBars, 0, kMaxCountInBars) : 0;
     countInEnd_ = wrapTick(pausedTick_, timeline.length);
@@ -221,22 +226,54 @@ void Sequencer::scheduleNotes(const Timeline& timeline,
                               int numSamples,
                               SequencerBlock& block) const noexcept
 {
-    if (timeline.pattern == nullptr)
-        return;
     const std::int64_t from = std::max(range.first, countInEnd_);
     const std::int64_t to = std::min(range.second, passEnd(timeline.length) - 1);
-    const auto& notes = timeline.pattern->notes;
     for (std::int64_t pass = floorDiv(from, timeline.length); pass <= floorDiv(to, timeline.length); ++pass)
     {
         const std::int64_t passStart = pass * timeline.length;
-        auto note = std::ranges::lower_bound(notes, from - passStart, {}, &NoteSnapshot::startTick);
-        for (; note != notes.end() && note->startTick <= to - passStart && note->startTick < timeline.length;
-             ++note)
-        {
-            const std::int64_t offset = sampleOffsetOf(passStart + note->startTick);
-            if (offset >= 0 && offset < numSamples)
-                addNote(block, {note->slotIndex, note->velocity, static_cast<int>(offset)});
-        }
+        if (timeline.song)
+            scheduleSong(timeline, passStart, {from, to}, numSamples, block);
+        else if (timeline.pattern != nullptr)
+            scheduleSegment(*timeline.pattern, {passStart, timeline.length}, {from, to}, numSamples, block);
+    }
+}
+
+void Sequencer::scheduleSong(const Timeline& timeline,
+                             std::int64_t passStart,
+                             std::pair<std::int64_t, std::int64_t> range,
+                             int numSamples,
+                             SequencerBlock& block) const noexcept
+{
+    const auto& patterns = timeline.snapshot->patterns;
+    for (const auto& entry : timeline.snapshot->song)
+    {
+        const std::int64_t start = passStart + entry.startTick;
+        if (start > range.second)
+            break;
+        if (entry.patternIndex < 0 || static_cast<std::size_t>(entry.patternIndex) >= patterns.size())
+            continue;
+        scheduleSegment(patterns[static_cast<std::size_t>(entry.patternIndex)],
+                        {start, entry.lengthTicks},
+                        range,
+                        numSamples,
+                        block);
+    }
+}
+
+void Sequencer::scheduleSegment(const PatternSnapshot& pattern,
+                                std::pair<std::int64_t, std::int64_t> segment,
+                                std::pair<std::int64_t, std::int64_t> range,
+                                int numSamples,
+                                SequencerBlock& block) const noexcept
+{
+    const auto [start, length] = segment;
+    const auto& notes = pattern.notes;
+    auto note = std::ranges::lower_bound(notes, range.first - start, {}, &NoteSnapshot::startTick);
+    for (; note != notes.end() && note->startTick <= range.second - start && note->startTick < length; ++note)
+    {
+        const std::int64_t offset = sampleOffsetOf(start + note->startTick);
+        if (offset >= 0 && offset < numSamples)
+            addNote(block, {note->slotIndex, note->velocity, static_cast<int>(offset)});
     }
 }
 

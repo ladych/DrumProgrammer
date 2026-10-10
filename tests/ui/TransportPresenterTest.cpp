@@ -146,6 +146,105 @@ TEST_F(TransportPresenterTest, FSO01_ChoosingAnotherPatternKeepsARunningRecordin
     transport.stop();
 }
 
+// ----- Song mode (F-TR-05) -------------------------------------------------------------------
+
+class TransportPresenterSongTest : public TransportPresenterTest
+{
+protected:
+    void SetUp() override
+    {
+        TransportPresenterTest::SetUp();
+        // "Fill" (1 bar) on bar 1, "Pattern 1" (2 bars) on bar 2.
+        model::Project project{tree, nullptr};
+        project.addPattern("p-2", "Fill", 1);
+        project.song().addEntry("p-2", 0);
+        project.song().addEntry("id-1", 1);
+    }
+};
+
+TEST_F(TransportPresenterSongTest, FTR05_SongModePlaysTheTimeline)
+{
+    EXPECT_EQ(transport.playMode(), PlayMode::pattern);
+    transport.setPlayMode(PlayMode::song);
+    EXPECT_EQ(transport.playMode(), PlayMode::song);
+    EXPECT_FALSE(transport.songPlayheadTick().has_value());
+
+    transport.play();
+    audioBlock((3840 + 960) * kTick);
+
+    EXPECT_EQ(transport.positionText(), "002.2.000");
+    EXPECT_EQ(transport.songPlayheadTick(), 3840 + 960);
+    EXPECT_EQ(transport.playheadTick(), 960); // inside the block of the active "Pattern 1"
+}
+
+TEST_F(TransportPresenterSongTest, FPR11_PianoRollPlayheadOnlyWhileABlockOfTheActivePatternPlays)
+{
+    transport.setPlayMode(PlayMode::song);
+    transport.play();
+    audioBlock(0);
+    EXPECT_EQ(transport.songPlayheadTick(), 0);
+    EXPECT_FALSE(transport.playheadTick().has_value()); // "Fill" plays
+
+    audioBlock((3840 + 960) * kTick);
+    transport.setActivePattern(1);
+    audioBlock(0);
+
+    EXPECT_EQ(transport.songPlayheadTick(), 3840 + 960); // the song keeps playing
+    EXPECT_FALSE(transport.playheadTick().has_value());
+}
+
+TEST_F(TransportPresenterSongTest, FTR05_SwitchingTheModeRestartsFromTheStart)
+{
+    transport.play();
+    audioBlock(1000 * kTick);
+    EXPECT_FALSE(transport.songPlayheadTick().has_value());
+
+    transport.setPlayMode(PlayMode::song);
+    audioBlock(0);
+    EXPECT_TRUE(transport.isPlaying());
+    EXPECT_EQ(transport.songPlayheadTick(), 0);
+
+    transport.setPlayMode(PlayMode::song);
+    audioBlock(1000 * kTick);
+    EXPECT_EQ(transport.songPlayheadTick(), 1000);
+
+    transport.stop();
+    audioBlock();
+    transport.setPlayMode(PlayMode::pattern);
+    audioBlock();
+    EXPECT_FALSE(transport.isPlaying());
+    EXPECT_EQ(transport.positionText(), "001.1.000");
+}
+
+TEST_F(TransportPresenterSongTest, FTR05_SongModeOnlyPlaysEvenWithRecArmed)
+{
+    transport.setPlayMode(PlayMode::song);
+    transport.setCountInBars(0);
+    transport.toggleRecordArmed();
+    transport.play();
+    audioBlockWithHit(0);
+    transport.tick();
+
+    EXPECT_TRUE(transport.isPlaying());
+    EXPECT_FALSE(transport.isRecording());
+    EXPECT_EQ(pattern().numNotes(), 0);
+}
+
+TEST_F(TransportPresenterSongTest, FTR05_TheModeCannotChangeDuringARecording)
+{
+    transport.setCountInBars(0);
+    transport.toggleRecordArmed();
+    transport.play();
+    audioBlock();
+
+    transport.setPlayMode(PlayMode::song);
+    audioBlock();
+
+    EXPECT_EQ(transport.playMode(), PlayMode::pattern);
+    EXPECT_TRUE(transport.isRecording());
+    transport.stop();
+}
+
 TEST_F(TransportPresenterTest, FTR07_PlayWithoutRecArmedOnlyPlays)
 {
     transport.play();

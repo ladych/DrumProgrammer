@@ -56,6 +56,10 @@ public:
     void duplicate(int index);
     /// The last pattern cannot be deleted, so there is always one to play.
     [[nodiscard]] bool canRemove() const;
+    /// Number of song blocks that use the pattern.
+    [[nodiscard]] int songUses(int index) const;
+    /// Question to confirm before deleting a pattern the song uses, empty if it needs none (F-SO-05).
+    [[nodiscard]] std::string removeQuestion(int index) const;
     void remove(int index);
 
     /// Changes whenever the project changed, also by undo or loading.

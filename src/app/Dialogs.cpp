@@ -68,4 +68,19 @@ void askForText(const juce::String& title,
                             true);
 }
 
+void askToConfirm(const juce::String& title,
+                  const juce::String& question,
+                  const juce::String& yesButton,
+                  std::function<void()> onYes)
+{
+    const auto options = juce::MessageBoxOptions::makeOptionsOkCancel(
+        juce::MessageBoxIconType::QuestionIcon, title, question, yesButton, "Abbrechen");
+    juce::AlertWindow::showAsync(options,
+                                 [onYes = std::move(onYes)](int result)
+                                 {
+                                     if (result == 1)
+                                         onYes();
+                                 });
+}
+
 } // namespace drumprog::app

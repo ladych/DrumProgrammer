@@ -36,6 +36,7 @@ add_library(drumprog_core STATIC
     model/ProjectFactory.cpp
     model/SnapshotBuilder.cpp
     model/SnapshotPublisher.cpp
+    model/SongLayout.cpp
     model/TakeRecorder.cpp
     model/TreeChangeListener.cpp
     model/TreeNode.cpp
@@ -54,6 +55,8 @@ add_library(drumprog_core STATIC
     ui/PianoRollGeometry.cpp
     ui/PianoRollPresenter.cpp
     ui/SnapGrid.cpp
+    ui/SongTimelineGeometry.cpp
+    ui/SongTimelinePresenter.cpp
     ui/TempoPresenter.cpp
     ui/TransportPresenter.cpp
 )
@@ -81,6 +84,7 @@ set(DRUMPROG_APP_SOURCES
     app/PatternListPanel.cpp
     app/PianoRollToolbar.cpp
     app/PianoRollView.cpp
+    app/SongTimelineView.cpp
     app/TransportBar.cpp
 )
 

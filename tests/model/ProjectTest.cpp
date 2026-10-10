@@ -284,6 +284,17 @@ TEST_F(ProjectTest, FSE04_FindSlotReturnsNothingForUnknownNote)
     EXPECT_FALSE(project.kit().findSlot(80).has_value());
 }
 
+TEST_F(ProjectTest, FSO03_ClearRemovesAllSongBlocks)
+{
+    auto song = project.song();
+    song.addEntry("id-1", 0);
+    song.addEntry("id-1", 2);
+
+    song.clear();
+
+    EXPECT_EQ(song.numEntries(), 0);
+}
+
 TEST_F(ProjectTest, FSO04_SongBlocksReferencePatternsById)
 {
     auto song = project.song();

@@ -134,6 +134,7 @@ public:
     SongEntry addEntry(const std::string& patternId, int startBar);
     void removeEntry(int index);
     void removeEntriesFor(const std::string& patternId);
+    void clear();
 };
 
 class BackingTrack : public TreeNode

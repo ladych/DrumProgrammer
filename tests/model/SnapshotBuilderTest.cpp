@@ -133,9 +133,24 @@ TEST_F(SnapshotBuilderTest, FSO04_SongBlocksAreSortedAndResolvedToPatternIndex)
     const auto snapshot = SnapshotBuilder::build(project, activeKit());
 
     ASSERT_EQ(snapshot->song.size(), 3U);
-    EXPECT_EQ(snapshot->song[0], (SongEntrySnapshot{0, 0}));
-    EXPECT_EQ(snapshot->song[1], (SongEntrySnapshot{1, 2 * 3840}));
-    EXPECT_EQ(snapshot->song[2], (SongEntrySnapshot{1, 6 * 3840}));
+    EXPECT_EQ(snapshot->song[0], (SongEntrySnapshot{0, 0, 2 * 3840}));
+    EXPECT_EQ(snapshot->song[1], (SongEntrySnapshot{1, 2 * 3840, 4 * 3840}));
+    EXPECT_EQ(snapshot->song[2], (SongEntrySnapshot{1, 6 * 3840, 4 * 3840}));
+    EXPECT_EQ(snapshot->songLengthTicks, 10 * 3840);
+}
+
+TEST_F(SnapshotBuilderTest, FTR05_SongBlocksPlayUntilTheNextBlock)
+{
+    auto song = project.song();
+    song.addEntry("id-1", 0);
+    song.addEntry("id-1", 1);
+
+    const auto snapshot = SnapshotBuilder::build(project, activeKit());
+
+    ASSERT_EQ(snapshot->song.size(), 2U);
+    EXPECT_EQ(snapshot->song[0], (SongEntrySnapshot{0, 0, 3840}));
+    EXPECT_EQ(snapshot->song[1], (SongEntrySnapshot{0, 3840, 2 * 3840}));
+    EXPECT_EQ(snapshot->songLengthTicks, 3 * 3840);
 }
 
 TEST_F(SnapshotBuilderTest, FSO04_SkipsSongBlocksOfUnknownPatterns)

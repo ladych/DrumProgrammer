@@ -1,5 +1,7 @@
 #include "app/PatternListPanel.h"
 
+#include "app/SongTimelineView.h"
+
 #include <utility>
 
 namespace drumprog::app
@@ -94,6 +96,13 @@ void PatternListPanel::listBoxItemDoubleClicked(int row, const juce::MouseEvent&
     dialogs_.rename(row);
 }
 
+juce::var PatternListPanel::getDragSourceDescription(const juce::SparseSet<int>& rowsToDescribe)
+{
+    if (rowsToDescribe.isEmpty())
+        return {};
+    return juce::String(SongTimelineView::kPatternDragPrefix) + juce::String(rowsToDescribe[0]);
+}
+
 void PatternListPanel::timerCallback()
 {
     if (presenter_.changeCount() != seenChangeCount_ || presenter_.selectedIndex() != seenSelection_)
@@ -133,7 +142,7 @@ void PatternListPanel::showMenu(int row)
                            else if (result == 3)
                                presenter_.duplicate(row);
                            else if (result == 4)
-                               presenter_.remove(row);
+                               dialogs_.remove(row);
                            else if (result >= 100)
                                presenter_.setColour(row, palette.at(static_cast<std::size_t>(result - 100)));
                        });

@@ -24,7 +24,7 @@ public:
 private:
     [[nodiscard]] static engine::PatternSnapshot
     buildPattern(const Pattern& pattern, const Kit& kit, std::int64_t ticksPerBar);
-    [[nodiscard]] static std::vector<engine::SongEntrySnapshot> buildSong(const Project& project);
+    static void buildSong(const Project& project, engine::ProjectSnapshot& snapshot);
 };
 
 } // namespace drumprog::model

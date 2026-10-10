@@ -110,6 +110,30 @@ bool PatternListPresenter::canRemove() const
     return numPatterns() > 1;
 }
 
+int PatternListPresenter::songUses(int index) const
+{
+    if (!isValid(index))
+        return 0;
+    const auto project = this->project();
+    const auto id = project.pattern(index).id();
+    const auto song = project.song();
+    int uses = 0;
+    for (int entry = 0; entry < song.numEntries(); ++entry)
+        if (song.entry(entry).patternId() == id)
+            ++uses;
+    return uses;
+}
+
+std::string PatternListPresenter::removeQuestion(int index) const
+{
+    const int uses = songUses(index);
+    if (uses == 0)
+        return {};
+    return "\xe2\x80\x9e" + name(index) + "\xe2\x80\x9c wird im Song " + std::to_string(uses) +
+           "-mal verwendet. Beim L\xc3\xb6schen werden alle Bl\xc3\xb6"
+           "cke entfernt.";
+}
+
 void PatternListPresenter::remove(int index)
 {
     if (!isValid(index) || !canRemove())

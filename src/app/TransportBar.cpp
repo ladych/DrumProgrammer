@@ -32,6 +32,7 @@ TransportBar::TransportBar(ui::TransportPresenter& transport, ui::TempoPresenter
 {
     setUpTransport();
     setUpTempo();
+    setUpMode();
     setUpMetronome();
     setUpRecording();
     keepKeyboardFocusAway({&rewindButton_,
@@ -41,6 +42,8 @@ TransportBar::TransportBar(ui::TransportPresenter& transport, ui::TempoPresenter
                            &recButton_,
                            &numeratorBox_,
                            &denominatorBox_,
+                           &patternModeButton_,
+                           &songModeButton_,
                            &metronomeButton_,
                            &metronomeRecordButton_,
                            &metronomeLevel_,
@@ -96,6 +99,17 @@ void TransportBar::setUpTempo()
     denominatorBox_.onChange = [this] { commitTimeSignature(); };
     for (auto* component : std::initializer_list<juce::Component*>{
              &bpmLabel_, &bpmEditor_, &signatureLabel_, &numeratorBox_, &denominatorBox_})
+        addAndMakeVisible(component);
+}
+
+void TransportBar::setUpMode()
+{
+    patternModeButton_.setTooltip("Spielt das aktive Pattern");
+    patternModeButton_.onClick = [this] { transport_.setPlayMode(ui::PlayMode::pattern); };
+    songModeButton_.setTooltip("Spielt die Song-Timeline");
+    songModeButton_.onClick = [this] { transport_.setPlayMode(ui::PlayMode::song); };
+    for (auto* component :
+         std::initializer_list<juce::Component*>{&modeLabel_, &patternModeButton_, &songModeButton_})
         addAndMakeVisible(component);
 }
 
@@ -159,9 +173,15 @@ void TransportBar::resized()
     signatureLabel_.setBounds(row.removeFromLeft(44));
     numeratorBox_.setBounds(row.removeFromLeft(56).reduced(0, 2));
     denominatorBox_.setBounds(row.removeFromLeft(56).reduced(0, 2));
+    row.removeFromLeft(2 * kGap);
+    layOutMode(row);
 
     area.removeFromTop(kGap);
-    row = area.removeFromTop(kRowHeight);
+    layOutMetronomeAndRecording(area.removeFromTop(kRowHeight));
+}
+
+void TransportBar::layOutMetronomeAndRecording(juce::Rectangle<int> row)
+{
     metronomeButton_.setBounds(row.removeFromLeft(100));
     metronomeRecordButton_.setBounds(row.removeFromLeft(120));
     metronomeLevel_.setBounds(row.removeFromLeft(100));
@@ -172,6 +192,13 @@ void TransportBar::resized()
     row.removeFromLeft(kGap);
     offsetLabel_.setBounds(row.removeFromLeft(90));
     offsetSlider_.setBounds(row.removeFromLeft(200));
+}
+
+void TransportBar::layOutMode(juce::Rectangle<int> row)
+{
+    modeLabel_.setBounds(row.removeFromLeft(54));
+    patternModeButton_.setBounds(row.removeFromLeft(70));
+    songModeButton_.setBounds(row.removeFromLeft(60));
 }
 
 void TransportBar::timerCallback()
@@ -190,6 +217,10 @@ void TransportBar::refresh()
                           playing ? kActiveOrange
                                   : getLookAndFeel().findColour(juce::TextButton::buttonColourId));
     loopButton_.setToggleState(transport_.loop(), juce::dontSendNotification);
+    const auto normal = getLookAndFeel().findColour(juce::TextButton::buttonColourId);
+    const bool song = transport_.playMode() == ui::PlayMode::song;
+    patternModeButton_.setColour(juce::TextButton::buttonColourId, song ? normal : kActiveOrange);
+    songModeButton_.setColour(juce::TextButton::buttonColourId, song ? kActiveOrange : normal);
     // Rec: dark red while armed, bright red while recording, blinking during the count-in (F-TR-07).
     blink_ = (blink_ + 1) % kBlinkPeriod;
     juce::Colour recColour = getLookAndFeel().findColour(juce::TextButton::buttonColourId);
