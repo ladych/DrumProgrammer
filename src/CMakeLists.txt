@@ -27,6 +27,7 @@ add_library(drumprog_core STATIC
     input/Keymap.cpp
     input/MidiInputHandler.cpp
     input/Scancode.cpp
+    io/DefaultKit.cpp
     io/GlobalKit.cpp
     io/MidiFileReader.cpp
     io/MidiFileWriter.cpp
@@ -48,6 +49,7 @@ add_library(drumprog_core STATIC
     model/TreeChangeListener.cpp
     model/TreeNode.cpp
     model/UuidGenerator.cpp
+    ui/AboutInfo.cpp
     ui/ActivePattern.cpp
     ui/ActivityLed.cpp
     ui/AudioStatus.cpp
@@ -81,6 +83,7 @@ endif()
 # Humble objects (E-03): JUCE glue without logic, listed in coverage-exclusions.txt.
 set(DRUMPROG_APP_SOURCES
     app/Main.cpp
+    app/AboutDialog.cpp
     app/AppComposition.cpp
     app/AudioDeviceSupervisor.cpp
     app/Dialogs.cpp
@@ -124,6 +127,17 @@ target_compile_definitions(DrumProgrammer PRIVATE
     JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:DrumProgrammer,JUCE_PRODUCT_NAME>"
     JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:DrumProgrammer,JUCE_VERSION>"
 )
+
+# Default kit (io::DefaultKit): its samples and license text are built into the program.
+file(GLOB DRUMPROG_DEFAULT_KIT_FILES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/resources/DefaultKit/*")
+juce_add_binary_data(DrumProgrammerDefaultKit
+    HEADER_NAME DefaultKitData.h
+    NAMESPACE DefaultKitData
+    SOURCES ${DRUMPROG_DEFAULT_KIT_FILES})
+# Its generated header is included as a system header, so clang-tidy does not check it.
+target_link_libraries(DrumProgrammer PRIVATE $<LINK_ONLY:DrumProgrammerDefaultKit>)
+target_include_directories(DrumProgrammer SYSTEM PRIVATE
+    $<TARGET_PROPERTY:DrumProgrammerDefaultKit,INTERFACE_INCLUDE_DIRECTORIES>)
 
 # JUCE itself comes compiled from drumprog_juce through drumprog_core (cmake/DrumProgrammerJuce.cmake).
 target_link_libraries(DrumProgrammer PRIVATE drumprog_core)

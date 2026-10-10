@@ -28,6 +28,7 @@ add_executable(drumprog_tests
     input/KeymapTest.cpp
     input/MidiInputHandlerTest.cpp
     input/ScancodeTest.cpp
+    io/DefaultKitTest.cpp
     io/GlobalKitTest.cpp
     io/MidiFileReaderTest.cpp
     io/MidiFileWriterTest.cpp
@@ -48,6 +49,7 @@ add_executable(drumprog_tests
     model/TakeRecorderTest.cpp
     model/TreeChangeListenerTest.cpp
     model/UuidGeneratorTest.cpp
+    ui/AboutInfoTest.cpp
     ui/ActivePatternTest.cpp
     ui/ActivityLedTest.cpp
     ui/AudioStatusTest.cpp

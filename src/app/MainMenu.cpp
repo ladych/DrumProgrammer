@@ -44,7 +44,10 @@ constexpr juce::CommandID audioRemoveBackingTrack = 0x3004;
 constexpr juce::CommandID kitCopyToProject = 0x5001;
 constexpr juce::CommandID kitUseGlobal = 0x5002;
 constexpr juce::CommandID kitCopyToGlobal = 0x5003;
+constexpr juce::CommandID kitShow = 0x5004;
+constexpr juce::CommandID kitResetToDefault = 0x5005;
 constexpr juce::CommandID transportRecord = 0x4001;
+constexpr juce::CommandID helpAbout = 0x9001;
 } // namespace command
 
 constexpr int kCtrl = juce::ModifierKeys::commandModifier;
@@ -139,6 +142,12 @@ constexpr std::array kCommands{
                 "Audio",
                 0,
                 0},
+    CommandSpec{command::kitShow,
+                "Kit bearbeiten...",
+                "Samples, Lautstärke, Pitch, MIDI-Note und Taste der Slots einstellen",
+                "Kit",
+                'k',
+                kCtrl},
     CommandSpec{command::kitCopyToProject,
                 "Kit ins Projekt übernehmen",
                 "Das Projekt bekommt ein eigenes Kit, das das Programm-Kit überschreibt",
@@ -155,6 +164,18 @@ constexpr std::array kCommands{
                 "Projekt-Kit als Programm-Kit übernehmen",
                 "Das Kit des Projekts wird das Kit für alle Projekte ohne eigenes Kit",
                 "Kit",
+                0,
+                0},
+    CommandSpec{command::kitResetToDefault,
+                "Default zurücksetzen",
+                "Das angezeigte Kit auf das Default-Kit mit seinen Samples zurücksetzen",
+                "Kit",
+                0,
+                0},
+    CommandSpec{command::helpAbout,
+                "Info und Lizenzen...",
+                "Version, Lizenz, Quellcode und Komponenten von Drittanbietern",
+                "Hilfe",
                 0,
                 0},
     CommandSpec{command::transportRecord,
@@ -202,9 +223,18 @@ std::vector<juce::CommandID> menuCommands(int menuIndex)
     case 4:
         return {midiImport, midiExport};
     case 5:
-        return {kitCopyToProject, kitUseGlobal, kSeparator, kitCopyToGlobal};
-    default:
+        return {kitShow,
+                kSeparator,
+                kitCopyToProject,
+                kitUseGlobal,
+                kSeparator,
+                kitCopyToGlobal,
+                kSeparator,
+                kitResetToDefault};
+    case 6:
         return {audioSettings, audioKeymap, kSeparator, audioLoadBackingTrack, audioRemoveBackingTrack};
+    default:
+        return {helpAbout};
     }
 }
 
@@ -226,10 +256,11 @@ MainMenu::MainMenu(ui::DocumentController& document,
                    MidiActions midi,
                    KitMenuActions kit,
                    AudioMenuActions audio,
+                   HelpActions help,
                    TransportActions transport)
     : document_(document), quit_(std::move(quit)), edit_(std::move(edit)), pattern_(std::move(pattern)),
       song_(std::move(song)), midi_(std::move(midi)), kit_(std::move(kit)), audio_(std::move(audio)),
-      transport_(std::move(transport))
+      help_(std::move(help)), transport_(std::move(transport))
 {
     commands_.registerAllCommandsForTarget(this);
     commands_.setFirstCommandTarget(this);
@@ -243,7 +274,7 @@ MainMenu::~MainMenu()
 
 juce::StringArray MainMenu::getMenuBarNames()
 {
-    return {"Datei", "Bearbeiten", "Pattern", "Song", "MIDI", "Kit", "Audio"};
+    return {"Datei", "Bearbeiten", "Pattern", "Song", "MIDI", "Kit", "Audio", "Hilfe"};
 }
 
 juce::PopupMenu MainMenu::getMenuForIndex(int menuIndex, const juce::String& /*menuName*/)
@@ -430,6 +461,10 @@ std::function<void()> MainMenu::kitActionFor(juce::CommandID commandID) const
 {
     switch (commandID)
     {
+    case command::kitShow:
+        return kit_.showKit;
+    case command::kitResetToDefault:
+        return kit_.resetToDefault;
     case command::kitCopyToProject:
         return kit_.copyGlobalKitToProject;
     case command::kitUseGlobal:
@@ -453,6 +488,8 @@ std::function<void()> MainMenu::audioActionFor(juce::CommandID commandID) const
         return audio_.loadBackingTrack;
     case command::audioRemoveBackingTrack:
         return audio_.removeBackingTrack;
+    case command::helpAbout:
+        return help_.showAbout;
     default:
         return {};
     }

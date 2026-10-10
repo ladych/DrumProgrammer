@@ -127,5 +127,8 @@ jobs:
         env:
           CC: clang
           CXX: clang++
+      # Generated header of the built-in default kit (DefaultKitData.h), included by src/app/AppComposition.cpp.
+      - name: Generate sources
+        run: cmake --build build --target DrumProgrammerDefaultKit
       - name: Run clang-tidy
         run: tools/run-clang-tidy.sh build

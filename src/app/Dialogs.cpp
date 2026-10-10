@@ -1,6 +1,8 @@
 #include "app/Dialogs.h"
 
+#include "app/AboutDialog.h"
 #include "app/KeymapDialog.h"
+#include "app/KitPanel.h"
 
 #include <memory>
 #include <utility>
@@ -10,9 +12,13 @@ namespace drumprog::app
 namespace
 {
 
-void launch(std::unique_ptr<juce::Component> content,
-            const juce::String& title,
-            juce::Component* centreAround)
+constexpr int kKitDialogWidth = 760;
+constexpr int kKitDialogHeight = 520;
+
+juce::DialogWindow* launch(std::unique_ptr<juce::Component> content,
+                           const juce::String& title,
+                           juce::Component* centreAround,
+                           bool resizable = false)
 {
     juce::DialogWindow::LaunchOptions options;
     options.dialogBackgroundColour =
@@ -22,8 +28,8 @@ void launch(std::unique_ptr<juce::Component> content,
     options.componentToCentreAround = centreAround;
     options.escapeKeyTriggersCloseButton = true;
     options.useNativeTitleBar = true;
-    options.resizable = false;
-    options.launchAsync();
+    options.resizable = resizable;
+    return options.launchAsync();
 }
 
 } // namespace
@@ -46,6 +52,28 @@ void showAudioSettingsDialog(juce::AudioDeviceManager& deviceManager, juce::Comp
 void showKeymapDialog(ui::KeymapPresenter& presenter, juce::Component* centreAround)
 {
     launch(std::make_unique<KeymapDialog>(presenter), "Tastatur-Mapping", centreAround);
+}
+
+juce::DialogWindow* showKitDialog(ui::KitPresenter& kit,
+                                  ui::KeymapPresenter& keymap,
+                                  const juce::String& sampleWildcard,
+                                  const std::vector<juce::KeyListener*>& keyListeners,
+                                  juce::Component* centreAround)
+{
+    auto panel = std::make_unique<KitPanel>(kit, keymap, sampleWildcard);
+    panel->setSize(kKitDialogWidth, kKitDialogHeight);
+    auto* window = launch(std::move(panel), "Kit", centreAround, true);
+    for (auto* listener : keyListeners)
+        window->addKeyListener(listener);
+    return window;
+}
+
+void showAboutDialog(const ui::AboutInfo& info, juce::Component* centreAround)
+{
+    launch(std::make_unique<AboutDialog>(info),
+           juce::String::fromUTF8("Info über Drum Programmer"),
+           centreAround,
+           true);
 }
 
 void askForText(const juce::String& title,

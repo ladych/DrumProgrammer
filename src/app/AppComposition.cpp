@@ -1,11 +1,16 @@
 #include "app/AppComposition.h"
 
+#include "DefaultKitData.h"
 #include "app/Dialogs.h"
 #include "app/MainComponent.h"
+#include "ui/AboutInfo.h"
 #include "ui/AudioStatus.h"
 
 #include <filesystem>
+#include <optional>
+#include <span>
 #include <string>
+#include <string_view>
 
 namespace drumprog::app
 {
@@ -16,6 +21,11 @@ constexpr double kTestToneFrequencyHz = 440.0;
 constexpr float kTestToneGain = 0.2F;
 constexpr int kNumOutputChannels = 2;
 constexpr int kGlobalKitSaveIntervalMs = 1000;
+#if defined(JUCE_ASIO) && JUCE_ASIO
+constexpr bool kWithAsio = true;
+#else
+constexpr bool kWithAsio = false;
+#endif
 
 std::filesystem::path settingsFile(const char* name)
 {
@@ -27,13 +37,37 @@ std::filesystem::path settingsFile(const char* name)
     return {std::u8string{utf8.begin(), utf8.end()}};
 }
 
+/// The default kit's files built into the program (resources/DefaultKit).
+std::optional<std::string> defaultKitResource(std::string_view fileName)
+{
+    for (const auto* name : std::span{&DefaultKitData::namedResourceList[0],
+                                      static_cast<std::size_t>(DefaultKitData::namedResourceListSize)})
+    {
+        if (fileName != DefaultKitData::getNamedResourceOriginalFilename(name))
+            continue;
+        int size = 0;
+        const auto* data = DefaultKitData::getNamedResource(name, size);
+        return std::string{data, static_cast<std::size_t>(size)};
+    }
+    return std::nullopt;
+}
+
+io::DefaultKit installedDefaultKit(io::IFileSystem& fileSystem)
+{
+    io::DefaultKit kit{fileSystem, settingsFile("DefaultKit"), &defaultKitResource};
+    // A file that cannot be copied is reported as a missing sample of the global kit.
+    kit.install();
+    return kit;
+}
+
 } // namespace
 
 AppComposition::AppComposition()
     : deviceSettings_(fileSystem_, settingsFile("audio-device.xml")),
       keymapSettings_(fileSystem_, settingsFile("keymap.txt")),
       recordOffsetSettings_(fileSystem_, settingsFile("recording-offset.txt")),
-      globalKitSettings_(fileSystem_, settingsFile("kit.xml")), globalKit_(globalKitSettings_, fileSystem_),
+      globalKitSettings_(fileSystem_, settingsFile("kit.xml")), defaultKit_(installedDefaultKit(fileSystem_)),
+      globalKit_(globalKitSettings_, fileSystem_, [this] { return defaultKit_.createKit(); }),
       testTone_(kTestToneFrequencyHz, kTestToneGain), kitBuilder_(sampleLoader_),
       kitPublisher_(kitBuilder_, sampleEngine_),
       playbackRenderer_(sequencer_, sampleEngine_, metronome_, backingTrackPlayer_),
@@ -74,7 +108,9 @@ AppComposition::AppComposition()
                 patternActions(),
                 songActions(),
                 midiActions(),
-                {.copyGlobalKitToProject = [this] { kitPresenter_.copyGlobalKitToProject(); },
+                {.showKit = [this] { showKit(); },
+                 .resetToDefault = [this] { resetKitToDefault(); },
+                 .copyGlobalKitToProject = [this] { kitPresenter_.copyGlobalKitToProject(); },
                  .useGlobalKit = [this] { kitPresenter_.useGlobalKit(); },
                  .copyProjectKitToGlobal = [this] { kitPresenter_.copyProjectKitToGlobal(); },
                  .usesProjectKit = [this] { return kitPresenter_.usesProjectKit(); }},
@@ -83,6 +119,11 @@ AppComposition::AppComposition()
                  .loadBackingTrack = [this] { chooseBackingTrack(); },
                  .removeBackingTrack = [this] { backingTrackPresenter_.remove(); },
                  .hasBackingTrack = [this] { return backingTrackPresenter_.hasTrack(); }},
+                {.showAbout =
+                     [this] {
+                         showAboutDialog(ui::makeAboutInfo(JUCE_APPLICATION_VERSION_STRING, kWithAsio),
+                                         dialogParent_);
+                     }},
                 {.toggleRecordArmed = [this] { transportPresenter_.toggleRecordArmed(); }})
 {
     activePattern_.addOnChange([this](int index) { transportPresenter_.setActivePattern(index); });
@@ -102,6 +143,8 @@ AppComposition::AppComposition()
 AppComposition::~AppComposition()
 {
     stopTimer();
+    // The kit dialog refers to the presenters.
+    delete kitDialog_.getComponent();
     globalKit_.saveIfChanged();
     deviceManager_.removeChangeListener(this);
     deviceManager_.removeMidiInputDeviceCallback({}, &midiInputCallback_);
@@ -117,7 +160,6 @@ std::unique_ptr<juce::Component> AppComposition::createMainComponent()
         deviceSupervisor_,
         transportPresenter_,
         tempoPresenter_,
-        kitPresenter_,
         patternListPresenter_,
         PatternDialogs{.rename = [this](int index) { renamePattern(index); },
                        .setLength = [this](int index) { askPatternLength(index); },
@@ -129,9 +171,7 @@ std::unique_ptr<juce::Component> AppComposition::createMainComponent()
         mixPresenter_,
         midiActions(),
         pianoRollPresenter_,
-        keymapPresenter_,
-        inputLeds_,
-        sampleLoader_.wildcardPattern());
+        inputLeds_);
 }
 
 void AppComposition::changeListenerCallback(juce::ChangeBroadcaster* /*source*/)
@@ -227,6 +267,26 @@ void AppComposition::chooseBackingTrack()
                                                        "Die Datei konnte nicht gelesen werden:\n" +
                                                            file.getFullPathName());
         });
+}
+
+void AppComposition::showKit()
+{
+    if (kitDialog_ != nullptr)
+    {
+        kitDialog_->toFront(true);
+        return;
+    }
+    kitDialog_ = showKitDialog(kitPresenter_,
+                               keymapPresenter_,
+                               sampleLoader_.wildcardPattern(),
+                               {mainMenu_.keyMappings(), &keyboardListener_},
+                               dialogParent_);
+}
+
+void AppComposition::resetKitToDefault()
+{
+    defaultKit_.install();
+    kitPresenter_.resetToDefaultKit(defaultKit_.createKit());
 }
 
 EditActions AppComposition::editActions()

@@ -24,6 +24,8 @@ src/app/MixPanel.h              # JUCE faders of the mix, logic in ui::MixPresen
 src/app/MixPanel.cpp            # JUCE faders of the mix, logic in ui::MixPresenter
 src/app/JuceSampleLoader.h      # ISampleLoader on top of juce::AudioFormatManager
 src/app/JuceSampleLoader.cpp    # ISampleLoader on top of juce::AudioFormatManager, decoding only
+src/app/AboutDialog.h           # JUCE labels and links of the info dialog, content from ui::makeAboutInfo
+src/app/AboutDialog.cpp         # JUCE labels and links of the info dialog, content from ui::makeAboutInfo
 src/app/KitPanel.h              # JUCE kit list and inspector widgets, logic in ui::KitPresenter
 src/app/KitPanel.cpp            # JUCE kit list and inspector widgets, logic in ui::KitPresenter
 src/app/Dialogs.h               # opens JUCE dialog windows, no logic

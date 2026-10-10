@@ -53,29 +53,39 @@ protected:
         return kit.toXmlString().toStdString();
     }
 
+    /// Stands in for io::DefaultKit: the GM kit with a kick sample.
+    static juce::ValueTree defaultKitWithKick()
+    {
+        auto kit = model::ProjectFactory::createDefaultKit();
+        Kit{kit, nullptr}.findSlot(36)->setFilePath(kKickFile.string());
+        return kit;
+    }
+
     NiceMock<MockFileSystem> fileSystem;
     SettingsStore store{fileSystem, kKitFile};
     std::string written;
+    GlobalKit::KitFactory defaultKit = &defaultKitWithKick;
 };
 
-TEST_F(GlobalKitTest, FSE04_StartsAsTheGmDefaultKitWithoutSavedKit)
+TEST_F(GlobalKitTest, FSE04_StartsAsTheDefaultKitWithoutSavedKit)
 {
     givenSavedKit(std::nullopt);
+    ON_CALL(fileSystem, exists(kKickFile)).WillByDefault(Return(true));
 
-    const GlobalKit kit{store, fileSystem};
+    const GlobalKit kit{store, fileSystem, defaultKit};
 
-    EXPECT_TRUE(kit.tree().isEquivalentTo(model::ProjectFactory::createDefaultKit()));
+    EXPECT_TRUE(kit.tree().isEquivalentTo(defaultKitWithKick()));
     EXPECT_TRUE(kit.missingSamples().empty());
     EXPECT_FALSE(kit.hasUnsavedChanges());
 }
 
-TEST_F(GlobalKitTest, FSE04_StartsAsTheGmDefaultKitIfTheSavedKitIsNoKit)
+TEST_F(GlobalKitTest, FSE04_StartsAsTheDefaultKitIfTheSavedKitIsNoKit)
 {
     givenSavedKit(std::string{"<PROJECT/>"});
 
-    const GlobalKit kit{store, fileSystem};
+    const GlobalKit kit{store, fileSystem, defaultKit};
 
-    EXPECT_EQ(Kit(kit.tree(), nullptr).numSlots(), 25);
+    EXPECT_EQ(Kit(kit.tree(), nullptr).findSlot(36)->filePath(), kKickFile.string());
 }
 
 TEST_F(GlobalKitTest, FPJ02_RestoresTheSavedKit)
@@ -83,7 +93,7 @@ TEST_F(GlobalKitTest, FPJ02_RestoresTheSavedKit)
     givenSavedKit(kitWithSamples());
     ON_CALL(fileSystem, exists(_)).WillByDefault(Return(true));
 
-    const GlobalKit kit{store, fileSystem};
+    const GlobalKit kit{store, fileSystem, defaultKit};
 
     EXPECT_EQ(fs::path{Kit(kit.tree(), nullptr).findSlot(36)->filePath()}, kKickFile);
     EXPECT_TRUE(kit.missingSamples().empty());
@@ -96,7 +106,7 @@ TEST_F(GlobalKitTest, FPJ03_MarksAndReportsMissingSamples)
     ON_CALL(fileSystem, exists(kKickFile)).WillByDefault(Return(true));
     ON_CALL(fileSystem, exists(kSnareFile)).WillByDefault(Return(false));
 
-    const GlobalKit kit{store, fileSystem};
+    const GlobalKit kit{store, fileSystem, defaultKit};
 
     ASSERT_EQ(kit.missingSamples().size(), 1U);
     EXPECT_EQ(kit.missingSamples()[0], (MissingSample{"Acoustic Snare", kSnareFile.string()}));
@@ -106,7 +116,7 @@ TEST_F(GlobalKitTest, FPJ03_MarksAndReportsMissingSamples)
 
 TEST_F(GlobalKitTest, FPJ02_SavesOnlyAfterAChange)
 {
-    GlobalKit kit{store, fileSystem};
+    GlobalKit kit{store, fileSystem, defaultKit};
     EXPECT_CALL(fileSystem, writeText(_, _)).Times(0);
     EXPECT_TRUE(kit.saveIfChanged());
     ::testing::Mock::VerifyAndClearExpectations(&fileSystem);
@@ -125,7 +135,7 @@ TEST_F(GlobalKitTest, FPJ03_DoesNotSaveTheMissingSampleMarker)
 {
     givenSavedKit(kitWithSamples());
     ON_CALL(fileSystem, exists(_)).WillByDefault(Return(false));
-    GlobalKit kit{store, fileSystem};
+    GlobalKit kit{store, fileSystem, defaultKit};
 
     Kit{kit.tree(), nullptr}.findSlot(36)->setGain(0.5);
     ASSERT_TRUE(kit.saveIfChanged());
@@ -136,7 +146,7 @@ TEST_F(GlobalKitTest, FPJ03_DoesNotSaveTheMissingSampleMarker)
 
 TEST_F(GlobalKitTest, Q10_AFailedSaveKeepsTheChangesUnsaved)
 {
-    GlobalKit kit{store, fileSystem};
+    GlobalKit kit{store, fileSystem, defaultKit};
     Kit{kit.tree(), nullptr}.findSlot(38)->setGain(0.5);
     ON_CALL(fileSystem, writeText(_, _)).WillByDefault(Return(false));
 

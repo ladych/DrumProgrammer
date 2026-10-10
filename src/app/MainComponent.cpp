@@ -15,7 +15,6 @@ constexpr int kLedSize = 10;
 constexpr int kLedWidth = 90;
 constexpr int kMidiButtonWidth = 100;
 constexpr int kSideWidth = 260;
-constexpr int kKitPanelHeight = 290;
 
 ui::AudioDeviceInfo deviceInfo(juce::AudioDeviceManager& deviceManager,
                                const AudioDeviceSupervisor& supervisor)
@@ -44,7 +43,6 @@ MainComponent::MainComponent(engine::TestToneSource& testTone,
                              const AudioDeviceSupervisor& deviceSupervisor,
                              ui::TransportPresenter& transport,
                              ui::TempoPresenter& tempo,
-                             ui::KitPresenter& kitPresenter,
                              ui::PatternListPresenter& patterns,
                              PatternDialogs patternDialogs,
                              ui::SongTimelinePresenter& songTimeline,
@@ -54,15 +52,12 @@ MainComponent::MainComponent(engine::TestToneSource& testTone,
                              ui::MixPresenter& mix,
                              MidiActions midi,
                              ui::PianoRollPresenter& pianoRoll,
-                             ui::KeymapPresenter& keymapPresenter,
-                             ui::InputLedPresenter& inputLeds,
-                             const juce::String& sampleWildcard)
+                             ui::InputLedPresenter& inputLeds)
     : testTone_(testTone), deviceManager_(deviceManager), deviceSupervisor_(deviceSupervisor),
       inputLeds_(inputLeds), midi_(std::move(midi)), pianoRoll_(pianoRoll), transportBar_(transport, tempo),
       pianoRollToolbar_(pianoRoll), patternList_(patterns, std::move(patternDialogs)),
       songTimeline_(songTimeline, transport, backingTrack, backingFormats, std::move(loadBackingTrack)),
-      pianoRollView_(pianoRoll, transport), noteInspector_(pianoRoll), mixPanel_(mix),
-      kitPanel_(kitPresenter, keymapPresenter, sampleWildcard)
+      pianoRollView_(pianoRoll, transport), noteInspector_(pianoRoll), mixPanel_(mix)
 {
     setUpButtons();
     editStatus_.setJustificationType(juce::Justification::centredRight);
@@ -77,7 +72,6 @@ MainComponent::MainComponent(engine::TestToneSource& testTone,
                                                                    &pianoRollView_,
                                                                    &noteInspector_,
                                                                    &mixPanel_,
-                                                                   &kitPanel_,
                                                                    &status_,
                                                                    &editStatus_})
         addAndMakeVisible(component);
@@ -133,8 +127,6 @@ void MainComponent::resized()
     ledArea_ = row.removeFromRight(2 * kLedWidth + 16);
     pianoRollToolbar_.setBounds(row.withTrimmedLeft(16));
     area.removeFromTop(8);
-    kitPanel_.setBounds(area.removeFromBottom(kKitPanelHeight));
-    area.removeFromBottom(8);
     patternList_.setBounds(area.removeFromLeft(kSideWidth));
     area.removeFromLeft(8);
     auto inspector = area.removeFromRight(kSideWidth).withTrimmedLeft(8);

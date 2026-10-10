@@ -45,6 +45,12 @@ CLion liest `CMakePresets.json` direkt; die Presets `coverage`, `asan` und `tsan
 
 Die CI (GitHub Actions) prüft all das bei jedem Push: Linux- und Windows-Build mit Tests, Coverage-Gate, Address/UB- und Thread-Sanitizer, clang-format und clang-tidy.
 
+## Default-Kit
+
+Beim ersten Start spielt das Programm mit dem Default-Kit: den GM-Slots 35 bis 59 mit Samples aus dem Kit „Black Pearl" der [AVL Drumkits](http://www.bandshed.net/avldrumkits/) von Glen MacArthur, pro Instrument die höchste Velocity-Stufe. Die Samples liegen unter `resources/DefaultKit/`, sind ins Programm eingebaut und werden beim Start in den Einstellungsordner kopiert (`DefaultKit/` neben `kit.xml`). Menü **Kit → Default zurücksetzen** stellt das angezeigte Kit wieder her, **Kit → Kit bearbeiten...** (Strg+K) öffnet den Kit-Dialog.
+
 ## Lizenz
 
 GNU Affero General Public License v3.0, siehe [LICENSE](LICENSE). Die Lizenz folgt aus der Open-Source-Lizenz von JUCE.
+
+Die Samples des Default-Kits stehen unter [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) (AVL Drumkits, Glen MacArthur), siehe [resources/DefaultKit/LIESMICH.txt](resources/DefaultKit/LIESMICH.txt). Alle Komponenten von Drittanbietern mit ihren Lizenzen zeigt das Programm unter **Hilfe → Info und Lizenzen...**.
