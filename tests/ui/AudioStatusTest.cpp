@@ -60,5 +60,41 @@ TEST(AudioStatusTest, Q02_ClosedDevice)
     EXPECT_EQ(audioStatusText(info), "Kein Audio-Gerät geöffnet | MIDI: kein Eingang");
 }
 
+TEST(AudioStatusTest, Q03_ShowsDropoutsWhenTheDriverCountsThem)
+{
+    auto info = jack128();
+    info.xruns = 3;
+    EXPECT_EQ(
+        audioStatusText(info),
+        "JACK | system | 48000 Hz | Buffer 128 (2,7 ms) | Latenz 5,3 ms, Anschlag bis Ton max. 8,0 ms | "
+        "XRuns: 3 | MIDI: Alesis Nitro");
+    info.xruns = 0;
+    EXPECT_NE(audioStatusText(info).find("| XRuns: 0 |"), std::string::npos);
+}
+
+TEST(AudioStatusTest, Q09_WarnsWhileTheDeviceGivesNoAudio)
+{
+    auto info = jack128();
+    info.stalled = true;
+    EXPECT_EQ(audioStatusText(info).rfind("Audio-Gerät antwortet nicht, neuer Versuch läuft | JACK | ", 0),
+              0U);
+    AudioDeviceInfo closed;
+    closed.stalled = true;
+    EXPECT_EQ(
+        audioStatusText(closed),
+        "Audio-Gerät antwortet nicht, neuer Versuch läuft | Kein Audio-Gerät geöffnet | MIDI: kein Eingang");
+}
+
+TEST(AudioStatusTest, FAO03_NamesTheDeviceAFallbackReplaces)
+{
+    auto info = jack128();
+    info.driver = "Windows Audio";
+    info.device = "Lautsprecher";
+    info.replacedDevice = "ASIO: Focusrite USB ASIO";
+    EXPECT_EQ(audioStatusText(info).rfind(
+                  "Ersatz für ASIO: Focusrite USB ASIO | Windows Audio | Lautsprecher | ", 0),
+              0U);
+}
+
 } // namespace
 } // namespace drumprog::ui

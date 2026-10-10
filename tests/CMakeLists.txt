@@ -1,4 +1,6 @@
 add_executable(drumprog_tests
+    audio/DeviceRecoveryTest.cpp
+    audio/DriverChoiceTest.cpp
     engine/ClockTest.cpp
     engine/DownmixTest.cpp
     engine/EngineKitTest.cpp
