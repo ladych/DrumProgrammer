@@ -52,16 +52,23 @@ struct PatternActions
     std::function<bool()> canRemove;
 };
 
+/// Actions of the menu "MIDI" (F-MI-01).
+struct MidiActions
+{
+    std::function<void()> exportPattern;
+    std::function<bool()> canExportPattern;
+};
+
 /// Transport commands that only have a shortcut, no menu entry (F-TR-07).
 struct TransportActions
 {
     std::function<void()> toggleRecordArmed;
 };
 
-/// Humble object (E-03): menus "Datei", "Bearbeiten", "Pattern", "Kit" and "Audio" with their shortcuts
-/// (Pflichtenheft 6.2), forwarding every command to the DocumentController or the actions. Shortcuts use
-/// Strg only, so letter keys stay free for drum triggers (6.4), except Entf; the space bar for play/stop
-/// is handled by ui::KeyRouter.
+/// Humble object (E-03): menus "Datei", "Bearbeiten", "Pattern", "MIDI", "Kit" and "Audio" with their
+/// shortcuts (Pflichtenheft 6.2), forwarding every command to the DocumentController or the actions.
+/// Shortcuts use Strg only, so letter keys stay free for drum triggers (6.4), except Entf; the space bar for
+/// play/stop is handled by ui::KeyRouter.
 class MainMenu final : public juce::MenuBarModel, public juce::ApplicationCommandTarget
 {
 public:
@@ -69,6 +76,7 @@ public:
              std::function<void()> quit,
              EditActions edit,
              PatternActions pattern,
+             MidiActions midi,
              KitMenuActions kit,
              AudioMenuActions audio,
              TransportActions transport);
@@ -103,6 +111,7 @@ private:
     std::function<void()> quit_;
     EditActions edit_;
     PatternActions pattern_;
+    MidiActions midi_;
     KitMenuActions kit_;
     AudioMenuActions audio_;
     TransportActions transport_;

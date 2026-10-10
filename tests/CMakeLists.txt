@@ -26,6 +26,8 @@ add_executable(drumprog_tests
     input/MidiInputHandlerTest.cpp
     input/ScancodeTest.cpp
     io/GlobalKitTest.cpp
+    io/MidiFileWriterTest.cpp
+    io/PatternMidiExportTest.cpp
     io/ProjectRepositoryTest.cpp
     io/ProjectSerializerTest.cpp
     io/SettingsStoreTest.cpp
@@ -45,6 +47,7 @@ add_executable(drumprog_tests
     ui/KeymapPresenterTest.cpp
     ui/KeyRouterTest.cpp
     ui/KitPresenterTest.cpp
+    ui/MidiExportControllerTest.cpp
     ui/MusicalTimeTest.cpp
     ui/PatternListPresenterTest.cpp
     ui/PianoRollGeometryTest.cpp
