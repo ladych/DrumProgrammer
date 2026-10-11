@@ -1,6 +1,6 @@
 #include "app/MainComponent.h"
 
-#include "app/Dialogs.h"
+#include "app/Theme.h"
 #include "ui/AudioStatus.h"
 
 #include <utility>
@@ -13,8 +13,22 @@ namespace
 constexpr int kTimerHz = 30;
 constexpr int kLedSize = 10;
 constexpr int kLedWidth = 90;
-constexpr int kMidiButtonWidth = 100;
-constexpr int kSideWidth = 260;
+constexpr int kGap = Splitter::kThickness;
+constexpr int kPadding = 10;
+constexpr int kTopBarHeight = 46;
+constexpr int kStatusHeight = 24;
+constexpr int kPatternColumnWidth = 240;
+constexpr int kPatternColumnMinimum = 150;
+constexpr int kRightColumnWidth = 290;
+constexpr int kRightColumnMinimum = 240;
+constexpr int kCenterMinimum = 520;
+constexpr int kSongMinimum = MetronomePanel::kMinimumHeight + kPadding;
+constexpr int kPianoRollMinimum = 260;
+constexpr int kNoteInspectorHeight = 26 + 4 * 28;
+/// What the pattern column leaves free: the right column at its minimum, the centre and two splitters.
+constexpr int kBesidePatternColumn = kRightColumnMinimum + kCenterMinimum + 2 * Splitter::kThickness;
+constexpr int kBesideRightColumn = kCenterMinimum + Splitter::kThickness;
+constexpr int kBelowSong = kPianoRollMinimum + Splitter::kThickness;
 
 ui::AudioDeviceInfo deviceInfo(juce::AudioDeviceManager& deviceManager,
                                const AudioDeviceSupervisor& supervisor)
@@ -38,8 +52,7 @@ ui::AudioDeviceInfo deviceInfo(juce::AudioDeviceManager& deviceManager,
 
 } // namespace
 
-MainComponent::MainComponent(engine::TestToneSource& testTone,
-                             juce::AudioDeviceManager& deviceManager,
+MainComponent::MainComponent(juce::AudioDeviceManager& deviceManager,
                              const AudioDeviceSupervisor& deviceSupervisor,
                              ui::TransportPresenter& transport,
                              ui::TempoPresenter& tempo,
@@ -50,28 +63,34 @@ MainComponent::MainComponent(engine::TestToneSource& testTone,
                              juce::AudioFormatManager& backingFormats,
                              std::function<void()> loadBackingTrack,
                              ui::MixPresenter& mix,
-                             MidiActions midi,
                              ui::PianoRollPresenter& pianoRoll,
                              ui::InputLedPresenter& inputLeds)
-    : testTone_(testTone), deviceManager_(deviceManager), deviceSupervisor_(deviceSupervisor),
-      inputLeds_(inputLeds), midi_(std::move(midi)), pianoRoll_(pianoRoll), transportBar_(transport, tempo),
-      pianoRollToolbar_(pianoRoll), patternList_(patterns, std::move(patternDialogs)),
+    : deviceManager_(deviceManager), deviceSupervisor_(deviceSupervisor), inputLeds_(inputLeds),
+      pianoRoll_(pianoRoll), patternColumn_(kPatternColumnWidth, kPatternColumnMinimum),
+      rightColumn_(kRightColumnWidth, kRightColumnMinimum),
+      songHeight_(SongTimelineView::kPreferredHeight, kSongMinimum), transportBar_(transport, tempo),
+      patternList_(patterns, std::move(patternDialogs)),
       songTimeline_(songTimeline, transport, backingTrack, backingFormats, std::move(loadBackingTrack)),
-      pianoRollView_(pianoRoll, transport), noteInspector_(pianoRoll), mixPanel_(mix)
+      pianoRollView_(pianoRoll, transport), metronomePanel_(transport), noteInspector_(pianoRoll),
+      mixPanel_(mix)
 {
-    setUpButtons();
+    for (auto* label : {&status_, &editStatus_})
+    {
+        label->setFont(juce::FontOptions{juce::Font::getDefaultMonospacedFontName(), 13.0F, 0});
+        label->setColour(juce::Label::textColourId, theme::kTextDim);
+    }
     editStatus_.setJustificationType(juce::Justification::centredRight);
+    setUpSplitters();
     for (auto* component : std::initializer_list<juce::Component*>{&transportBar_,
-                                                                   &testToneButton_,
-                                                                   &settingsButton_,
-                                                                   &midiImportButton_,
-                                                                   &midiExportButton_,
-                                                                   &pianoRollToolbar_,
                                                                    &patternList_,
                                                                    &songTimeline_,
                                                                    &pianoRollView_,
+                                                                   &metronomePanel_,
                                                                    &noteInspector_,
                                                                    &mixPanel_,
+                                                                   &leftSplitter_,
+                                                                   &rightSplitter_,
+                                                                   &songSplitter_,
                                                                    &status_,
                                                                    &editStatus_})
         addAndMakeVisible(component);
@@ -81,16 +100,33 @@ MainComponent::MainComponent(engine::TestToneSource& testTone,
     setSize(1440, 960);
 }
 
-void MainComponent::setUpButtons()
+/// The splitters change the pattern column, the right column and the height of the song timeline. Each
+/// pane keeps the minimum of the others free (AP14).
+void MainComponent::setUpSplitters()
 {
-    testToneButton_.setToggleState(testTone_.isEnabled(), juce::dontSendNotification);
-    testToneButton_.onClick = [this] { testTone_.setEnabled(testToneButton_.getToggleState()); };
-    settingsButton_.onClick = [this] { showAudioSettingsDialog(deviceManager_, this); };
-    midiImportButton_.onClick = [this] { midi_.importFile(); };
-    midiExportButton_.onClick = [this] { midi_.exportFile(); };
-    for (auto* button : std::initializer_list<juce::Button*>{
-             &testToneButton_, &settingsButton_, &midiImportButton_, &midiExportButton_})
-        button->setWantsKeyboardFocus(false);
+    leftSplitter_.setDragHandlers(
+        [this] { patternColumn_.beginDrag(bodyArea().getWidth(), kBesidePatternColumn); },
+        [this](int offset)
+        {
+            patternColumn_.dragTo(offset, bodyArea().getWidth(), kBesidePatternColumn);
+            resized();
+        });
+    // The splitter is left of the right column: dragging to the right makes the column smaller.
+    rightSplitter_.setDragHandlers(
+        [this]
+        { rightColumn_.beginDrag(bodyArea().getRight() - leftSplitter_.getRight(), kBesideRightColumn); },
+        [this](int offset)
+        {
+            rightColumn_.dragTo(
+                -offset, bodyArea().getRight() - leftSplitter_.getRight(), kBesideRightColumn);
+            resized();
+        });
+    songSplitter_.setDragHandlers([this] { songHeight_.beginDrag(bodyArea().getHeight(), kBelowSong); },
+                                  [this](int offset)
+                                  {
+                                      songHeight_.dragTo(offset, bodyArea().getHeight(), kBelowSong);
+                                      resized();
+                                  });
 }
 
 MainComponent::~MainComponent()
@@ -101,40 +137,68 @@ MainComponent::~MainComponent()
 
 void MainComponent::paint(juce::Graphics& g)
 {
-    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
+    g.fillAll(theme::kGap);
+    for (const auto& panel : panels_)
+    {
+        g.setColour(theme::kPanel);
+        g.fillRect(panel);
+        g.setColour(theme::kOutline.withAlpha(0.5F));
+        g.drawRect(panel);
+    }
     auto leds = ledArea_;
     paintLed(g, leds.removeFromLeft(kLedWidth), "MIDI In", inputLeds_.isMidiLedOn());
     paintLed(g, leds.removeFromLeft(kLedWidth), "Tastatur", inputLeds_.isKeyboardLedOn());
 }
 
+juce::Rectangle<int> MainComponent::bodyArea() const
+{
+    return getLocalBounds()
+        .reduced(kGap)
+        .withTrimmedTop(kTopBarHeight + kGap)
+        .withTrimmedBottom(kStatusHeight);
+}
+
 void MainComponent::resized()
 {
-    auto area = getLocalBounds().reduced(12);
-    auto statusRow = area.removeFromBottom(24);
+    auto area = getLocalBounds().reduced(kGap);
+    auto statusRow = area.removeFromBottom(kStatusHeight).reduced(kPadding, 0);
     editStatus_.setBounds(statusRow.removeFromRight(320));
     status_.setBounds(statusRow);
-    area.removeFromBottom(6);
-    transportBar_.setBounds(area.removeFromTop(TransportBar::kPreferredHeight));
-    area.removeFromTop(6);
-    auto row = area.removeFromTop(30);
-    testToneButton_.setBounds(row.removeFromLeft(160));
-    settingsButton_.setBounds(row.removeFromRight(220));
-    row.removeFromRight(8);
-    midiExportButton_.setBounds(row.removeFromRight(kMidiButtonWidth));
-    row.removeFromRight(4);
-    midiImportButton_.setBounds(row.removeFromRight(kMidiButtonWidth));
-    row.removeFromRight(8);
-    ledArea_ = row.removeFromRight(2 * kLedWidth + 16);
-    pianoRollToolbar_.setBounds(row.withTrimmedLeft(16));
-    area.removeFromTop(8);
-    patternList_.setBounds(area.removeFromLeft(kSideWidth));
-    area.removeFromLeft(8);
-    auto inspector = area.removeFromRight(kSideWidth).withTrimmedLeft(8);
-    mixPanel_.setBounds(inspector.removeFromBottom(MixPanel::kPreferredHeight));
-    noteInspector_.setBounds(inspector);
-    songTimeline_.setBounds(area.removeFromTop(SongTimelineView::kPreferredHeight));
-    area.removeFromTop(8);
-    pianoRollView_.setBounds(area);
+
+    // Top: one row of controls, the input LEDs in the right corner.
+    topBar_ = area.removeFromTop(kTopBarHeight);
+    auto top = topBar_.reduced(kPadding, 0);
+    ledArea_ = top.removeFromRight(2 * kLedWidth);
+    transportBar_.setBounds(top.withSizeKeepingCentre(top.getWidth(), TransportBar::kPreferredHeight));
+    area.removeFromTop(kGap);
+    layOutColumns(area);
+    repaint();
+}
+
+/// Three columns: patterns, editing, settings (AP14).
+void MainComponent::layOutColumns(juce::Rectangle<int> area)
+{
+    auto left = area.removeFromLeft(patternColumn_.size(area.getWidth(), kBesidePatternColumn));
+    leftSplitter_.setBounds(area.removeFromLeft(Splitter::kThickness));
+    auto right = area.removeFromRight(rightColumn_.size(area.getWidth(), kBesideRightColumn));
+    rightSplitter_.setBounds(area.removeFromRight(Splitter::kThickness));
+
+    const int songHeight = songHeight_.size(area.getHeight(), kBelowSong);
+    const auto song = area.removeFromTop(songHeight);
+    songSplitter_.setBounds(area.removeFromTop(Splitter::kThickness));
+    // The right column follows the song splitter: the note inspector starts level with the piano roll.
+    const auto metronome = right.removeFromTop(songHeight);
+    right.removeFromTop(Splitter::kThickness);
+
+    panels_ = {topBar_, left, song, area, metronome, right};
+    patternList_.setBounds(left.reduced(1));
+    songTimeline_.setBounds(song.reduced(1));
+    pianoRollView_.setBounds(area.reduced(1));
+    metronomePanel_.setBounds(metronome.reduced(kPadding, kPadding / 2));
+    auto inspector = right.reduced(kPadding, kPadding / 2);
+    noteInspector_.setBounds(inspector.removeFromTop(kNoteInspectorHeight));
+    inspector.removeFromTop(kPadding);
+    mixPanel_.setBounds(inspector.removeFromTop(MixPanel::kPreferredHeight));
 }
 
 void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* /*source*/)
@@ -145,7 +209,6 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* /*source*/)
 void MainComponent::timerCallback()
 {
     inputLeds_.tick();
-    midiExportButton_.setEnabled(midi_.canExport());
     repaint(ledArea_);
     editStatus_.setText(juce::String::fromUTF8(pianoRoll_.statusText().c_str()), juce::dontSendNotification);
     // Dropouts and a hanging device change without a change message (Q-03, Q-09).

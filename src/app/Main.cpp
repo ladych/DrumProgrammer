@@ -1,4 +1,5 @@
 #include "app/AppComposition.h"
+#include "app/Theme.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -50,6 +51,7 @@ public:
 
     void initialise(const juce::String& /*commandLine*/) override
     {
+        juce::LookAndFeel::setDefaultLookAndFeel(&lookAndFeel_);
         composition_ = std::make_unique<AppComposition>();
         mainWindow_ = std::make_unique<MainWindow>(getApplicationName(),
                                                    composition_->createMainComponent(),
@@ -64,6 +66,7 @@ public:
     {
         mainWindow_.reset();
         composition_.reset();
+        juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
     }
 
     // Window close button and Strg+Q: ask for unsaved changes first (F-PJ-04).
@@ -73,6 +76,7 @@ public:
     }
 
 private:
+    theme::LookAndFeel lookAndFeel_;
     std::unique_ptr<AppComposition> composition_;
     std::unique_ptr<MainWindow> mainWindow_;
 };

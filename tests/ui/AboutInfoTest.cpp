@@ -58,6 +58,17 @@ TEST(AboutInfoTest, Q12_TheAsioSdkAndItsTrademarkNoticeOnlyInTheAsioBuild)
     EXPECT_EQ(asio->licenseText.text, "GPLv3");
 }
 
+TEST(AboutInfoTest, AP14_NamesTheLucideIconsWithTheirCopyrightNotices)
+{
+    const auto info = makeAboutInfo("1.0", false);
+
+    const auto* icons = find(info, "Lucide");
+    ASSERT_NE(icons, nullptr);
+    EXPECT_EQ(icons->licenseText.text, "ISC");
+    EXPECT_THAT(icons->notice, HasSubstr("Lucide Icons and Contributors"));
+    EXPECT_THAT(icons->notice, HasSubstr("Cole Bemis"));
+}
+
 TEST(AboutInfoTest, Q12_EveryComponentHasAuthorLicenseAndWebLinks)
 {
     for (const auto& component : makeAboutInfo("1.0", true).components)

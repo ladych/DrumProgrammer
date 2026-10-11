@@ -155,7 +155,6 @@ AppComposition::~AppComposition()
 std::unique_ptr<juce::Component> AppComposition::createMainComponent()
 {
     return std::make_unique<MainComponent>(
-        testTone_,
         deviceManager_,
         deviceSupervisor_,
         transportPresenter_,
@@ -169,7 +168,6 @@ std::unique_ptr<juce::Component> AppComposition::createMainComponent()
         backingTrackLoader_.formats(),
         [this] { chooseBackingTrack(); },
         mixPresenter_,
-        midiActions(),
         pianoRollPresenter_,
         inputLeds_);
 }

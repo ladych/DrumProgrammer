@@ -38,12 +38,19 @@ src/app/PatternListPanel.h      # JUCE pattern list and context menu, logic in u
 src/app/PatternListPanel.cpp    # JUCE pattern list and context menu, logic in ui::PatternListPresenter
 src/app/PianoRollView.h         # JUCE painting and mouse forwarding, logic in ui::PianoRollPresenter and ui::PianoRollGeometry
 src/app/PianoRollView.cpp       # JUCE painting and mouse forwarding, logic in ui::PianoRollPresenter and ui::PianoRollGeometry
-src/app/PianoRollToolbar.h      # JUCE snap and tool buttons, logic in ui::PianoRollPresenter
-src/app/PianoRollToolbar.cpp    # JUCE snap and tool buttons, logic in ui::PianoRollPresenter
+src/app/PianoRollToolbar.h      # JUCE snap, tool and recording mode buttons, logic in ui::PianoRollPresenter and ui::TransportPresenter
+src/app/PianoRollToolbar.cpp    # JUCE snap, tool and recording mode buttons, logic in ui::PianoRollPresenter and ui::TransportPresenter
 src/app/NoteInspector.h         # JUCE labels and slider of the note inspector, logic in ui::PianoRollPresenter
 src/app/NoteInspector.cpp       # JUCE labels and slider of the note inspector, logic in ui::PianoRollPresenter
 src/app/SongTimelineView.h      # JUCE painting, mouse and drag & drop forwarding, logic in ui::SongTimelinePresenter, ui::BackingTrackPresenter and ui::SongTimelineGeometry
 src/app/SongTimelineView.cpp    # JUCE painting, mouse and drag & drop forwarding, logic in ui::SongTimelinePresenter, ui::BackingTrackPresenter and ui::SongTimelineGeometry
+src/app/IconButton.h            # JUCE button painting the Lucide icons, no logic
+src/app/IconButton.cpp          # JUCE button painting the Lucide icons, no logic
+src/app/Splitter.h              # JUCE splitter bar forwarding the drag, sizes in ui::PaneSize
+src/app/Splitter.cpp            # JUCE splitter bar forwarding the drag, sizes in ui::PaneSize
+src/app/MetronomePanel.h        # JUCE metronome and recording widgets, logic in ui::TransportPresenter
+src/app/MetronomePanel.cpp      # JUCE metronome and recording widgets, logic in ui::TransportPresenter
+src/app/Theme.h                 # colours and JUCE look and feel, no logic
 src/app/KeyboardInputGlue.h     # JUCE key listener forwarding to ui::KeyRouter, OS key names
 src/app/MidiInputCallback.h     # JUCE MIDI callback forwarding raw bytes to input::MidiInputHandler
 src/app/NativeKeyboard.h        # declarations of the platform keyboard access
