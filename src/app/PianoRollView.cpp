@@ -17,6 +17,7 @@ constexpr int kLaneHeight = 110;
 constexpr int kLaneMinimum = 50;
 constexpr int kNotesMinimum = 120;
 constexpr int kLegendWidth = 210;
+constexpr int kLengthBoxWidth = 96;
 constexpr int kHeaderButton = PianoRollToolbar::kButtonSize;
 constexpr int kScrollBarSize = 12;
 constexpr double kEndGrabPixels = 6.0;
@@ -291,11 +292,13 @@ private:
 
 // ----- Piano roll ---------------------------------------------------------------------------------
 
-PianoRollView::PianoRollView(ui::PianoRollPresenter& presenter, ui::TransportPresenter& transport)
-    : presenter_(presenter), transport_(transport), geometry_(presenter.ticksPerQuarter()),
-      laneHeight_(kLaneHeight, kLaneMinimum), noteArea_(std::make_unique<NoteArea>(*this)),
-      velocityLane_(std::make_unique<VelocityLane>(*this)), snapControls_(presenter),
-      toolbar_(presenter, transport)
+PianoRollView::PianoRollView(ui::PianoRollPresenter& presenter,
+                             ui::TransportPresenter& transport,
+                             ui::PatternListPresenter& patterns)
+    : presenter_(presenter), transport_(transport), patterns_(patterns),
+      geometry_(presenter.ticksPerQuarter()), laneHeight_(kLaneHeight, kLaneMinimum),
+      noteArea_(std::make_unique<NoteArea>(*this)), velocityLane_(std::make_unique<VelocityLane>(*this)),
+      snapControls_(presenter), toolbar_(presenter, transport)
 {
     for (auto* component : std::initializer_list<juce::Component*>{noteArea_.get(),
                                                                    velocityLane_.get(),
@@ -303,6 +306,7 @@ PianoRollView::PianoRollView(ui::PianoRollPresenter& presenter, ui::TransportPre
                                                                    &verticalBar_,
                                                                    &zoomOutButton_,
                                                                    &zoomInButton_,
+                                                                   &lengthBox_,
                                                                    &snapControls_,
                                                                    &toolbar_,
                                                                    &laneSplitter_})
@@ -316,6 +320,7 @@ PianoRollView::PianoRollView(ui::PianoRollPresenter& presenter, ui::TransportPre
     verticalBar_.setAutoHide(false);
     zoomOutButton_.onClick = [this] { zoom(1.0 / kZoomStep); };
     zoomInButton_.onClick = [this] { zoom(kZoomStep); };
+    setUpLengthBox();
     laneSplitter_.setDragHandlers(
         [this] { laneHeight_.beginDrag(getHeight() - kHeaderHeight, kNotesMinimum + kScrollBarSize); },
         [this](int offset) { dragLane(offset); });
@@ -381,8 +386,9 @@ void PianoRollView::layOutHeader()
     constexpr int kButtonGroups = 2 * kHeaderButton + 2 + PianoRollToolbar::kGroupGap +
                                   PianoRollToolbar::kPreferredWidth + PianoRollToolbar::kGroupGap;
     auto header = headerArea_.reduced(8, 0);
-    const bool withLegend =
-        header.getWidth() >= textWidth + SnapControls::kPreferredWidth + kButtonGroups + kLegendWidth;
+    const bool withLegend = header.getWidth() >= textWidth + kLengthBoxWidth + PianoRollToolbar::kGroupGap +
+                                                     SnapControls::kPreferredWidth + kButtonGroups +
+                                                     kLegendWidth;
     legendArea_ = withLegend ? header.removeFromRight(kLegendWidth) : juce::Rectangle<int>{};
 
     auto buttons = header.withSizeKeepingCentre(header.getWidth(), kHeaderButton);
@@ -394,8 +400,33 @@ void PianoRollView::layOutHeader()
     header.setRight(zoomOutButton_.getX() - PianoRollToolbar::kGroupGap);
 
     headerTextArea_ = header.removeFromLeft(std::min(textWidth, header.getWidth()));
+    lengthBox_.setBounds(
+        header.removeFromLeft(kLengthBoxWidth).withSizeKeepingCentre(kLengthBoxWidth, kHeaderButton));
+    header.removeFromLeft(PianoRollToolbar::kGroupGap);
     snapControls_.setBounds(header.removeFromLeft(SnapControls::kPreferredWidth)
                                 .withSizeKeepingCentre(SnapControls::kPreferredWidth, kHeaderButton));
+}
+
+/// Length of the shown pattern, changed right in the header (F-PR-09, AP14).
+void PianoRollView::setUpLengthBox()
+{
+    for (int bars = ui::PatternListPresenter::kMinBars; bars <= ui::PatternListPresenter::kMaxBars; ++bars)
+        lengthBox_.addItem(juce::String(bars) + (bars == 1 ? " Takt" : " Takte"), bars);
+    lengthBox_.setTooltip(juce::String::fromUTF8("Länge des Patterns"));
+    lengthBox_.setMouseClickGrabsKeyboardFocus(false);
+    lengthBox_.onChange = [this]
+    {
+        if (lengthBox_.getSelectedId() > 0)
+            patterns_.setLengthBars(patterns_.selectedIndex(), lengthBox_.getSelectedId());
+    };
+    refreshLengthBox();
+}
+
+void PianoRollView::refreshLengthBox()
+{
+    const int bars = patterns_.lengthBars(patterns_.selectedIndex());
+    if (bars != lengthBox_.getSelectedId())
+        lengthBox_.setSelectedId(bars, juce::dontSendNotification);
 }
 
 void PianoRollView::dragLane(int offset)
@@ -410,6 +441,7 @@ void PianoRollView::timerCallback()
 {
     if (presenter_.changeCount() != seenChangeCount_)
         contentChanged();
+    refreshLengthBox();
     const auto playhead = transport_.playheadTick();
     if (playhead != playhead_)
     {
@@ -454,6 +486,7 @@ void PianoRollView::mouseWheelMove(const juce::MouseEvent& event, const juce::Mo
 void PianoRollView::contentChanged()
 {
     seenChangeCount_ = presenter_.changeCount();
+    refreshLengthBox();
     if (utf8(presenter_.headerText()) != headerText_)
     {
         layOutHeader();

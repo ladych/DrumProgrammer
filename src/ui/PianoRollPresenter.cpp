@@ -69,7 +69,6 @@ std::string PianoRollPresenter::headerText() const
         return "Piano-Roll";
     const auto signature = project().timeSignature();
     std::string text = "Piano-Roll \xe2\x80\x94 " + shown->name();
-    text += kSeparator + plural(shown->lengthBars(), " Takt", " Takte");
     text += kSeparator + std::to_string(signature.numerator) + "/" + std::to_string(signature.denominator);
     text += kSeparator + std::string{"Raster "} + gridText();
     return text;

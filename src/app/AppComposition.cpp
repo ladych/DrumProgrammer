@@ -160,7 +160,8 @@ std::unique_ptr<juce::Component> AppComposition::createMainComponent()
         transportPresenter_,
         tempoPresenter_,
         patternListPresenter_,
-        PatternDialogs{.rename = [this](int index) { renamePattern(index); },
+        PatternDialogs{.add = [this] { addPattern(); },
+                       .rename = [this](int index) { renamePattern(index); },
                        .setLength = [this](int index) { askPatternLength(index); },
                        .remove = [this](int index) { removePattern(index); }},
         songTimelinePresenter_,
@@ -209,6 +210,14 @@ void AppComposition::updateOutputLatency()
         info.outputLatencySamples = device->getOutputLatencyInSamples();
     }
     transportPresenter_.setOutputLatencyMs(info.open ? ui::outputLatencyMs(info) : 0.0);
+}
+
+void AppComposition::addPattern()
+{
+    askForNewPattern(juce::String::fromUTF8(patternListPresenter_.newName().c_str()),
+                     ui::PatternListPresenter::kNewPatternBars,
+                     ui::PatternListPresenter::kMaxBars,
+                     [this](const std::string& name, int bars) { patternListPresenter_.add(name, bars); });
 }
 
 void AppComposition::renamePattern(int index)
@@ -306,7 +315,7 @@ EditActions AppComposition::editActions()
 PatternActions AppComposition::patternActions()
 {
     auto& list = patternListPresenter_;
-    return {.add = [&list] { list.add(); },
+    return {.add = [this] { addPattern(); },
             .duplicate = [&list] { list.duplicate(list.selectedIndex()); },
             .rename = [this] { renamePattern(patternListPresenter_.selectedIndex()); },
             .setLength = [this] { askPatternLength(patternListPresenter_.selectedIndex()); },

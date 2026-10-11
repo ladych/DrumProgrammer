@@ -106,7 +106,7 @@ constexpr std::array kCommands{
     CommandSpec{command::toolDraw, "Werkzeug Zeichnen", "Noten zeichnen", "Bearbeiten", '1', kCtrl},
     CommandSpec{command::toolSelect, "Werkzeug Auswahl", "Noten auswählen", "Bearbeiten", '2', kCtrl},
     CommandSpec{command::toolErase, "Werkzeug Löschen", "Noten löschen", "Bearbeiten", '3', kCtrl},
-    CommandSpec{command::patternNew, "Neu", "Neues Pattern anlegen", "Pattern", 0, 0},
+    CommandSpec{command::patternNew, "Neu...", "Neues Pattern anlegen", "Pattern", 0, 0},
     CommandSpec{command::patternDuplicate, "Duplizieren", "Aktives Pattern duplizieren", "Pattern", 0, 0},
     CommandSpec{command::patternRename, "Umbenennen...", "Aktives Pattern umbenennen", "Pattern", 0, 0},
     CommandSpec{command::patternLength, "Länge...", "Länge des aktiven Patterns in Takten", "Pattern", 0, 0},

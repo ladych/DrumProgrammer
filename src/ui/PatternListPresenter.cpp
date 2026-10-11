@@ -65,8 +65,16 @@ std::string PatternListPresenter::lengthText(int index) const
 
 void PatternListPresenter::add()
 {
+    add(freeName(), kNewPatternBars);
+}
+
+void PatternListPresenter::add(const std::string& name, int bars)
+{
+    auto trimmed = juce::String::fromUTF8(name.c_str()).trim().toStdString();
+    if (trimmed.empty())
+        trimmed = freeName();
     undoManager_.beginNewTransaction("Pattern anlegen");
-    auto pattern = project().addPattern(idGenerator_.next(), freeName(), kNewPatternBars);
+    auto pattern = project().addPattern(idGenerator_.next(), trimmed, std::clamp(bars, kMinBars, kMaxBars));
     pattern.setColour(kPalette.at(static_cast<std::size_t>(numPatterns() - 1) % kPalette.size()));
     active_.select(numPatterns() - 1);
 }

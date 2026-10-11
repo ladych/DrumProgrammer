@@ -56,6 +56,31 @@ TEST_F(PatternListPresenterTest, FSO01_AddAppendsANumberedPatternAndOpensIt)
     EXPECT_EQ(presenter.selectedIndex(), 0);
 }
 
+TEST_F(PatternListPresenterTest, AP14_AddsAPatternWithChosenNameAndLength)
+{
+    EXPECT_EQ(presenter.newName(), "Pattern 2");
+
+    presenter.add("  Groove  ", 4);
+
+    ASSERT_EQ(presenter.numPatterns(), 2);
+    EXPECT_EQ(presenter.name(1), "Groove");
+    EXPECT_EQ(presenter.lengthBars(1), 4);
+    EXPECT_EQ(presenter.selectedIndex(), 1);
+    undoManager.undo();
+    EXPECT_EQ(presenter.numPatterns(), 1);
+}
+
+TEST_F(PatternListPresenterTest, AP14_AddWithoutNameTakesTheNextFreeNameAndClampsTheLength)
+{
+    presenter.add(" ", 0);
+    presenter.add("", 100);
+
+    EXPECT_EQ(presenter.name(1), "Pattern 2");
+    EXPECT_EQ(presenter.lengthBars(1), PatternListPresenter::kMinBars);
+    EXPECT_EQ(presenter.name(2), "Pattern 3");
+    EXPECT_EQ(presenter.lengthBars(2), PatternListPresenter::kMaxBars);
+}
+
 TEST_F(PatternListPresenterTest, FSO01_NewNamesAreUnique)
 {
     project.pattern(0).setName("Pattern 2");

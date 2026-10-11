@@ -96,6 +96,33 @@ void askForText(const juce::String& title,
                             true);
 }
 
+void askForNewPattern(const juce::String& name,
+                      int bars,
+                      int maxBars,
+                      std::function<void(const std::string& name, int bars)> onOk)
+{
+    auto* window = new juce::AlertWindow("Neues Pattern", {}, juce::MessageBoxIconType::NoIcon);
+    window->addTextEditor("name", name, "Name");
+    juce::StringArray lengths;
+    for (int length = 1; length <= maxBars; ++length)
+        lengths.add(juce::String(length) + (length == 1 ? " Takt" : " Takte"));
+    window->addComboBox("bars", lengths, juce::String::fromUTF8("Länge"));
+    window->getComboBoxComponent("bars")->setSelectedItemIndex(bars - 1, juce::dontSendNotification);
+    window->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    window->addButton("Abbrechen", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+    // The window deletes itself after the callback (deleteWhenDismissed).
+    window->enterModalState(true,
+                            juce::ModalCallbackFunction::create(
+                                [window, onOk = std::move(onOk)](int result)
+                                {
+                                    if (result == 1)
+                                        onOk(window->getTextEditorContents("name").toStdString(),
+                                             window->getComboBoxComponent("bars")->getSelectedItemIndex() +
+                                                 1);
+                                }),
+                            true);
+}
+
 void askToConfirm(const juce::String& title,
                   const juce::String& question,
                   const juce::String& yesButton,

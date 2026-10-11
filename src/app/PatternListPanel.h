@@ -11,9 +11,11 @@
 namespace drumprog::app
 {
 
-/// What the context menu of the pattern list opens as dialogs.
+/// What the "+" button and the context menu of the pattern list open as dialogs.
 struct PatternDialogs
 {
+    /// Dialog "Neues Pattern" with name and length (AP14).
+    std::function<void()> add;
     std::function<void(int index)> rename;
     std::function<void(int index)> setLength;
     /// Asks first if the song uses the pattern (F-SO-05).

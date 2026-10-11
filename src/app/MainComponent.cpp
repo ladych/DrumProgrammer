@@ -71,7 +71,7 @@ MainComponent::MainComponent(juce::AudioDeviceManager& deviceManager,
       songHeight_(SongTimelineView::kPreferredHeight, kSongMinimum), transportBar_(transport, tempo),
       patternList_(patterns, std::move(patternDialogs)),
       songTimeline_(songTimeline, transport, backingTrack, backingFormats, std::move(loadBackingTrack)),
-      pianoRollView_(pianoRoll, transport), metronomePanel_(transport), noteInspector_(pianoRoll),
+      pianoRollView_(pianoRoll, transport, patterns), metronomePanel_(transport), noteInspector_(pianoRoll),
       mixPanel_(mix)
 {
     for (auto* label : {&status_, &editStatus_})

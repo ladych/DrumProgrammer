@@ -30,7 +30,7 @@ PatternListPanel::PatternListPanel(ui::PatternListPresenter& presenter, PatternD
 {
     list_.setRowHeight(kRowHeight);
     list_.setWantsKeyboardFocus(false);
-    addButton_.onClick = [this] { presenter_.add(); };
+    addButton_.onClick = [this] { dialogs_.add(); };
     addAndMakeVisible(addButton_);
     addAndMakeVisible(list_);
     refresh();

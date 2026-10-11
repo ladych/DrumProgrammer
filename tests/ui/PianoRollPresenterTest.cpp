@@ -116,15 +116,13 @@ TEST_F(PianoRollPresenterTest, FPR01_RowsFollowTheMidiNoteOfTheActiveKit)
     EXPECT_EQ(presenter.rows().front().gmNote, 57);
 }
 
-TEST_F(PianoRollPresenterTest, FPR09_HeaderShowsNameLengthTimeSignatureAndGrid)
+// The length is no longer part of the text: the header has its own length box next to it (AP14).
+TEST_F(PianoRollPresenterTest, FPR09_HeaderShowsNameTimeSignatureAndGrid)
 {
-    EXPECT_EQ(presenter.headerText(),
-              "Piano-Roll \xe2\x80\x94 Pattern 1 \xc2\xb7 2 Takte \xc2\xb7 4/4 \xc2\xb7 Raster 1/16");
+    EXPECT_EQ(presenter.headerText(), "Piano-Roll \xe2\x80\x94 Pattern 1 \xc2\xb7 4/4 \xc2\xb7 Raster 1/16");
 
-    pattern().setLengthBars(1);
     presenter.setSnapEnabled(false);
-    EXPECT_EQ(presenter.headerText(),
-              "Piano-Roll \xe2\x80\x94 Pattern 1 \xc2\xb7 1 Takt \xc2\xb7 4/4 \xc2\xb7 Raster aus");
+    EXPECT_EQ(presenter.headerText(), "Piano-Roll \xe2\x80\x94 Pattern 1 \xc2\xb7 4/4 \xc2\xb7 Raster aus");
 }
 
 TEST_F(PianoRollPresenterTest, FPR08_TimingOfTheGrid)

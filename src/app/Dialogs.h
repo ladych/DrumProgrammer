@@ -38,6 +38,12 @@ void askForText(const juce::String& title,
                 const juce::String& initialText,
                 std::function<void(const std::string&)> onOk);
 
+/// Dialog "Neues Pattern" (AP14): asks for name and length in bars; onOk gets both unless the user cancels.
+void askForNewPattern(const juce::String& name,
+                      int bars,
+                      int maxBars,
+                      std::function<void(const std::string& name, int bars)> onOk);
+
 /// Asks a yes/no question, e.g. before deleting; onYes runs only if the user confirms.
 void askToConfirm(const juce::String& title,
                   const juce::String& question,

@@ -68,6 +68,7 @@ public:
     void open(int block);
 
     // Moving blocks bar by bar, Alt duplicates (F-SO-03). The preview is ghost(); release() commits.
+    /// Pressing a block also makes its pattern the active one, shown in piano roll and pattern list (AP14).
     void press(int block, int bar);
     void dragTo(int bar, bool duplicate);
     void release();

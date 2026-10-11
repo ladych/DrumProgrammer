@@ -119,6 +119,8 @@ void SongTimelinePresenter::press(int block, int bar)
     if (!selected_.isValid())
         return;
     const auto view = blocks().at(static_cast<std::size_t>(block));
+    // The piano roll and the pattern list follow the clicked block (AP14).
+    active_.select(view.patternIndex);
     Drag drag;
     drag.entry = selected_;
     drag.patternIndex = view.patternIndex;

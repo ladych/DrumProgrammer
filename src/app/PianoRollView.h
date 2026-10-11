@@ -4,6 +4,7 @@
 #include "app/PianoRollToolbar.h"
 #include "app/Splitter.h"
 #include "ui/PaneSize.h"
+#include "ui/PatternListPresenter.h"
 #include "ui/PianoRollGeometry.h"
 #include "ui/PianoRollPresenter.h"
 #include "ui/TransportPresenter.h"
@@ -19,13 +20,15 @@ namespace drumprog::app
 /// Humble object (E-03): piano roll (Pflichtenheft 6.1, area 8) with header, row names and key
 /// badges, the note area with grid, notes, ghost frames and playback cursor (F-PR-01 to 08, F-PR-11),
 /// scroll bars and zoom, and the velocity lane below (area 9, F-PR-10) behind a splitter. The header holds
-/// the snap controls after the general information and, next to the zoom buttons, the tools and the
-/// recording mode (AP14). All logic is in ui::PianoRollPresenter and ui::PianoRollGeometry; a 30 Hz timer
-/// repaints on changes.
+/// the pattern length and the snap controls after the general information and, next to the zoom buttons, the
+/// tools and the recording mode (AP14). All logic is in ui::PianoRollPresenter and ui::PianoRollGeometry; a
+/// 30 Hz timer repaints on changes.
 class PianoRollView final : public juce::Component, private juce::Timer, private juce::ScrollBar::Listener
 {
 public:
-    PianoRollView(ui::PianoRollPresenter& presenter, ui::TransportPresenter& transport);
+    PianoRollView(ui::PianoRollPresenter& presenter,
+                  ui::TransportPresenter& transport,
+                  ui::PatternListPresenter& patterns);
     ~PianoRollView() override;
 
     PianoRollView(const PianoRollView&) = delete;
@@ -52,9 +55,12 @@ private:
     void paintLegend(juce::Graphics& g, juce::Rectangle<int> area) const;
     void layOutHeader();
     void dragLane(int offset);
+    void setUpLengthBox();
+    void refreshLengthBox();
 
     ui::PianoRollPresenter& presenter_;
     ui::TransportPresenter& transport_;
+    ui::PatternListPresenter& patterns_;
     ui::PianoRollGeometry geometry_;
     std::uint32_t seenChangeCount_ = 0;
     std::optional<std::int64_t> playhead_;
@@ -72,6 +78,7 @@ private:
     juce::ScrollBar verticalBar_{true};
     IconButton zoomOutButton_{Icon::zoomOut, "Verkleinern (Strg+Mausrad)"};
     IconButton zoomInButton_{Icon::zoomIn, juce::String::fromUTF8("Vergrößern (Strg+Mausrad)")};
+    juce::ComboBox lengthBox_;
     SnapControls snapControls_;
     PianoRollToolbar toolbar_;
     Splitter laneSplitter_{Splitter::Direction::upDown};
