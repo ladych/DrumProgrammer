@@ -118,7 +118,7 @@ public:
     /// Key that triggers the row's slot, for the badge (F-PR-01).
     [[nodiscard]] std::string rowKey(int row) const;
     [[nodiscard]] bool hasPattern() const;
-    /// "Piano-Roll — Pattern 1 · 2 Takte · 4/4 · Raster 1/16".
+    /// "Piano-Roll — Pattern 1 · 4/4 · Raster 1/16"; the length has its own box in the header (AP14).
     [[nodiscard]] std::string headerText() const;
     [[nodiscard]] int ticksPerQuarter() const;
     [[nodiscard]] std::int64_t ticksPerBar() const;

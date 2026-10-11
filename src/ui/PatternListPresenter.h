@@ -8,6 +8,7 @@
 #include <juce_data_structures/juce_data_structures.h>
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -47,6 +48,14 @@ public:
     // Edits ignore indices outside the list.
     /// Appends "Pattern n" with two bars and makes it active.
     void add();
+    /// Appends a pattern with the name and length chosen in the dialog "Neues Pattern" and makes it active
+    /// (AP14). An empty name becomes newName(), the length is clamped to 1-64 bars.
+    void add(const std::string& name, int bars);
+    /// Length typed into the dialog "Neues Pattern" or the piano roll header (AP14): a whole number of
+    /// 1-64 bars, surrounding spaces allowed; nullopt marks the input as wrong.
+    [[nodiscard]] static std::optional<int> parseBars(const std::string& text);
+    /// Next free name "Pattern n", offered in the dialog "Neues Pattern".
+    [[nodiscard]] std::string newName() const { return freeName(); }
     /// Ignores names that are empty after trimming.
     void rename(int index, const std::string& name);
     void setColour(int index, const std::string& colour);

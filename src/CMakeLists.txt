@@ -63,6 +63,7 @@ add_library(drumprog_core STATIC
     ui/MidiImportController.cpp
     ui/MixPresenter.cpp
     ui/MusicalTime.cpp
+    ui/PaneSize.cpp
     ui/PatternListPresenter.cpp
     ui/PianoRollGeometry.cpp
     ui/PianoRollPresenter.cpp
@@ -87,6 +88,7 @@ set(DRUMPROG_APP_SOURCES
     app/AppComposition.cpp
     app/AudioDeviceSupervisor.cpp
     app/Dialogs.cpp
+    app/IconButton.cpp
     app/JuceBackingTrackLoader.cpp
     app/JuceDocumentView.cpp
     app/JuceMidiDialogs.cpp
@@ -95,12 +97,14 @@ set(DRUMPROG_APP_SOURCES
     app/KitPanel.cpp
     app/MainComponent.cpp
     app/MainMenu.cpp
+    app/MetronomePanel.cpp
     app/MixPanel.cpp
     app/NoteInspector.cpp
     app/PatternListPanel.cpp
     app/PianoRollToolbar.cpp
     app/PianoRollView.cpp
     app/SongTimelineView.cpp
+    app/Splitter.cpp
     app/TransportBar.cpp
 )
 
@@ -138,6 +142,16 @@ juce_add_binary_data(DrumProgrammerDefaultKit
 target_link_libraries(DrumProgrammer PRIVATE $<LINK_ONLY:DrumProgrammerDefaultKit>)
 target_include_directories(DrumProgrammer SYSTEM PRIVATE
     $<TARGET_PROPERTY:DrumProgrammerDefaultKit,INTERFACE_INCLUDE_DIRECTORIES>)
+
+# Button icons (app::IconButton): the SVG files of Lucide Icons, see resources/Icons/LIESMICH.txt.
+file(GLOB DRUMPROG_ICON_FILES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/resources/Icons/*.svg")
+juce_add_binary_data(DrumProgrammerIcons
+    HEADER_NAME IconData.h
+    NAMESPACE IconData
+    SOURCES ${DRUMPROG_ICON_FILES})
+target_link_libraries(DrumProgrammer PRIVATE $<LINK_ONLY:DrumProgrammerIcons>)
+target_include_directories(DrumProgrammer SYSTEM PRIVATE
+    $<TARGET_PROPERTY:DrumProgrammerIcons,INTERFACE_INCLUDE_DIRECTORIES>)
 
 # JUCE itself comes compiled from drumprog_juce through drumprog_core (cmake/DrumProgrammerJuce.cmake).
 target_link_libraries(DrumProgrammer PRIVATE drumprog_core)

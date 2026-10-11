@@ -156,6 +156,19 @@ TEST_F(SongTimelinePresenterTest, FSO06_OpeningABlockShowsItsPatternInThePianoRo
     EXPECT_EQ(active.index(), 1);
 }
 
+TEST_F(SongTimelinePresenterTest, AP14_ClickingABlockShowsItsPatternInPianoRollAndPatternList)
+{
+    project.song().addEntry("p-2", 0);
+    project.song().addEntry("id-1", 1);
+
+    presenter.press(0, 0);
+    EXPECT_EQ(active.index(), 1);
+    presenter.press(1, 1);
+    EXPECT_EQ(active.index(), 0);
+    presenter.press(-1, 5);
+    EXPECT_EQ(active.index(), 0);
+}
+
 TEST_F(SongTimelinePresenterTest, FSO03_DragMovesTheBlockBarByBar)
 {
     project.song().addEntry("id-1", 0);

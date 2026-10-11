@@ -100,6 +100,19 @@ ThirdPartyComponent blackPearl()
             .notice = {}};
 }
 
+/// Icons of the buttons (AP14). Some of them come from Feather, whose MIT license asks for its notice too.
+ThirdPartyComponent lucide()
+{
+    return {.name = "Lucide Icons 1.55.0",
+            .author = "Lucide Icons and Contributors",
+            .usage = "Icons der Buttons, unverändert",
+            .license = "ISC License, einzelne Icons aus Feather unter MIT License",
+            .website = {"lucide.dev", "https://lucide.dev"},
+            .licenseText = {"ISC", "https://lucide.dev/license"},
+            .notice = "Copyright (c) 2026 Lucide Icons and Contributors. "
+                      "Teile aus Feather: Copyright (c) 2013-present Cole Bemis (MIT License)."};
+}
+
 } // namespace
 
 AboutInfo makeAboutInfo(std::string_view version, bool withAsio)
@@ -118,6 +131,7 @@ AboutInfo makeAboutInfo(std::string_view version, bool withAsio)
     if (withAsio)
         info.components.push_back(asioSdk());
     info.components.push_back(blackPearl());
+    info.components.push_back(lucide());
     return info;
 }
 

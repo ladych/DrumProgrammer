@@ -85,6 +85,7 @@ private:
     void saveDeviceSettings();
     void updateSampleRate();
     void updateOutputLatency();
+    void addPattern();
     void renamePattern(int index);
     void askPatternLength(int index);
     /// Asks first if the song uses the pattern (F-SO-05).

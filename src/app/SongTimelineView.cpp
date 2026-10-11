@@ -13,7 +13,8 @@ namespace
 {
 
 constexpr int kTimerHz = 30;
-constexpr int kHeaderHeight = 28;
+constexpr int kHeaderHeight = 34;
+constexpr int kZoomButton = 26;
 constexpr int kRulerHeight = 20;
 constexpr int kLabelWidth = 120;
 constexpr int kScrollBarSize = 12;
@@ -352,9 +353,6 @@ SongTimelineView::SongTimelineView(ui::SongTimelinePresenter& presenter,
     }
     scrollBar_.addListener(this);
     scrollBar_.setAutoHide(false);
-    zoomOutButton_.setTooltip("Timeline verkleinern");
-    zoomInButton_.setTooltip(juce::String::fromUTF8("Timeline vergr\xc3\xb6\xc3\x9f"
-                                                    "ern"));
     zoomOutButton_.onClick = [this] { zoom(false); };
     zoomInButton_.onClick = [this] { zoom(true); };
     contentChanged();
@@ -372,7 +370,7 @@ void SongTimelineView::paint(juce::Graphics& g)
     g.fillAll(findColour(juce::ResizableWindow::backgroundColourId));
     const auto text = findColour(juce::Label::textColourId);
     auto header = headerArea_.reduced(8, 0);
-    header.removeFromRight(zoomOutButton_.getWidth() + zoomInButton_.getWidth() + 8);
+    header.removeFromRight(2 * kZoomButton + 2 + 8);
     g.setColour(text);
     g.setFont(juce::FontOptions(15.0F, juce::Font::bold));
     const juce::String title{"Song-Arrangement"};
@@ -435,9 +433,10 @@ void SongTimelineView::resized()
 {
     auto area = getLocalBounds();
     headerArea_ = area.removeFromTop(kHeaderHeight);
-    auto zoomArea = headerArea_.removeFromRight(56).reduced(0, 3);
-    zoomInButton_.setBounds(zoomArea.removeFromRight(26));
-    zoomOutButton_.setBounds(zoomArea.removeFromRight(26));
+    auto zoomArea = headerArea_.reduced(8, 0).withSizeKeepingCentre(headerArea_.getWidth() - 16, kZoomButton);
+    zoomInButton_.setBounds(zoomArea.removeFromRight(kZoomButton));
+    zoomArea.removeFromRight(2);
+    zoomOutButton_.setBounds(zoomArea.removeFromRight(kZoomButton));
     rulerArea_ = area.removeFromTop(kRulerHeight).withTrimmedLeft(kLabelWidth);
     scrollBar_.setBounds(area.removeFromBottom(kScrollBarSize).withTrimmedLeft(kLabelWidth));
     auto backingRow = area.removeFromTop(kBackingHeight);

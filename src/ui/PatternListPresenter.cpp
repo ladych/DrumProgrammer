@@ -63,10 +63,29 @@ std::string PatternListPresenter::lengthText(int index) const
     return std::to_string(bars) + (bars == 1 ? " Takt" : " Takte");
 }
 
+std::optional<int> PatternListPresenter::parseBars(const std::string& text)
+{
+    const auto trimmed = juce::String::fromUTF8(text.c_str()).trim();
+    if (trimmed.isEmpty() || !trimmed.containsOnly("0123456789") || trimmed.length() > 2)
+        return std::nullopt;
+    const int bars = trimmed.getIntValue();
+    if (bars < kMinBars || bars > kMaxBars)
+        return std::nullopt;
+    return bars;
+}
+
 void PatternListPresenter::add()
 {
+    add(freeName(), kNewPatternBars);
+}
+
+void PatternListPresenter::add(const std::string& name, int bars)
+{
+    auto trimmed = juce::String::fromUTF8(name.c_str()).trim().toStdString();
+    if (trimmed.empty())
+        trimmed = freeName();
     undoManager_.beginNewTransaction("Pattern anlegen");
-    auto pattern = project().addPattern(idGenerator_.next(), freeName(), kNewPatternBars);
+    auto pattern = project().addPattern(idGenerator_.next(), trimmed, std::clamp(bars, kMinBars, kMaxBars));
     pattern.setColour(kPalette.at(static_cast<std::size_t>(numPatterns() - 1) % kPalette.size()));
     active_.select(numPatterns() - 1);
 }

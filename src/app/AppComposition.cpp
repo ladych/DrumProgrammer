@@ -155,13 +155,13 @@ AppComposition::~AppComposition()
 std::unique_ptr<juce::Component> AppComposition::createMainComponent()
 {
     return std::make_unique<MainComponent>(
-        testTone_,
         deviceManager_,
         deviceSupervisor_,
         transportPresenter_,
         tempoPresenter_,
         patternListPresenter_,
-        PatternDialogs{.rename = [this](int index) { renamePattern(index); },
+        PatternDialogs{.add = [this] { addPattern(); },
+                       .rename = [this](int index) { renamePattern(index); },
                        .setLength = [this](int index) { askPatternLength(index); },
                        .remove = [this](int index) { removePattern(index); }},
         songTimelinePresenter_,
@@ -169,7 +169,6 @@ std::unique_ptr<juce::Component> AppComposition::createMainComponent()
         backingTrackLoader_.formats(),
         [this] { chooseBackingTrack(); },
         mixPresenter_,
-        midiActions(),
         pianoRollPresenter_,
         inputLeds_);
 }
@@ -211,6 +210,13 @@ void AppComposition::updateOutputLatency()
         info.outputLatencySamples = device->getOutputLatencyInSamples();
     }
     transportPresenter_.setOutputLatencyMs(info.open ? ui::outputLatencyMs(info) : 0.0);
+}
+
+void AppComposition::addPattern()
+{
+    askForNewPattern(juce::String::fromUTF8(patternListPresenter_.newName().c_str()),
+                     ui::PatternListPresenter::kNewPatternBars,
+                     [this](const std::string& name, int bars) { patternListPresenter_.add(name, bars); });
 }
 
 void AppComposition::renamePattern(int index)
@@ -308,7 +314,7 @@ EditActions AppComposition::editActions()
 PatternActions AppComposition::patternActions()
 {
     auto& list = patternListPresenter_;
-    return {.add = [&list] { list.add(); },
+    return {.add = [this] { addPattern(); },
             .duplicate = [&list] { list.duplicate(list.selectedIndex()); },
             .rename = [this] { renamePattern(patternListPresenter_.selectedIndex()); },
             .setLength = [this] { askPatternLength(patternListPresenter_.selectedIndex()); },

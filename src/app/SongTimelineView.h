@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/IconButton.h"
 #include "ui/BackingTrackPresenter.h"
 #include "ui/SongTimelineGeometry.h"
 #include "ui/SongTimelinePresenter.h"
@@ -27,7 +28,7 @@ class SongTimelineView final : public juce::Component, private juce::Timer, priv
 {
 public:
     static constexpr const char* kPatternDragPrefix = "pattern:";
-    static constexpr int kPreferredHeight = 176;
+    static constexpr int kPreferredHeight = 182;
 
     /// loadBackingTrack opens the file dialog of the menu entry "Backing-Track laden".
     SongTimelineView(ui::SongTimelinePresenter& presenter,
@@ -78,8 +79,8 @@ private:
     std::unique_ptr<BackingLane> backingLane_;
     std::unique_ptr<Track> track_;
     juce::ScrollBar scrollBar_{false};
-    juce::TextButton zoomOutButton_{"-"};
-    juce::TextButton zoomInButton_{"+"};
+    IconButton zoomOutButton_{Icon::zoomOut, "Timeline verkleinern (Strg+Mausrad)"};
+    IconButton zoomInButton_{Icon::zoomIn, juce::String::fromUTF8("Timeline vergrößern (Strg+Mausrad)")};
 
     JUCE_LEAK_DETECTOR(SongTimelineView)
 };

@@ -1,0 +1,23 @@
+Icons von Drum Programmer
+=========================
+
+Die SVG-Dateien in diesem Ordner stammen unverändert aus Lucide Icons
+(Paket lucide-static 1.55.0), https://lucide.dev
+
+Lizenz: ISC License, siehe LICENSE-Lucide.txt. Einige Icons (z. B. play,
+square, circle, plus, zoom-in, zoom-out) stammen ursprünglich aus Feather und
+stehen zusätzlich unter der MIT License, ebenfalls in LICENSE-Lucide.txt.
+
+Das Programm baut die SVG-Dateien ein (src/CMakeLists.txt, IconData) und färbt
+sie beim Laden ein (src/app/IconButton.cpp).
+
+
+Icons of Drum Programmer
+========================
+
+The SVG files in this folder are taken unchanged from Lucide Icons (package
+lucide-static 1.55.0), https://lucide.dev
+
+License: ISC License, see LICENSE-Lucide.txt. Some icons (e.g. play, square,
+circle, plus, zoom-in, zoom-out) originally come from Feather and are also
+under the MIT License, also in LICENSE-Lucide.txt.

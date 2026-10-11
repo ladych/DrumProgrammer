@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/IconButton.h"
 #include "ui/PatternListPresenter.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -10,9 +11,11 @@
 namespace drumprog::app
 {
 
-/// What the context menu of the pattern list opens as dialogs.
+/// What the "+" button and the context menu of the pattern list open as dialogs.
 struct PatternDialogs
 {
+    /// Dialog "Neues Pattern" with name and length (AP14).
+    std::function<void()> add;
     std::function<void(int index)> rename;
     std::function<void(int index)> setLength;
     /// Asks first if the song uses the pattern (F-SO-05).
@@ -54,7 +57,7 @@ private:
     PatternDialogs dialogs_;
     std::uint32_t seenChangeCount_ = 0;
     int seenSelection_ = -1;
-    juce::TextButton addButton_{"+"};
+    IconButton addButton_{Icon::add, "Neues Pattern"};
     juce::ListBox list_{"Patterns", this};
 
     JUCE_LEAK_DETECTOR(PatternListPanel)

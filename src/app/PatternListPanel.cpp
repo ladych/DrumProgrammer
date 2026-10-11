@@ -10,7 +10,7 @@ namespace
 {
 
 constexpr int kTimerHz = 30;
-constexpr int kTitleHeight = 28;
+constexpr int kTitleHeight = 34;
 constexpr int kRowHeight = 26;
 
 juce::String utf8(const std::string& text)
@@ -30,9 +30,7 @@ PatternListPanel::PatternListPanel(ui::PatternListPresenter& presenter, PatternD
 {
     list_.setRowHeight(kRowHeight);
     list_.setWantsKeyboardFocus(false);
-    addButton_.setWantsKeyboardFocus(false);
-    addButton_.setTooltip("Neues Pattern");
-    addButton_.onClick = [this] { presenter_.add(); };
+    addButton_.onClick = [this] { dialogs_.add(); };
     addAndMakeVisible(addButton_);
     addAndMakeVisible(list_);
     refresh();
@@ -49,7 +47,7 @@ void PatternListPanel::paint(juce::Graphics& g)
     g.setColour(findColour(juce::Label::textColourId));
     g.setFont(juce::FontOptions(13.0F, juce::Font::bold));
     g.drawText("PATTERNS",
-               getLocalBounds().removeFromTop(kTitleHeight).reduced(6, 0),
+               getLocalBounds().removeFromTop(kTitleHeight).reduced(8, 0),
                juce::Justification::centredLeft);
 }
 
@@ -57,7 +55,7 @@ void PatternListPanel::resized()
 {
     auto area = getLocalBounds();
     auto title = area.removeFromTop(kTitleHeight);
-    addButton_.setBounds(title.removeFromRight(kTitleHeight).reduced(3));
+    addButton_.setBounds(title.removeFromRight(kTitleHeight).reduced(4));
     list_.setBounds(area);
 }
 

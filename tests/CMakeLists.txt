@@ -62,6 +62,7 @@ add_executable(drumprog_tests
     ui/MidiExportControllerTest.cpp
     ui/MidiImportControllerTest.cpp
     ui/MixPresenterTest.cpp
+    ui/PaneSizeTest.cpp
     ui/MusicalTimeTest.cpp
     ui/PatternListPresenterTest.cpp
     ui/PianoRollGeometryTest.cpp
