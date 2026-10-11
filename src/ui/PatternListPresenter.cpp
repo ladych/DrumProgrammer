@@ -63,6 +63,17 @@ std::string PatternListPresenter::lengthText(int index) const
     return std::to_string(bars) + (bars == 1 ? " Takt" : " Takte");
 }
 
+std::optional<int> PatternListPresenter::parseBars(const std::string& text)
+{
+    const auto trimmed = juce::String::fromUTF8(text.c_str()).trim();
+    if (trimmed.isEmpty() || !trimmed.containsOnly("0123456789") || trimmed.length() > 2)
+        return std::nullopt;
+    const int bars = trimmed.getIntValue();
+    if (bars < kMinBars || bars > kMaxBars)
+        return std::nullopt;
+    return bars;
+}
+
 void PatternListPresenter::add()
 {
     add(freeName(), kNewPatternBars);

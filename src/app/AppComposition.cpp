@@ -216,7 +216,6 @@ void AppComposition::addPattern()
 {
     askForNewPattern(juce::String::fromUTF8(patternListPresenter_.newName().c_str()),
                      ui::PatternListPresenter::kNewPatternBars,
-                     ui::PatternListPresenter::kMaxBars,
                      [this](const std::string& name, int bars) { patternListPresenter_.add(name, bars); });
 }
 

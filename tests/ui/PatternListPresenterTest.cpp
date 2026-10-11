@@ -81,6 +81,19 @@ TEST_F(PatternListPresenterTest, AP14_AddWithoutNameTakesTheNextFreeNameAndClamp
     EXPECT_EQ(presenter.lengthBars(2), PatternListPresenter::kMaxBars);
 }
 
+TEST(PatternListPresenterParseTest, AP14_TypedLengthMustBeOneToSixtyFourBars)
+{
+    EXPECT_EQ(PatternListPresenter::parseBars("4"), 4);
+    EXPECT_EQ(PatternListPresenter::parseBars(" 64 "), 64);
+    EXPECT_EQ(PatternListPresenter::parseBars("1"), 1);
+    EXPECT_EQ(PatternListPresenter::parseBars("0"), std::nullopt);
+    EXPECT_EQ(PatternListPresenter::parseBars("65"), std::nullopt);
+    EXPECT_EQ(PatternListPresenter::parseBars("100"), std::nullopt);
+    EXPECT_EQ(PatternListPresenter::parseBars(""), std::nullopt);
+    EXPECT_EQ(PatternListPresenter::parseBars("2a"), std::nullopt);
+    EXPECT_EQ(PatternListPresenter::parseBars("-2"), std::nullopt);
+}
+
 TEST_F(PatternListPresenterTest, FSO01_NewNamesAreUnique)
 {
     project.pattern(0).setName("Pattern 2");

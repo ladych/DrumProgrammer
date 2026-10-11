@@ -1,5 +1,8 @@
 #include "app/PianoRollView.h"
 
+#include "app/Dialogs.h"
+#include "app/Theme.h"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -17,7 +20,7 @@ constexpr int kLaneHeight = 110;
 constexpr int kLaneMinimum = 50;
 constexpr int kNotesMinimum = 120;
 constexpr int kLegendWidth = 210;
-constexpr int kLengthBoxWidth = 96;
+constexpr int kLengthBoxWidth = 84;
 constexpr int kHeaderButton = PianoRollToolbar::kButtonSize;
 constexpr int kScrollBarSize = 12;
 constexpr double kEndGrabPixels = 6.0;
@@ -307,6 +310,7 @@ PianoRollView::PianoRollView(ui::PianoRollPresenter& presenter,
                                                                    &zoomOutButton_,
                                                                    &zoomInButton_,
                                                                    &lengthBox_,
+                                                                   &lengthLabel_,
                                                                    &snapControls_,
                                                                    &toolbar_,
                                                                    &laneSplitter_})
@@ -400,33 +404,59 @@ void PianoRollView::layOutHeader()
     header.setRight(zoomOutButton_.getX() - PianoRollToolbar::kGroupGap);
 
     headerTextArea_ = header.removeFromLeft(std::min(textWidth, header.getWidth()));
-    lengthBox_.setBounds(
-        header.removeFromLeft(kLengthBoxWidth).withSizeKeepingCentre(kLengthBoxWidth, kHeaderButton));
+    auto length =
+        header.removeFromLeft(kLengthBoxWidth).withSizeKeepingCentre(kLengthBoxWidth, kHeaderButton);
+    lengthBox_.setBounds(length.removeFromLeft(36));
+    lengthLabel_.setBounds(length);
     header.removeFromLeft(PianoRollToolbar::kGroupGap);
     snapControls_.setBounds(header.removeFromLeft(SnapControls::kPreferredWidth)
                                 .withSizeKeepingCentre(SnapControls::kPreferredWidth, kHeaderButton));
 }
 
-/// Length of the shown pattern, changed right in the header (F-PR-09, AP14).
+/// Length of the shown pattern, typed right in the header (F-PR-09, AP14). A wrong number is marked red
+/// and not taken; Return or leaving the field takes a right one, Escape restores the length.
 void PianoRollView::setUpLengthBox()
 {
-    for (int bars = ui::PatternListPresenter::kMinBars; bars <= ui::PatternListPresenter::kMaxBars; ++bars)
-        lengthBox_.addItem(juce::String(bars) + (bars == 1 ? " Takt" : " Takte"), bars);
-    lengthBox_.setTooltip(juce::String::fromUTF8("Länge des Patterns"));
-    lengthBox_.setMouseClickGrabsKeyboardFocus(false);
-    lengthBox_.onChange = [this]
+    lengthBox_.setWantsKeyboardFocus(true);
+    lengthBox_.setInputRestrictions(2, "0123456789");
+    lengthBox_.setJustification(juce::Justification::centred);
+    lengthBox_.setTooltip(juce::String::fromUTF8("Länge des Patterns in Takten (1–64), Eingabe mit Enter"));
+    lengthBox_.onTextChange = [this]
     {
-        if (lengthBox_.getSelectedId() > 0)
-            patterns_.setLengthBars(patterns_.selectedIndex(), lengthBox_.getSelectedId());
+        markInput(lengthBox_,
+                  ui::PatternListPresenter::parseBars(lengthBox_.getText().toStdString()).has_value());
     };
+    lengthBox_.onReturnKey = [] { unfocusAllComponents(); };
+    lengthBox_.onEscapeKey = [this]
+    {
+        lengthBox_.setText(juce::String(patterns_.lengthBars(patterns_.selectedIndex())), true);
+        unfocusAllComponents();
+    };
+    lengthBox_.onFocusLost = [this] { commitLength(); };
+    lengthLabel_.setColour(juce::Label::textColourId, theme::kTextDim);
+    refreshLengthBox();
+}
+
+void PianoRollView::commitLength()
+{
+    const int index = patterns_.selectedIndex();
+    const auto bars = ui::PatternListPresenter::parseBars(lengthBox_.getText().toStdString());
+    if (bars && *bars != patterns_.lengthBars(index))
+        patterns_.setLengthBars(index, *bars);
+    lengthBox_.clear();
     refreshLengthBox();
 }
 
 void PianoRollView::refreshLengthBox()
 {
-    const int bars = patterns_.lengthBars(patterns_.selectedIndex());
-    if (bars != lengthBox_.getSelectedId())
-        lengthBox_.setSelectedId(bars, juce::dontSendNotification);
+    if (lengthBox_.hasKeyboardFocus(false))
+        return;
+    const juce::String bars(patterns_.lengthBars(patterns_.selectedIndex()));
+    if (bars != lengthBox_.getText())
+    {
+        lengthBox_.setText(bars, false);
+        markInput(lengthBox_, true);
+    }
 }
 
 void PianoRollView::dragLane(int offset)

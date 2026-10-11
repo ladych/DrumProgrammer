@@ -3,6 +3,8 @@
 #include "app/AboutDialog.h"
 #include "app/KeymapDialog.h"
 #include "app/KitPanel.h"
+#include "app/Theme.h"
+#include "ui/PatternListPresenter.h"
 
 #include <memory>
 #include <utility>
@@ -96,29 +98,44 @@ void askForText(const juce::String& title,
                             true);
 }
 
+void markInput(juce::TextEditor& editor, bool valid)
+{
+    const auto& laf = editor.getLookAndFeel();
+    editor.setColour(juce::TextEditor::outlineColourId,
+                     valid ? laf.findColour(juce::TextEditor::outlineColourId) : theme::kRecord);
+    editor.setColour(juce::TextEditor::focusedOutlineColourId,
+                     valid ? laf.findColour(juce::TextEditor::focusedOutlineColourId) : theme::kRecord);
+    editor.applyColourToAllText(valid ? laf.findColour(juce::TextEditor::textColourId) : theme::kRecord);
+    editor.repaint();
+}
+
 void askForNewPattern(const juce::String& name,
                       int bars,
-                      int maxBars,
                       std::function<void(const std::string& name, int bars)> onOk)
 {
     auto* window = new juce::AlertWindow("Neues Pattern", {}, juce::MessageBoxIconType::NoIcon);
     window->addTextEditor("name", name, "Name");
-    juce::StringArray lengths;
-    for (int length = 1; length <= maxBars; ++length)
-        lengths.add(juce::String(length) + (length == 1 ? " Takt" : " Takte"));
-    window->addComboBox("bars", lengths, juce::String::fromUTF8("Länge"));
-    window->getComboBoxComponent("bars")->setSelectedItemIndex(bars - 1, juce::dontSendNotification);
+    window->addTextEditor("bars", juce::String(bars), juce::String::fromUTF8("Länge in Takten (1–64)"));
     window->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
     window->addButton("Abbrechen", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+    auto* barsEditor = window->getTextEditor("bars");
+    barsEditor->setInputRestrictions(2, "0123456789");
+    barsEditor->onTextChange = [window, barsEditor]
+    {
+        const bool valid =
+            ui::PatternListPresenter::parseBars(barsEditor->getText().toStdString()).has_value();
+        markInput(*barsEditor, valid);
+        window->getButton("OK")->setEnabled(valid);
+    };
     // The window deletes itself after the callback (deleteWhenDismissed).
     window->enterModalState(true,
                             juce::ModalCallbackFunction::create(
                                 [window, onOk = std::move(onOk)](int result)
                                 {
-                                    if (result == 1)
-                                        onOk(window->getTextEditorContents("name").toStdString(),
-                                             window->getComboBoxComponent("bars")->getSelectedItemIndex() +
-                                                 1);
+                                    const auto length = ui::PatternListPresenter::parseBars(
+                                        window->getTextEditorContents("bars").toStdString());
+                                    if (result == 1 && length)
+                                        onOk(window->getTextEditorContents("name").toStdString(), *length);
                                 }),
                             true);
 }

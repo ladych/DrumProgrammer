@@ -57,6 +57,7 @@ private:
     void dragLane(int offset);
     void setUpLengthBox();
     void refreshLengthBox();
+    void commitLength();
 
     ui::PianoRollPresenter& presenter_;
     ui::TransportPresenter& transport_;
@@ -78,7 +79,8 @@ private:
     juce::ScrollBar verticalBar_{true};
     IconButton zoomOutButton_{Icon::zoomOut, "Verkleinern (Strg+Mausrad)"};
     IconButton zoomInButton_{Icon::zoomIn, juce::String::fromUTF8("Vergrößern (Strg+Mausrad)")};
-    juce::ComboBox lengthBox_;
+    juce::TextEditor lengthBox_;
+    juce::Label lengthLabel_{{}, "Takte"};
     SnapControls snapControls_;
     PianoRollToolbar toolbar_;
     Splitter laneSplitter_{Splitter::Direction::upDown};
