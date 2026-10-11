@@ -1,6 +1,7 @@
 #include "app/MainComponent.h"
 
 #include "app/Theme.h"
+#include "i18n/Translate.h"
 #include "ui/AudioStatus.h"
 
 #include <utility>
@@ -147,7 +148,7 @@ void MainComponent::paint(juce::Graphics& g)
     }
     auto leds = ledArea_;
     paintLed(g, leds.removeFromLeft(kLedWidth), "MIDI In", inputLeds_.isMidiLedOn());
-    paintLed(g, leds.removeFromLeft(kLedWidth), "Tastatur", inputLeds_.isKeyboardLedOn());
+    paintLed(g, leds.removeFromLeft(kLedWidth), i18n::trJuce("Keyboard"), inputLeds_.isKeyboardLedOn());
 }
 
 juce::Rectangle<int> MainComponent::bodyArea() const

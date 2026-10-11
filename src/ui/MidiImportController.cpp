@@ -1,5 +1,6 @@
 #include "ui/MidiImportController.h"
 
+#include "i18n/Translate.h"
 #include "io/MidiFileReader.h"
 #include "io/MidiImport.h"
 #include "io/Utf8Path.h"
@@ -19,28 +20,24 @@ namespace drumprog::ui
 namespace
 {
 
-constexpr const char* kFailedTitle = "Import fehlgeschlagen";
+constexpr const char* kFailedTitle = i18n::marked("Import failed");
 
-/// "MIDI-Note 60" or "MIDI-Noten 60, 61".
+/// "MIDI note 60" or "MIDI notes 60, 61".
 std::string midiNotesText(const std::vector<int>& notes)
 {
-    std::string text = notes.size() == 1 ? "MIDI-Note" : "MIDI-Noten";
-    const char* separator = " ";
+    std::string list;
     for (const int note : notes)
-    {
-        text += separator + std::to_string(note);
-        separator = ", ";
-    }
-    return text;
+        list += (list.empty() ? "" : ", ") + std::to_string(note);
+    return notes.size() == 1 ? i18n::tr("MIDI note %1", list) : i18n::tr("MIDI notes %1", list);
 }
 
 std::string unmatchedText(const io::ImportedPattern& imported)
 {
-    const char* notes = " Noten ohne passenden Slot im Kit wurden";
+    const auto count = std::to_string(imported.numUnmatched);
+    const auto notes = midiNotesText(imported.unmatchedNotes);
     if (imported.numUnmatched == 1)
-        notes = " Note ohne passenden Slot im Kit wurde";
-    return std::to_string(imported.numUnmatched) + notes + " nicht übernommen (" +
-           midiNotesText(imported.unmatchedNotes) + ").";
+        return i18n::tr("%1 note without a matching slot in the kit was not imported (%2).", count, notes);
+    return i18n::tr("%1 notes without a matching slot in the kit were not imported (%2).", count, notes);
 }
 
 /// Tempo and time signature of the file that differ from the project and are valid there.
@@ -78,21 +75,25 @@ std::string adoptQuestion(const MidiImportController::FileTempo& tempo, const mo
 {
     std::string question;
     if (tempo.bpm > 0.0)
-        question += "Tempo der Datei: " + bpmText(tempo.bpm) + " (Projekt: " + bpmText(project.bpm()) + ")\n";
-    if (tempo.timeSigNumerator > 0)
         question +=
-            "Taktart der Datei: " + timeSignatureText({tempo.timeSigNumerator, tempo.timeSigDenominator}) +
-            " (Projekt: " + timeSignatureText(project.timeSignature()) + ")\n";
-    return question + "\nIns Projekt übernehmen?";
+            i18n::tr("Tempo of the file: %1 (project: %2)", bpmText(tempo.bpm), bpmText(project.bpm())) +
+            "\n";
+    if (tempo.timeSigNumerator > 0)
+        question += i18n::tr("Time signature of the file: %1 (project: %2)",
+                             timeSignatureText({tempo.timeSigNumerator, tempo.timeSigDenominator}),
+                             timeSignatureText(project.timeSignature())) +
+                    "\n";
+    return question + "\n" + i18n::tr("Adopt into the project?");
 }
 
 /// Why a file added no pattern.
 std::string nothingImportedText(const io::ImportedPattern& imported, const std::string& fileName)
 {
     if (imported.numUnmatched == 0)
-        return fileName + " enthält keine Noten.";
-    return "Keine Note aus " + fileName + " passt zu einem Slot im Kit (" +
-           midiNotesText(imported.unmatchedNotes) + ").";
+        return i18n::tr("\"%1\" contains no notes.", fileName);
+    return i18n::tr("No note of \"%1\" matches a slot in the kit (%2).",
+                    fileName,
+                    midiNotesText(imported.unmatchedNotes));
 }
 
 } // namespace
@@ -121,11 +122,11 @@ void MidiImportController::importMidiFile()
 
 void MidiImportController::import(const std::filesystem::path& file)
 {
-    const auto fileName = "„" + io::utf8FromPath(file.filename()) + "“";
+    const auto fileName = io::utf8FromPath(file.filename());
     auto content = read(file);
     if (!content)
     {
-        view_.showMessage(kFailedTitle, fileName + " ist keine lesbare MIDI-Datei.");
+        view_.showMessage(i18n::tr(kFailedTitle), i18n::tr("\"%1\" is not a readable MIDI file.", fileName));
         return;
     }
 
@@ -133,7 +134,7 @@ void MidiImportController::import(const std::filesystem::path& file)
     const auto imported = io::importedPatternOf(*content, project, project.activeKit(globalKit_));
     if (imported.notes.empty())
     {
-        view_.showMessage(kFailedTitle, nothingImportedText(imported, fileName));
+        view_.showMessage(i18n::tr(kFailedTitle), nothingImportedText(imported, fileName));
         return;
     }
 
@@ -170,7 +171,7 @@ void MidiImportController::addPending(bool adoptTempo)
 void MidiImportController::addPattern(const io::MidiFileContent& content, const FileTempo& tempo)
 {
     model::Project project{project_, &undoManager_};
-    undoManager_.beginNewTransaction(kUndoName);
+    undoManager_.beginNewTransaction(i18n::trJuce(kUndoName));
     if (tempo.bpm > 0.0)
         project.setBpm(tempo.bpm);
     if (tempo.timeSigNumerator > 0)
@@ -185,7 +186,7 @@ void MidiImportController::addPattern(const io::MidiFileContent& content, const 
     undoManager_.beginNewTransaction();
     activePattern_.select(project.numPatterns() - 1);
     if (imported.numUnmatched > 0)
-        view_.showMessage("MIDI-Import", unmatchedText(imported));
+        view_.showMessage(i18n::tr("MIDI import"), unmatchedText(imported));
 }
 
 } // namespace drumprog::ui

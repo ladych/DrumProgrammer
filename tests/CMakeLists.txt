@@ -21,6 +21,9 @@ add_executable(drumprog_tests
     engine/VelocityCurveTest.cpp
     engine/VoicePoolTest.cpp
     engine/VoiceTest.cpp
+    i18n/GermanTestLanguage.cpp
+    i18n/LanguageCatalogTest.cpp
+    i18n/TranslateTest.cpp
     input/EngineNoteSinksTest.cpp
     input/InputActivityTest.cpp
     input/KeyboardInputTest.cpp
@@ -82,7 +85,17 @@ endif()
 
 target_link_libraries(drumprog_tests PRIVATE drumprog_core GTest::gmock_main)
 target_include_directories(drumprog_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+# The tests run in German (i18n/GermanTestLanguage.cpp), so they also check the German translations.
+target_compile_definitions(drumprog_tests PRIVATE
+    DRUMPROG_LANGUAGES_DIR="${PROJECT_SOURCE_DIR}/resources/Languages")
 drumprog_enable_warnings(drumprog_tests)
 
 include(GoogleTest)
 gtest_discover_tests(drumprog_tests DISCOVERY_MODE PRE_TEST)
+
+# AP15: every language file translates every text of the program.
+find_package(Python3 COMPONENTS Interpreter)
+if(Python3_FOUND)
+    add_test(NAME TranslationsComplete
+             COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/check-translations.py ${PROJECT_SOURCE_DIR})
+endif()

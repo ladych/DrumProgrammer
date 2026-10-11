@@ -1,6 +1,7 @@
 #include "app/SongTimelineView.h"
 
 #include "app/Dialogs.h"
+#include "i18n/Translate.h"
 #include "io/Utf8Path.h"
 
 #include <algorithm>
@@ -164,8 +165,9 @@ private:
         g.setFont(juce::FontOptions(13.0F, juce::Font::bold));
         g.drawText(utf8(block.name), text.removeFromTop(16.0F), juce::Justification::topLeft, true);
         g.setFont(juce::FontOptions(11.0F));
-        g.drawText(
-            juce::String(block.lengthBars) + " T.", text.removeFromTop(14.0F), juce::Justification::topLeft);
+        g.drawText(i18n::trJuce("%1 b.", std::to_string(block.lengthBars)),
+                   text.removeFromTop(14.0F),
+                   juce::Justification::topLeft);
     }
 
     void paintGhost(juce::Graphics& g) const
@@ -190,10 +192,8 @@ private:
     void showMenu(int block)
     {
         juce::PopupMenu menu;
-        menu.addItem(1,
-                     juce::String::fromUTF8("Pattern im Piano-Roll \xc3\xb6"
-                                            "ffnen"));
-        menu.addItem(2, juce::String::fromUTF8("Block l\xc3\xb6schen"));
+        menu.addItem(1, i18n::trJuce("Open pattern in the piano roll"));
+        menu.addItem(2, i18n::trJuce("Delete block"));
         menu.showMenuAsync(juce::PopupMenu::Options{},
                            [this, block](int result)
                            {
@@ -245,8 +245,7 @@ public:
         if (!backing().hasTrack())
         {
             g.setColour(text.withAlpha(0.45F));
-            g.drawText(juce::String::fromUTF8(
-                           "Kein Backing-Track \xc2\xb7 Rechtsklick oder Men\xc3\xbc Audio zum Laden"),
+            g.drawText(i18n::trJuce("No backing track · right-click or menu Audio to load one"),
                        getLocalBounds().reduced(8, 0),
                        juce::Justification::centredLeft);
             return;
@@ -299,13 +298,10 @@ private:
     void showMenu()
     {
         juce::PopupMenu menu;
-        menu.addItem(1, "Backing-Track laden...");
-        menu.addItem(2, "Versatz eingeben...", !backing().isMissing() && backing().hasTrack());
-        menu.addItem(3,
-                     juce::String::fromUTF8("Versatz zur\xc3\xbc"
-                                            "cksetzen"),
-                     !backing().isMissing() && backing().hasTrack());
-        menu.addItem(4, "Backing-Track entfernen", backing().hasTrack());
+        menu.addItem(1, i18n::trJuce("Load backing track..."));
+        menu.addItem(2, i18n::trJuce("Enter offset..."), !backing().isMissing() && backing().hasTrack());
+        menu.addItem(3, i18n::trJuce("Reset offset"), !backing().isMissing() && backing().hasTrack());
+        menu.addItem(4, i18n::trJuce("Remove backing track"), backing().hasTrack());
         menu.showMenuAsync(juce::PopupMenu::Options{}, [this](int result) { onMenu(result); });
     }
 
@@ -314,12 +310,12 @@ private:
         if (result == 1 && owner_.loadBackingTrack_)
             owner_.loadBackingTrack_();
         else if (result == 2)
-            askForText("Versatz Backing-Track",
-                       juce::String::fromUTF8("Millisekunden der Datei vor Takt 1 (negativ: Track beginnt "
-                                              "sp\xc3\xa4ter)"),
-                       juce::String(backing().offsetMs(), 1),
-                       [this](const std::string& text)
-                       { backing().setOffsetMs(juce::String::fromUTF8(text.c_str()).getDoubleValue()); });
+            askForText(
+                i18n::trJuce("Backing track offset"),
+                i18n::trJuce("Milliseconds of the file before bar 1 (negative: the track starts later)"),
+                juce::String(backing().offsetMs(), 1),
+                [this](const std::string& text)
+                { backing().setOffsetMs(juce::String::fromUTF8(text.c_str()).getDoubleValue()); });
         else if (result == 3)
             backing().setOffsetMs(0.0);
         else if (result == 4)
@@ -373,13 +369,12 @@ void SongTimelineView::paint(juce::Graphics& g)
     header.removeFromRight(2 * kZoomButton + 2 + 8);
     g.setColour(text);
     g.setFont(juce::FontOptions(15.0F, juce::Font::bold));
-    const juce::String title{"Song-Arrangement"};
+    const auto title = i18n::trJuce("Song arrangement");
     g.drawText(title, header.removeFromLeft(150), juce::Justification::centredLeft);
     g.setColour(text.withAlpha(0.6F));
     g.setFont(juce::FontOptions(13.0F));
-    g.drawText(juce::String::fromUTF8("Pattern-Bl\xc3\xb6"
-                                      "cke per Drag & Drop \xc2\xb7 Alt-Ziehen dupliziert \xc2\xb7 "
-                                      "Wiederholungen = Referenz auf dasselbe Pattern"),
+    g.drawText(i18n::trJuce("Pattern blocks by drag & drop · Alt-drag duplicates · "
+                            "repeats = reference to the same pattern"),
                header,
                juce::Justification::centredLeft,
                true);
@@ -403,7 +398,7 @@ void SongTimelineView::paintTrackLabels(juce::Graphics& g) const
     g.setColour(text);
     g.drawText("Drums", label.removeFromTop(18), juce::Justification::topLeft);
     g.setColour(text.withAlpha(0.6F));
-    g.drawText("Pattern-Kette", label.removeFromTop(18), juce::Justification::topLeft);
+    g.drawText(i18n::trJuce("Pattern chain"), label.removeFromTop(18), juce::Justification::topLeft);
 }
 
 void SongTimelineView::mouseDown(const juce::MouseEvent& event)

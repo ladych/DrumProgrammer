@@ -1,5 +1,6 @@
 #include "ui/KeymapPresenter.h"
 
+#include "i18n/Translate.h"
 #include "input/Scancode.h"
 
 namespace drumprog::ui
@@ -8,7 +9,7 @@ namespace
 {
 
 constexpr const char* kNoKey = "–";
-constexpr const char* kLearningPrompt = "Taste drücken …";
+constexpr const char* kLearningPrompt = i18n::marked("Press a key …");
 
 } // namespace
 
@@ -40,7 +41,7 @@ std::string KeymapPresenter::keyLabel(int row) const
     if (!isRow(row))
         return {};
     if (learning_ == row)
-        return kLearningPrompt;
+        return i18n::tr(kLearningPrompt);
     const auto key = keymap_.keyFor(kit_.midiNote(row));
     if (!key)
         return kNoKey;
@@ -61,7 +62,7 @@ std::string KeymapPresenter::duplicateWarning() const
 {
     std::string warning;
     for (const auto& [key, notes] : keymap_.duplicates())
-        warning += "Taste " + keyNames_.nameOf(key) + " ist doppelt belegt: " + slotList(notes) + "\n";
+        warning += i18n::tr("Key %1 is assigned twice: %2", keyNames_.nameOf(key), slotList(notes)) + "\n";
     return warning;
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/IconButton.h"
+#include "i18n/Translate.h"
 #include "ui/PatternListPresenter.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -57,7 +58,7 @@ private:
     PatternDialogs dialogs_;
     std::uint32_t seenChangeCount_ = 0;
     int seenSelection_ = -1;
-    IconButton addButton_{Icon::add, "Neues Pattern"};
+    IconButton addButton_{Icon::add, i18n::trJuce("New pattern")};
     juce::ListBox list_{"Patterns", this};
 
     JUCE_LEAK_DETECTOR(PatternListPanel)

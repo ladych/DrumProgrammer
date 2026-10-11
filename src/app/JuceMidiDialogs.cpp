@@ -1,5 +1,6 @@
 #include "app/JuceMidiDialogs.h"
 
+#include "i18n/Translate.h"
 #include "io/Utf8Path.h"
 
 #include <utility>
@@ -27,19 +28,19 @@ void JuceMidiDialogs::chooseExportKind(bool canExportPattern,
     std::vector<ui::MidiExportKind> kinds;
     auto options = juce::MessageBoxOptions()
                        .withIconType(juce::MessageBoxIconType::QuestionIcon)
-                       .withTitle("MIDI exportieren")
-                       .withMessage("Was soll als MIDI-Datei exportiert werden?");
+                       .withTitle(i18n::trJuce("Export MIDI"))
+                       .withMessage(i18n::trJuce("What should be exported as a MIDI file?"));
     if (canExportPattern)
     {
-        options = options.withButton("Aktives Pattern");
+        options = options.withButton(i18n::trJuce("Active pattern"));
         kinds.push_back(ui::MidiExportKind::pattern);
     }
     if (canExportSong)
     {
-        options = options.withButton("Ganzer Song");
+        options = options.withButton(i18n::trJuce("Whole song"));
         kinds.push_back(ui::MidiExportKind::song);
     }
-    options = options.withButton("Abbrechen");
+    options = options.withButton(i18n::trJuce("Cancel"));
     juce::AlertWindow::showAsync(options,
                                  [kinds, onChosen = std::move(onChosen)](int result)
                                  {
@@ -63,7 +64,7 @@ void JuceMidiDialogs::chooseMidiFileToSave(const std::string& title,
 
 void JuceMidiDialogs::chooseMidiFileToOpen(ui::FileChosenCallback onChosen)
 {
-    launch("MIDI-Datei als Pattern importieren",
+    launch(i18n::trJuce("Import MIDI file as a pattern"),
            directory_,
            juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
            [onChosen = std::move(onChosen)](std::optional<std::filesystem::path> file)
@@ -78,10 +79,10 @@ void JuceMidiDialogs::askToAdoptTempo(const std::string& question, std::function
 {
     juce::AlertWindow::showAsync(
         juce::MessageBoxOptions::makeOptionsOkCancel(juce::MessageBoxIconType::QuestionIcon,
-                                                     "Tempo und Taktart",
+                                                     i18n::trJuce("Tempo and time signature"),
                                                      fromUtf8(question),
-                                                     juce::String::fromUTF8("Übernehmen"),
-                                                     "Beibehalten"),
+                                                     i18n::trJuce("Adopt"),
+                                                     i18n::trJuce("Keep")),
         [onAnswer = std::move(onAnswer)](int result)
         {
             juce::MouseCursor::showWaitCursor();

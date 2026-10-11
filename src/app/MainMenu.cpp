@@ -1,5 +1,7 @@
 #include "app/MainMenu.h"
 
+#include "i18n/Translate.h"
+
 #include <array>
 #include <utility>
 #include <vector>
@@ -56,7 +58,7 @@ constexpr int kCtrlShift = juce::ModifierKeys::commandModifier | juce::ModifierK
 struct CommandSpec
 {
     juce::CommandID id;
-    const char* name; ///< UTF-8
+    const char* name; ///< English, translated when shown
     const char* description;
     const char* category;
     char key; ///< 0: no shortcut
@@ -64,129 +66,234 @@ struct CommandSpec
 };
 
 constexpr std::array kCommands{
-    CommandSpec{command::fileNew, "Neu", "Neues Projekt anlegen", "Datei", 'n', kCtrl},
-    CommandSpec{command::fileOpen, "Öffnen...", "Projekt öffnen", "Datei", 'o', kCtrl},
-    CommandSpec{command::fileSave, "Speichern", "Projekt speichern", "Datei", 's', kCtrl},
+    CommandSpec{command::fileNew,
+                i18n::marked("New"),
+                i18n::marked("Create a new project"),
+                i18n::marked("File"),
+                'n',
+                kCtrl},
+    CommandSpec{command::fileOpen,
+                i18n::marked("Open..."),
+                i18n::marked("Open project"),
+                i18n::marked("File"),
+                'o',
+                kCtrl},
+    CommandSpec{command::fileSave,
+                i18n::marked("Save"),
+                i18n::marked("Save project"),
+                i18n::marked("File"),
+                's',
+                kCtrl},
     CommandSpec{command::fileSaveAs,
-                "Speichern unter...",
-                "Projekt unter neuem Namen speichern",
-                "Datei",
+                i18n::marked("Save as..."),
+                i18n::marked("Save the project under a new name"),
+                i18n::marked("File"),
                 's',
                 kCtrlShift},
-    CommandSpec{command::fileQuit, "Beenden", "Programm beenden", "Datei", 'q', kCtrl},
-    CommandSpec{
-        command::editUndo, "Rückgängig", "Letzte Änderung rückgängig machen", "Bearbeiten", 'z', kCtrl},
+    CommandSpec{command::fileQuit,
+                i18n::marked("Quit"),
+                i18n::marked("Quit the program"),
+                i18n::marked("File"),
+                'q',
+                kCtrl},
+    CommandSpec{command::editUndo,
+                i18n::marked("Undo"),
+                i18n::marked("Undo the last change"),
+                i18n::marked("Edit"),
+                'z',
+                kCtrl},
     CommandSpec{command::editRedo,
-                "Wiederholen",
-                "Rückgängig gemachte Änderung wiederholen",
-                "Bearbeiten",
+                i18n::marked("Redo"),
+                i18n::marked("Redo the undone change"),
+                i18n::marked("Edit"),
                 'y',
                 kCtrl},
-    CommandSpec{command::editCut, "Ausschneiden", "Ausgewählte Noten ausschneiden", "Bearbeiten", 'x', kCtrl},
-    CommandSpec{command::editCopy, "Kopieren", "Ausgewählte Noten kopieren", "Bearbeiten", 'c', kCtrl},
+    CommandSpec{command::editCut,
+                i18n::marked("Cut"),
+                i18n::marked("Cut the selected notes"),
+                i18n::marked("Edit"),
+                'x',
+                kCtrl},
+    CommandSpec{command::editCopy,
+                i18n::marked("Copy"),
+                i18n::marked("Copy the selected notes"),
+                i18n::marked("Edit"),
+                'c',
+                kCtrl},
     CommandSpec{command::editPaste,
-                "Einfügen",
-                "Noten an der zuletzt geklickten Stelle einfügen",
-                "Bearbeiten",
+                i18n::marked("Paste"),
+                i18n::marked("Paste notes where you last clicked"),
+                i18n::marked("Edit"),
                 'v',
                 kCtrl},
     CommandSpec{command::editDuplicate,
-                "Duplizieren",
-                "Ausgewählte Noten dahinter kopieren",
-                "Bearbeiten",
+                i18n::marked("Duplicate"),
+                i18n::marked("Copy the selected notes behind them"),
+                i18n::marked("Edit"),
                 'd',
                 kCtrl},
-    CommandSpec{command::editDelete, "Löschen", "Ausgewählte Noten löschen", "Bearbeiten", 0, 0},
+    CommandSpec{command::editDelete,
+                i18n::marked("Delete"),
+                i18n::marked("Delete the selected notes"),
+                i18n::marked("Edit"),
+                0,
+                0},
     CommandSpec{command::editSelectAll,
-                "Alles auswählen",
-                "Alle Noten des Patterns auswählen",
-                "Bearbeiten",
+                i18n::marked("Select all"),
+                i18n::marked("Select all notes of the pattern"),
+                i18n::marked("Edit"),
                 'a',
                 kCtrl},
-    CommandSpec{command::toolDraw, "Werkzeug Zeichnen", "Noten zeichnen", "Bearbeiten", '1', kCtrl},
-    CommandSpec{command::toolSelect, "Werkzeug Auswahl", "Noten auswählen", "Bearbeiten", '2', kCtrl},
-    CommandSpec{command::toolErase, "Werkzeug Löschen", "Noten löschen", "Bearbeiten", '3', kCtrl},
-    CommandSpec{command::patternNew, "Neu...", "Neues Pattern anlegen", "Pattern", 0, 0},
-    CommandSpec{command::patternDuplicate, "Duplizieren", "Aktives Pattern duplizieren", "Pattern", 0, 0},
-    CommandSpec{command::patternRename, "Umbenennen...", "Aktives Pattern umbenennen", "Pattern", 0, 0},
-    CommandSpec{command::patternLength, "Länge...", "Länge des aktiven Patterns in Takten", "Pattern", 0, 0},
-    CommandSpec{command::patternDelete, "Löschen", "Aktives Pattern löschen", "Pattern", 0, 0},
-    CommandSpec{
-        command::songInsert, "Pattern einfügen", "Aktives Pattern ans Ende des Songs setzen", "Song", 0, 0},
-    CommandSpec{command::songRemoveBlock, "Block löschen", "Ausgewählten Song-Block löschen", "Song", 0, 0},
-    CommandSpec{command::songClear, "Song leeren", "Alle Blöcke aus dem Song entfernen", "Song", 0, 0},
-    CommandSpec{
-        command::midiImport, "Import...", "MIDI-Datei als neues Pattern importieren", "MIDI", 'i', kCtrl},
+    CommandSpec{command::toolDraw,
+                i18n::marked("Draw tool"),
+                i18n::marked("Draw notes"),
+                i18n::marked("Edit"),
+                '1',
+                kCtrl},
+    CommandSpec{command::toolSelect,
+                i18n::marked("Select tool"),
+                i18n::marked("Select notes"),
+                i18n::marked("Edit"),
+                '2',
+                kCtrl},
+    CommandSpec{command::toolErase,
+                i18n::marked("Erase tool"),
+                i18n::marked("Delete notes"),
+                i18n::marked("Edit"),
+                '3',
+                kCtrl},
+    CommandSpec{command::patternNew,
+                i18n::marked("New..."),
+                i18n::marked("Create a new pattern"),
+                i18n::marked("Pattern"),
+                0,
+                0},
+    CommandSpec{command::patternDuplicate,
+                i18n::marked("Duplicate"),
+                i18n::marked("Duplicate the active pattern"),
+                i18n::marked("Pattern"),
+                0,
+                0},
+    CommandSpec{command::patternRename,
+                i18n::marked("Rename..."),
+                i18n::marked("Rename the active pattern"),
+                i18n::marked("Pattern"),
+                0,
+                0},
+    CommandSpec{command::patternLength,
+                i18n::marked("Length..."),
+                i18n::marked("Length of the active pattern in bars"),
+                i18n::marked("Pattern"),
+                0,
+                0},
+    CommandSpec{command::patternDelete,
+                i18n::marked("Delete"),
+                i18n::marked("Delete the active pattern"),
+                i18n::marked("Pattern"),
+                0,
+                0},
+    CommandSpec{command::songInsert,
+                i18n::marked("Insert pattern"),
+                i18n::marked("Put the active pattern at the end of the song"),
+                i18n::marked("Song"),
+                0,
+                0},
+    CommandSpec{command::songRemoveBlock,
+                i18n::marked("Delete block"),
+                i18n::marked("Delete the selected song block"),
+                i18n::marked("Song"),
+                0,
+                0},
+    CommandSpec{command::songClear,
+                i18n::marked("Clear song"),
+                i18n::marked("Remove all blocks from the song"),
+                i18n::marked("Song"),
+                0,
+                0},
+    CommandSpec{command::midiImport,
+                i18n::marked("Import..."),
+                i18n::marked("Import a MIDI file as a new pattern"),
+                i18n::marked("MIDI"),
+                'i',
+                kCtrl},
     CommandSpec{command::midiExport,
-                "Export...",
-                "Aktives Pattern oder Song als MIDI-Datei exportieren",
-                "MIDI",
+                i18n::marked("Export..."),
+                i18n::marked("Export the active pattern or the song as a MIDI file"),
+                i18n::marked("MIDI"),
                 'e',
                 kCtrl},
     CommandSpec{command::audioSettings,
-                "Einstellungen...",
-                "Audio-Treiber, Gerät, Buffer und MIDI-Eingang wählen",
-                "Audio",
+                i18n::marked("Settings..."),
+                i18n::marked("Choose the audio driver, device, buffer and MIDI input"),
+                i18n::marked("Audio"),
                 0,
                 0},
-    CommandSpec{command::audioKeymap, "Tastatur-Mapping...", "Tasten den Drum-Slots zuordnen", "Audio", 0, 0},
+    CommandSpec{command::audioKeymap,
+                i18n::marked("Keyboard mapping..."),
+                i18n::marked("Assign keys to the drum slots"),
+                i18n::marked("Audio"),
+                0,
+                0},
     CommandSpec{command::audioLoadBackingTrack,
-                "Backing-Track laden...",
-                "WAV-Datei als Backing-Track über der Drums-Spur importieren",
-                "Audio",
+                i18n::marked("Load backing track..."),
+                i18n::marked("Import a WAV file as the backing track above the drums track"),
+                i18n::marked("Audio"),
                 0,
                 0},
     CommandSpec{command::audioRemoveBackingTrack,
-                "Backing-Track entfernen",
-                "Backing-Track aus dem Projekt entfernen",
-                "Audio",
+                i18n::marked("Remove backing track"),
+                i18n::marked("Remove the backing track from the project"),
+                i18n::marked("Audio"),
                 0,
                 0},
     CommandSpec{command::kitShow,
-                "Kit bearbeiten...",
-                "Samples, Lautstärke, Pitch, MIDI-Note und Taste der Slots einstellen",
-                "Kit",
+                i18n::marked("Edit kit..."),
+                i18n::marked("Set the samples, volume, pitch, MIDI note and key of the slots"),
+                i18n::marked("Kit"),
                 'k',
                 kCtrl},
     CommandSpec{command::kitCopyToProject,
-                "Kit ins Projekt übernehmen",
-                "Das Projekt bekommt ein eigenes Kit, das das Programm-Kit überschreibt",
-                "Kit",
+                i18n::marked("Copy kit into the project"),
+                i18n::marked("The project gets its own kit, which overrides the program kit"),
+                i18n::marked("Kit"),
                 0,
                 0},
     CommandSpec{command::kitUseGlobal,
-                "Programm-Kit verwenden",
-                "Das eigene Kit des Projekts entfernen",
-                "Kit",
+                i18n::marked("Use program kit"),
+                i18n::marked("Remove the project's own kit"),
+                i18n::marked("Kit"),
                 0,
                 0},
     CommandSpec{command::kitCopyToGlobal,
-                "Projekt-Kit als Programm-Kit übernehmen",
-                "Das Kit des Projekts wird das Kit für alle Projekte ohne eigenes Kit",
-                "Kit",
+                i18n::marked("Make project kit the program kit"),
+                i18n::marked("The project's kit becomes the kit of all projects without their own kit"),
+                i18n::marked("Kit"),
                 0,
                 0},
     CommandSpec{command::kitResetToDefault,
-                "Default zurücksetzen",
-                "Das angezeigte Kit auf das Default-Kit mit seinen Samples zurücksetzen",
-                "Kit",
+                i18n::marked("Reset to default"),
+                i18n::marked("Reset the shown kit to the default kit with its samples"),
+                i18n::marked("Kit"),
                 0,
                 0},
     CommandSpec{command::helpAbout,
-                "Info und Lizenzen...",
-                "Version, Lizenz, Quellcode und Komponenten von Drittanbietern",
-                "Hilfe",
+                i18n::marked("About and licenses..."),
+                i18n::marked("Version, license, source code and third-party components"),
+                i18n::marked("Help"),
                 0,
                 0},
     CommandSpec{command::transportRecord,
-                "Aufnahme scharf",
-                "Aufnahme scharf schalten oder entschärfen",
-                "Transport",
+                i18n::marked("Arm recording"),
+                i18n::marked("Arm or disarm recording"),
+                i18n::marked("Transport"),
                 'r',
                 kCtrl},
 };
 
 constexpr juce::CommandID kSeparator = 0;
+constexpr int kHelpMenu = 7;
+/// Item IDs of the submenu "Sprache", outside the command IDs.
+constexpr int kFirstLanguageItem = 0x9100;
 
 std::vector<juce::CommandID> editMenuCommands()
 {
@@ -274,7 +381,17 @@ MainMenu::~MainMenu()
 
 juce::StringArray MainMenu::getMenuBarNames()
 {
-    return {"Datei", "Bearbeiten", "Pattern", "Song", "MIDI", "Kit", "Audio", "Hilfe"};
+    juce::StringArray names;
+    for (const auto* name : {i18n::marked("File"),
+                             i18n::marked("Edit"),
+                             i18n::marked("Pattern"),
+                             i18n::marked("Song"),
+                             i18n::marked("MIDI"),
+                             i18n::marked("Kit"),
+                             i18n::marked("Audio"),
+                             i18n::marked("Help")})
+        names.add(i18n::trJuce(name));
+    return names;
 }
 
 juce::PopupMenu MainMenu::getMenuForIndex(int menuIndex, const juce::String& /*menuName*/)
@@ -287,7 +404,26 @@ juce::PopupMenu MainMenu::getMenuForIndex(int menuIndex, const juce::String& /*m
         else
             menu.addCommandItem(&commands_, id);
     }
+    if (menuIndex == kHelpMenu)
+    {
+        juce::PopupMenu languages;
+        int itemId = kFirstLanguageItem;
+        for (const auto& choice : help_.languages())
+            languages.addItem(itemId++, juce::String::fromUTF8(choice.label.c_str()), true, choice.ticked);
+        menu.addSeparator();
+        menu.addSubMenu(i18n::trJuce("Language"), languages);
+    }
     return menu;
+}
+
+void MainMenu::menuItemSelected(int menuItemID, int topLevelMenuIndex)
+{
+    if (topLevelMenuIndex != kHelpMenu || menuItemID < kFirstLanguageItem)
+        return;
+    const auto choices = help_.languages();
+    const auto index = static_cast<std::size_t>(menuItemID - kFirstLanguageItem);
+    if (index < choices.size())
+        help_.chooseLanguage(choices[index].setting);
 }
 
 void MainMenu::getAllCommands(juce::Array<juce::CommandID>& commands)
@@ -303,7 +439,7 @@ void MainMenu::getCommandInfo(juce::CommandID commandID, juce::ApplicationComman
         return;
 
     result.setInfo(
-        juce::String::fromUTF8(spec->name), juce::String::fromUTF8(spec->description), spec->category, 0);
+        i18n::trJuce(spec->name), i18n::trJuce(spec->description), i18n::trJuce(spec->category), 0);
     if (spec->key != 0)
         result.addDefaultKeypress(spec->key, spec->modifiers);
     if (commandID == command::editRedo)

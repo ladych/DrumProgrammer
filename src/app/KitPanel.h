@@ -1,5 +1,6 @@
 #pragma once
 
+#include "i18n/Translate.h"
 #include "ui/KeymapPresenter.h"
 #include "ui/KitPresenter.h"
 
@@ -48,22 +49,20 @@ private:
     std::unique_ptr<juce::FileChooser> fileChooser_;
 
     juce::Label kitSource_;
-    juce::ListBox slotList_{"Drum-Kit", this};
-    juce::ToggleButton showAllButton_{"Alle Slots anzeigen"};
+    juce::ListBox slotList_{i18n::trJuce("Drum kit"), this};
+    juce::ToggleButton showAllButton_{i18n::trJuce("Show all slots")};
     juce::Label slotName_;
     juce::Label sampleName_;
-    juce::TextButton loadButton_{"Laden..."};
-    juce::TextButton previewButton_{juce::String::fromUTF8("Vorh\xc3\xb6ren")};
+    juce::TextButton loadButton_{i18n::trJuce("Load...")};
+    juce::TextButton previewButton_{i18n::trJuce("Preview")};
     juce::Slider gainSlider_{juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight};
     juce::Slider pitchSlider_{juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight};
     juce::Slider noteSlider_{juce::Slider::IncDecButtons, juce::Slider::TextBoxLeft};
     juce::TextButton keyButton_;
-    juce::Label gainLabel_{{}, juce::String::fromUTF8("Lautst\xc3\xa4rke (dB)")};
-    juce::Label pitchLabel_{{}, juce::String::fromUTF8("Pitch (Halbt\xc3\xb6ne)")};
-    juce::Label noteLabel_{{}, "MIDI-Note"};
-    juce::Label keyLabel_{{},
-                          juce::String::fromUTF8("Taste (klicken, dann Taste dr\xc3\xbc"
-                                                 "cken)")};
+    juce::Label gainLabel_{{}, i18n::trJuce("Volume (dB)")};
+    juce::Label pitchLabel_{{}, i18n::trJuce("Pitch (semitones)")};
+    juce::Label noteLabel_{{}, i18n::trJuce("MIDI note")};
+    juce::Label keyLabel_{{}, i18n::trJuce("Key (click, then press a key)")};
 
     JUCE_LEAK_DETECTOR(KitPanel)
 };

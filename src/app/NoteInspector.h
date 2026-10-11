@@ -1,5 +1,6 @@
 #pragma once
 
+#include "i18n/Translate.h"
 #include "ui/PianoRollPresenter.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -31,11 +32,11 @@ private:
 
     ui::PianoRollPresenter& presenter_;
     std::uint32_t seenChangeCount_ = 0;
-    juce::Label title_{{}, juce::String::fromUTF8("Ausgew\xc3\xa4hlte Note")};
-    juce::Label instrumentLabel_{{}, "Instrument"};
-    juce::Label positionLabel_{{}, "Position"};
-    juce::Label lengthLabel_{{}, juce::String::fromUTF8("L\xc3\xa4nge")};
-    juce::Label velocityLabel_{{}, "Velocity"};
+    juce::Label title_{{}, i18n::trJuce("Selected note")};
+    juce::Label instrumentLabel_{{}, i18n::trJuce("Instrument")};
+    juce::Label positionLabel_{{}, i18n::trJuce("Position")};
+    juce::Label lengthLabel_{{}, i18n::trJuce("Length")};
+    juce::Label velocityLabel_{{}, i18n::trJuce("Velocity")};
     juce::Label instrument_;
     juce::Label position_;
     juce::Label length_;

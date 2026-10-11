@@ -1,5 +1,6 @@
 #include "ui/SongTimelinePresenter.h"
 
+#include "i18n/Translate.h"
 #include "model/SongLayout.h"
 
 #include <algorithm>
@@ -81,7 +82,7 @@ void SongTimelinePresenter::insertPattern(int patternIndex, int bar)
 {
     if (!isValidPattern(patternIndex))
         return;
-    undoManager_.beginNewTransaction(juce::String::fromUTF8("Block einf\xc3\xbcgen"));
+    undoManager_.beginNewTransaction(i18n::trJuce("Insert block"));
     add(patternIndex, bar);
 }
 
@@ -94,14 +95,14 @@ void SongTimelinePresenter::removeSelected()
 {
     if (!selected_.getParent().isValid())
         return;
-    undoManager_.beginNewTransaction(juce::String::fromUTF8("Block l\xc3\xb6schen"));
+    undoManager_.beginNewTransaction(i18n::trJuce("Delete block"));
     project().song().removeEntry(selected_.getParent().indexOf(selected_));
     selected_ = {};
 }
 
 void SongTimelinePresenter::clear()
 {
-    undoManager_.beginNewTransaction("Song leeren");
+    undoManager_.beginNewTransaction(i18n::trJuce("Clear song"));
     project().song().clear();
 }
 
@@ -149,11 +150,11 @@ void SongTimelinePresenter::release()
         return;
     if (drag.duplicate)
     {
-        undoManager_.beginNewTransaction("Block duplizieren");
+        undoManager_.beginNewTransaction(i18n::trJuce("Duplicate block"));
         add(drag.patternIndex, drag.targetBar);
         return;
     }
-    undoManager_.beginNewTransaction("Block verschieben");
+    undoManager_.beginNewTransaction(i18n::trJuce("Move block"));
     model::SongEntry{drag.entry, &undoManager_}.setStartBar(drag.targetBar);
 }
 

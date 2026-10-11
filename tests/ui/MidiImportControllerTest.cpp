@@ -122,7 +122,7 @@ TEST_F(MidiImportControllerTest, FMI03_TheImportIsOneUndoStep)
 
     controller.importMidiFile();
 
-    EXPECT_EQ(undoManager.getUndoDescription(), MidiImportController::kUndoName);
+    EXPECT_EQ(undoManager.getUndoDescription(), i18n::trJuce(MidiImportController::kUndoName));
     undoManager.undo();
     EXPECT_EQ(numPatterns(), 1);
     EXPECT_EQ(activePattern.index(), 0);

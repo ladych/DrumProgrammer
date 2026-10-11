@@ -21,6 +21,8 @@ add_library(drumprog_core STATIC
     engine/VelocityCurve.cpp
     engine/Voice.cpp
     engine/VoicePool.cpp
+    i18n/LanguageCatalog.cpp
+    i18n/Translate.cpp
     input/InputActivity.cpp
     input/KeyboardInput.cpp
     input/KeyNames.cpp
@@ -152,6 +154,16 @@ juce_add_binary_data(DrumProgrammerIcons
 target_link_libraries(DrumProgrammer PRIVATE $<LINK_ONLY:DrumProgrammerIcons>)
 target_include_directories(DrumProgrammer SYSTEM PRIVATE
     $<TARGET_PROPERTY:DrumProgrammerIcons,INTERFACE_INCLUDE_DIRECTORIES>)
+
+# Translation files (AP15, i18n::LanguageCatalog): one file per language, see resources/Languages/de.txt.
+file(GLOB DRUMPROG_LANGUAGE_FILES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/resources/Languages/*.txt")
+juce_add_binary_data(DrumProgrammerLanguages
+    HEADER_NAME LanguageData.h
+    NAMESPACE LanguageData
+    SOURCES ${DRUMPROG_LANGUAGE_FILES})
+target_link_libraries(DrumProgrammer PRIVATE $<LINK_ONLY:DrumProgrammerLanguages>)
+target_include_directories(DrumProgrammer SYSTEM PRIVATE
+    $<TARGET_PROPERTY:DrumProgrammerLanguages,INTERFACE_INCLUDE_DIRECTORIES>)
 
 # JUCE itself comes compiled from drumprog_juce through drumprog_core (cmake/DrumProgrammerJuce.cmake).
 target_link_libraries(DrumProgrammer PRIVATE drumprog_core)

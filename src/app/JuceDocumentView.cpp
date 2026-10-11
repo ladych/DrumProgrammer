@@ -1,5 +1,6 @@
 #include "app/JuceDocumentView.h"
 
+#include "i18n/Translate.h"
 #include "io/Utf8Path.h"
 
 #include <utility>
@@ -47,20 +48,20 @@ void JuceDocumentView::setWindowTitle(const std::string& title)
 void JuceDocumentView::askToSaveChanges(const std::string& projectName,
                                         std::function<void(ui::SaveChangesChoice)> onChoice)
 {
-    const auto options = juce::MessageBoxOptions::makeOptionsYesNoCancel(
-        juce::MessageBoxIconType::QuestionIcon,
-        fromUtf8("Ungespeicherte Änderungen"),
-        fromUtf8("Änderungen an „" + projectName + "“ speichern?"),
-        "Speichern",
-        "Verwerfen",
-        "Abbrechen");
+    const auto options =
+        juce::MessageBoxOptions::makeOptionsYesNoCancel(juce::MessageBoxIconType::QuestionIcon,
+                                                        i18n::trJuce("Unsaved changes"),
+                                                        i18n::trJuce("Save changes to \"%1\"?", projectName),
+                                                        i18n::trJuce("Save"),
+                                                        i18n::trJuce("Discard"),
+                                                        i18n::trJuce("Cancel"));
     juce::AlertWindow::showAsync(
         options, [onChoice = std::move(onChoice)](int button) { onChoice(choiceForButton(button)); });
 }
 
 void JuceDocumentView::chooseFileToOpen(ui::FileChosenCallback onChosen)
 {
-    launchChooser(fromUtf8("Projekt öffnen"),
+    launchChooser(i18n::trJuce("Open project"),
                   juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
                   juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                   std::move(onChosen));
@@ -68,7 +69,7 @@ void JuceDocumentView::chooseFileToOpen(ui::FileChosenCallback onChosen)
 
 void JuceDocumentView::chooseFileToSave(const std::string& suggestedFileName, ui::FileChosenCallback onChosen)
 {
-    launchChooser("Projekt speichern",
+    launchChooser(i18n::trJuce("Save project"),
                   juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
                       .getChildFile(fromUtf8(suggestedFileName)),
                   juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |

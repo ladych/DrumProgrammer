@@ -1,5 +1,6 @@
 #include "ui/KitPresenter.h"
 
+#include "i18n/Translate.h"
 #include "io/Utf8Path.h"
 
 #include <algorithm>
@@ -63,7 +64,7 @@ std::string KitPresenter::sampleLabel(int slotIndex) const
     if (!slot)
         return {};
     if (!slot->hasSample())
-        return "kein Sample";
+        return i18n::tr("no sample");
     return io::utf8FromPath(io::pathFromUtf8(slot->filePath()).filename());
 }
 
@@ -74,7 +75,7 @@ std::string KitPresenter::noteLabel(int slotIndex) const
         return {};
     auto label = std::to_string(slot->midiNote());
     if (slot->midiNote() == slot->gmNote())
-        label += " (GM-Default)";
+        label = i18n::tr("%1 (GM default)", label);
     return label;
 }
 
@@ -99,7 +100,7 @@ bool KitPresenter::loadSample(const std::filesystem::path& file)
     auto slot = selected();
     if (!slot || !kits_.canLoad(file))
         return false;
-    beginEdit(*slot, "Sample");
+    beginEdit(*slot, i18n::marked("Sample %1"));
     slot->setFilePath(io::utf8FromPath(file));
     return true;
 }
@@ -108,7 +109,7 @@ void KitPresenter::setGainDb(float gainDb)
 {
     if (auto slot = selected())
     {
-        beginEdit(*slot, "Lautstärke");
+        beginEdit(*slot, i18n::marked("Volume %1"));
         slot->setGain(std::pow(10.0, std::clamp(gainDb, kMinGainDb, kMaxGainDb) / 20.0));
     }
 }
@@ -127,7 +128,7 @@ void KitPresenter::setPitch(int semitones)
 {
     if (auto slot = selected())
     {
-        beginEdit(*slot, "Pitch");
+        beginEdit(*slot, i18n::marked("Pitch %1"));
         slot->setPitch(std::clamp(
             semitones, -engine::KitBuilder::kMaxPitchSemitones, engine::KitBuilder::kMaxPitchSemitones));
     }
@@ -143,7 +144,7 @@ void KitPresenter::setMidiNote(int midiNote)
 {
     if (auto slot = selected())
     {
-        beginEdit(*slot, "MIDI-Note");
+        beginEdit(*slot, i18n::marked("MIDI note %1"));
         slot->setMidiNote(std::clamp(midiNote, 0, kMaxMidiNote));
     }
 }
@@ -161,14 +162,14 @@ bool KitPresenter::usesProjectKit() const
 
 std::string KitPresenter::kitSourceLabel() const
 {
-    return usesProjectKit() ? "Projekt-Kit" : "Programm-Kit";
+    return usesProjectKit() ? i18n::tr("Project kit") : i18n::tr("Program kit");
 }
 
 void KitPresenter::copyGlobalKitToProject()
 {
     if (usesProjectKit())
         return;
-    undoManager_.beginNewTransaction(juce::String::fromUTF8("Kit ins Projekt übernehmen"));
+    undoManager_.beginNewTransaction(i18n::trJuce("Copy kit into the project"));
     project().setOwnKit(globalKit_);
 }
 
@@ -176,7 +177,7 @@ void KitPresenter::useGlobalKit()
 {
     if (!usesProjectKit())
         return;
-    undoManager_.beginNewTransaction("Programm-Kit verwenden");
+    undoManager_.beginNewTransaction(i18n::trJuce("Use program kit"));
     project().removeOwnKit();
 }
 
@@ -184,13 +185,13 @@ void KitPresenter::copyProjectKitToGlobal()
 {
     if (!usesProjectKit())
         return;
-    undoManager_.beginNewTransaction(juce::String::fromUTF8("Projekt-Kit als Programm-Kit übernehmen"));
+    undoManager_.beginNewTransaction(i18n::trJuce("Make project kit the program kit"));
     globalKit_.copyPropertiesAndChildrenFrom(project().kit().tree(), &undoManager_);
 }
 
 void KitPresenter::resetToDefaultKit(const juce::ValueTree& defaultKit)
 {
-    undoManager_.beginNewTransaction(juce::String::fromUTF8("Kit auf Default zurücksetzen"));
+    undoManager_.beginNewTransaction(i18n::trJuce("Reset kit to default"));
     auto kit = activeKit().tree();
     kit.copyPropertiesAndChildrenFrom(defaultKit, &undoManager_);
 }
@@ -233,9 +234,9 @@ std::optional<model::SampleSlot> KitPresenter::selected() const
     return selected_ ? slotAt(*selected_) : std::nullopt;
 }
 
-void KitPresenter::beginEdit(const model::SampleSlot& slot, const std::string& what)
+void KitPresenter::beginEdit(const model::SampleSlot& slot, const char* what)
 {
-    const auto name = juce::String::fromUTF8((what + " " + slot.name()).c_str());
+    const auto name = i18n::trJuce(what, slot.name());
     if (undoManager_.getCurrentTransactionName() != name)
         undoManager_.beginNewTransaction(name);
 }

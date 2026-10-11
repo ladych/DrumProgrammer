@@ -38,7 +38,8 @@ public:
     void exportSong();
 
 private:
-    void write(const io::MidiPattern& midi, const std::filesystem::path& file, const std::string& what);
+    /// `failedMessage` is the English message with %1 for the file.
+    void write(const io::MidiPattern& midi, const std::filesystem::path& file, const char* failedMessage);
 
     juce::ValueTree project_;
     const ActivePattern& activePattern_;

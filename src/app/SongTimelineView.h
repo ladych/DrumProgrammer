@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/IconButton.h"
+#include "i18n/Translate.h"
 #include "ui/BackingTrackPresenter.h"
 #include "ui/SongTimelineGeometry.h"
 #include "ui/SongTimelinePresenter.h"
@@ -79,8 +80,8 @@ private:
     std::unique_ptr<BackingLane> backingLane_;
     std::unique_ptr<Track> track_;
     juce::ScrollBar scrollBar_{false};
-    IconButton zoomOutButton_{Icon::zoomOut, "Timeline verkleinern (Strg+Mausrad)"};
-    IconButton zoomInButton_{Icon::zoomIn, juce::String::fromUTF8("Timeline vergrößern (Strg+Mausrad)")};
+    IconButton zoomOutButton_{Icon::zoomOut, i18n::trJuce("Zoom out the timeline (Ctrl+mouse wheel)")};
+    IconButton zoomInButton_{Icon::zoomIn, i18n::trJuce("Zoom in the timeline (Ctrl+mouse wheel)")};
 
     JUCE_LEAK_DETECTOR(SongTimelineView)
 };

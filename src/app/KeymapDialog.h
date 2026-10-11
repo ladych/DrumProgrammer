@@ -1,5 +1,6 @@
 #pragma once
 
+#include "i18n/Translate.h"
 #include "ui/KeymapPresenter.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -34,10 +35,10 @@ private:
 
     ui::KeymapPresenter& presenter_;
     juce::Label hint_;
-    juce::ListBox list_{"Tastatur-Mapping", this};
+    juce::ListBox list_{i18n::trJuce("Keyboard mapping"), this};
     juce::Label warning_;
-    juce::TextButton clearButton_{"Taste entfernen"};
-    juce::TextButton defaultsButton_{"Standard wiederherstellen"};
+    juce::TextButton clearButton_{i18n::trJuce("Remove key")};
+    juce::TextButton defaultsButton_{i18n::trJuce("Restore defaults")};
 
     JUCE_LEAK_DETECTOR(KeymapDialog)
 };

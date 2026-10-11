@@ -2,6 +2,7 @@
 
 #include "engine/KitDescription.h"
 #include "engine/TempoMath.h"
+#include "i18n/Translate.h"
 #include "ui/MusicalTime.h"
 
 #include <algorithm>
@@ -15,8 +16,8 @@ namespace
 {
 
 constexpr int kMaxVelocity = 127;
-const juce::String kVelocityEdit{"Velocity"};
-const juce::String kDeleteNotes = juce::String::fromUTF8("Noten l\xc3\xb6schen");
+constexpr const char* kVelocityEdit = i18n::marked("Velocity");
+constexpr const char* kDeleteNotes = i18n::marked("Delete notes");
 constexpr const char* kSeparator = " \xc2\xb7 ";
 constexpr const char* kDash = "\xe2\x80\x93";
 
@@ -28,9 +29,12 @@ double fractionOf(std::int64_t tick, std::int64_t from, std::int64_t to)
     return std::clamp(static_cast<double>(tick - from) / static_cast<double>(to - from), 0.0, 1.0);
 }
 
-std::string plural(int count, const char* one, const char* many)
+/// "1 note", "3 notes".
+std::string notesText(int count)
 {
-    return std::to_string(count) + (count == 1 ? one : many);
+    if (count == 1)
+        return i18n::tr("%1 note", std::to_string(count));
+    return i18n::tr("%1 notes", std::to_string(count));
 }
 
 } // namespace
@@ -66,11 +70,11 @@ std::string PianoRollPresenter::headerText() const
 {
     const auto shown = pattern();
     if (!shown)
-        return "Piano-Roll";
+        return i18n::tr("Piano roll");
     const auto signature = project().timeSignature();
-    std::string text = "Piano-Roll \xe2\x80\x94 " + shown->name();
+    std::string text = i18n::tr("Piano roll") + " \xe2\x80\x94 " + shown->name();
     text += kSeparator + std::to_string(signature.numerator) + "/" + std::to_string(signature.denominator);
-    text += kSeparator + std::string{"Raster "} + gridText();
+    text += kSeparator + i18n::tr("Grid %1", gridText());
     return text;
 }
 
@@ -132,7 +136,7 @@ void PianoRollPresenter::mouseDown(GridPoint point,
     const auto found = hit(point, tolerance);
     if (button == PointerButton::right || tool_ == PianoRollTool::erase)
     {
-        undoManager_.beginNewTransaction(kDeleteNotes);
+        undoManager_.beginNewTransaction(i18n::trJuce(kDeleteNotes));
         drag_ = button == PointerButton::right ? Drag::none : Drag::erase;
         eraseAt(point);
         return;
@@ -214,7 +218,7 @@ void PianoRollPresenter::deleteSelection()
 {
     if (selection_.empty())
         return;
-    undoManager_.beginNewTransaction(kDeleteNotes);
+    undoManager_.beginNewTransaction(i18n::trJuce(kDeleteNotes));
     removeNotes(selection_);
 }
 
@@ -239,7 +243,7 @@ void PianoRollPresenter::cut()
     copy();
     if (selection_.empty())
         return;
-    undoManager_.beginNewTransaction("Ausschneiden");
+    undoManager_.beginNewTransaction(i18n::trJuce("Cut"));
     removeNotes(selection_);
 }
 
@@ -248,7 +252,7 @@ void PianoRollPresenter::paste()
     auto shown = pattern();
     if (!shown || clipboard_.empty())
         return;
-    undoManager_.beginNewTransaction(juce::String::fromUTF8("Einf\xc3\xbcgen"));
+    undoManager_.beginNewTransaction(i18n::trJuce("Paste"));
     selection_ = addNotes(*shown, clipboard_, pasteTick_);
     pasteTick_ += clipboardSpan_;
     selectionChanged();
@@ -268,7 +272,7 @@ void PianoRollPresenter::duplicate()
         end = std::max(end, note.startTick + note.lengthTicks);
     }
     const std::int64_t step = gridStepTicks();
-    undoManager_.beginNewTransaction("Duplizieren");
+    undoManager_.beginNewTransaction(i18n::trJuce("Duplicate"));
     selection_ = addNotes(*shown, data, engine::floorDiv(end - first + step - 1, step) * step);
     selectionChanged();
 }
@@ -292,14 +296,14 @@ std::string PianoRollPresenter::laneLabel() const
 {
     const auto row = laneRow();
     if (!row)
-        return "Lane: Zeile w\xc3\xa4hlen";
+        return i18n::tr("Lane: choose a row");
     const auto& shown = rows_[static_cast<std::size_t>(*row)];
-    return "Lane: " + shown.name + " (" + std::to_string(shown.midiNote) + ")";
+    return i18n::tr("Lane: %1 (%2)", shown.name, std::to_string(shown.midiNote));
 }
 
 void PianoRollPresenter::velocityDragBegin(std::int64_t tick, int velocity, std::int64_t tolerance)
 {
-    undoManager_.beginNewTransaction(kVelocityEdit);
+    undoManager_.beginNewTransaction(i18n::trJuce(kVelocityEdit));
     laneTick_ = tick;
     laneVelocity_ = velocity;
     laneTolerance_ = tolerance;
@@ -335,7 +339,7 @@ std::optional<NoteDetails> PianoRollPresenter::noteDetails() const
     details.velocity = first->velocity;
     if (selection_.size() > 1)
     {
-        details.instrument = plural(numSelected(), " Note", " Noten");
+        details.instrument = notesText(numSelected());
         details.position = kDash;
         details.length = kDash;
         return details;
@@ -344,10 +348,10 @@ std::optional<NoteDetails> PianoRollPresenter::noteDetails() const
     const int ppq = ticksPerQuarter();
     details.instrument = std::to_string(row.midiNote) + kSeparator + row.name;
     details.position = formatPosition(first->start, ppq, project().timeSignature());
-    details.position += kSeparator + std::to_string(first->start) + " Ticks";
+    details.position += kSeparator + i18n::tr("%1 ticks", std::to_string(first->start));
     if (const auto value = noteValueLabel(first->length, ppq))
         details.length = *value + kSeparator;
-    details.length += std::to_string(first->length) + " Ticks";
+    details.length += i18n::tr("%1 ticks", std::to_string(first->length));
     return details;
 }
 
@@ -358,9 +362,9 @@ void PianoRollPresenter::setSelectedVelocity(int velocity)
     // The step goes on unless something else was changed in between.
     bool continues = velocityEditing_;
     if (continues)
-        continues = undoManager_.getCurrentTransactionName() == kVelocityEdit;
+        continues = undoManager_.getCurrentTransactionName() == i18n::trJuce(kVelocityEdit);
     if (!continues)
-        undoManager_.beginNewTransaction(kVelocityEdit);
+        undoManager_.beginNewTransaction(i18n::trJuce(kVelocityEdit));
     velocityEditing_ = true;
     for (const auto& tree : std::vector{selection_})
         model::Note{tree, &undoManager_}.setVelocity(velocity);
@@ -368,9 +372,9 @@ void PianoRollPresenter::setSelectedVelocity(int velocity)
 
 std::string PianoRollPresenter::statusText() const
 {
-    std::string text = "Snap: " + gridText();
+    std::string text = i18n::tr("Snap: %1", gridText());
     if (!selection_.empty())
-        text += kSeparator + plural(numSelected(), " Note", " Noten") + " ausgew\xc3\xa4hlt";
+        text += kSeparator + i18n::tr("%1 selected", notesText(numSelected()));
     return text;
 }
 
@@ -379,7 +383,7 @@ std::string PianoRollPresenter::statusText() const
 std::string PianoRollPresenter::gridText() const
 {
     if (!snapEnabled_)
-        return "aus";
+        return i18n::tr("off");
     return gridLabel(grid_);
 }
 
@@ -523,7 +527,7 @@ void PianoRollPresenter::grab(const Hit& found, GridPoint point, PointerModifier
     moveRows_ = 0;
     drag_ = found.part == NoteHit::end ? Drag::resize : Drag::move;
     if (drag_ == Drag::resize)
-        undoManager_.beginNewTransaction(juce::String::fromUTF8("Notenl\xc3\xa4nge"));
+        undoManager_.beginNewTransaction(i18n::trJuce("Note length"));
 }
 
 void PianoRollPresenter::drawNote(GridPoint point, PointerModifiers modifiers)
@@ -533,7 +537,7 @@ void PianoRollPresenter::drawNote(GridPoint point, PointerModifiers modifiers)
     auto shown = pattern();
     if (!shown || point.row < 0 || point.row >= numRows() || start < 0 || start >= length)
         return;
-    undoManager_.beginNewTransaction("Note zeichnen");
+    undoManager_.beginNewTransaction(i18n::trJuce("Draw note"));
     auto note = shown->addNote({.slotNote = rows_[static_cast<std::size_t>(point.row)].gmNote,
                                 .startTick = start,
                                 .lengthTicks = std::min(gridStepTicks(), length - start),
@@ -607,7 +611,7 @@ void PianoRollPresenter::commitMove()
     std::vector<NoteView> moved;
     std::ranges::copy_if(notes_, std::back_inserter(moved), &NoteView::selected);
     const std::int64_t step = gridStepTicks();
-    undoManager_.beginNewTransaction("Noten verschieben");
+    undoManager_.beginNewTransaction(i18n::trJuce("Move notes"));
     for (const auto& view : moved)
     {
         model::Note note{view.tree, &undoManager_};

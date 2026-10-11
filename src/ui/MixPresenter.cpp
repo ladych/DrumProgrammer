@@ -1,5 +1,7 @@
 #include "ui/MixPresenter.h"
 
+#include "i18n/Translate.h"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -42,7 +44,7 @@ void MixPresenter::setGainDb(MixChannel channel, double gainDb)
 {
     const double clamped = std::clamp(gainDb, kMinGainDb, kMaxGainDb);
     const double gain = clamped <= kMinGainDb ? 0.0 : std::pow(10.0, clamped / kDecibelFactor);
-    const auto name = juce::String::fromUTF8(("Mix " + label(channel)).c_str());
+    const auto name = i18n::trJuce("Mix %1", label(channel));
     if (undoManager_.getCurrentTransactionName() != name)
         undoManager_.beginNewTransaction(name);
     auto mix = this->mix();

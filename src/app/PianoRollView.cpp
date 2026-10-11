@@ -2,6 +2,7 @@
 
 #include "app/Dialogs.h"
 #include "app/Theme.h"
+#include "i18n/Translate.h"
 
 #include <algorithm>
 #include <array>
@@ -352,7 +353,7 @@ void PianoRollView::paint(juce::Graphics& g)
     g.setFont(juce::FontOptions(13.0F));
     g.setColour(findColour(juce::Label::textColourId));
     auto lane = laneHeaderArea_.reduced(8, 6);
-    g.drawText("Velocity", lane.removeFromTop(18), juce::Justification::topLeft);
+    g.drawText(i18n::trJuce("Velocity"), lane.removeFromTop(18), juce::Justification::topLeft);
     g.setColour(findColour(juce::Label::textColourId).withAlpha(0.6F));
     g.drawText(utf8(presenter_.laneLabel()), lane.removeFromTop(18), juce::Justification::topLeft);
 }
@@ -420,7 +421,7 @@ void PianoRollView::setUpLengthBox()
     lengthBox_.setWantsKeyboardFocus(true);
     lengthBox_.setInputRestrictions(2, "0123456789");
     lengthBox_.setJustification(juce::Justification::centred);
-    lengthBox_.setTooltip(juce::String::fromUTF8("Länge des Patterns in Takten (1–64), Eingabe mit Enter"));
+    lengthBox_.setTooltip(i18n::trJuce("Length of the pattern in bars (1–64), confirm with Enter"));
     lengthBox_.onTextChange = [this]
     {
         markInput(lengthBox_,
@@ -578,8 +579,8 @@ void PianoRollView::paintRows(juce::Graphics& g) const
 void PianoRollView::paintLegend(juce::Graphics& g, juce::Rectangle<int> area) const
 {
     g.setFont(juce::FontOptions(13.0F));
-    for (const auto& [colour, label] : {std::pair{kGridNote, juce::String("gerastert")},
-                                        std::pair{kLiveNote, juce::String("frei eingespielt")}})
+    for (const auto& [colour, label] : {std::pair{kGridNote, i18n::trJuce("on the grid")},
+                                        std::pair{kLiveNote, i18n::trJuce("played freely")}})
     {
         auto item = area.removeFromLeft(label.length() * 7 + 30);
         g.setColour(colour);

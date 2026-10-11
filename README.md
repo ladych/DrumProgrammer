@@ -49,6 +49,12 @@ Die CI (GitHub Actions) prüft all das bei jedem Push: Linux- und Windows-Build 
 
 Beim ersten Start spielt das Programm mit dem Default-Kit: den GM-Slots 35 bis 59 mit Samples aus dem Kit „Black Pearl" der [AVL Drumkits](http://www.bandshed.net/avldrumkits/) von Glen MacArthur, pro Instrument die höchste Velocity-Stufe. Die Samples liegen unter `resources/DefaultKit/`, sind ins Programm eingebaut und werden beim Start in den Einstellungsordner kopiert (`DefaultKit/` neben `kit.xml`). Menü **Kit → Default zurücksetzen** stellt das angezeigte Kit wieder her, **Kit → Kit bearbeiten...** (Strg+K) öffnet den Kit-Dialog.
 
+## Sprachen
+
+Die Oberfläche gibt es auf Deutsch und Englisch; **Hilfe → Sprache** wählt sie, Default ist die Sprache des Betriebssystems, sonst Englisch. Die Wahl gilt ab dem nächsten Start und liegt als `language.txt` im Einstellungsordner.
+
+Im Code stehen alle Texte englisch in `i18n::tr("...")` (oder `i18n::marked("...")` in Tabellen). Jede weitere Sprache ist eine Datei `resources/Languages/<ISO-639-1-Code>.txt` im Format von `juce::LocalisedStrings`, die beim Bauen ins Programm kommt; der Kopf von [resources/Languages/de.txt](resources/Languages/de.txt) beschreibt, wie eine neue Sprache angelegt wird. Fehlt eine Übersetzung, erscheint der englische Text. `tools/check-translations.py` (auch als Test `TranslationsComplete`) prüft, dass jede Datei jeden Text enthält; die Unit-Tests laufen auf Deutsch und prüfen so auch die deutschen Texte.
+
 ## Lizenz
 
 GNU Affero General Public License v3.0, siehe [LICENSE](LICENSE). Die Lizenz folgt aus der Open-Source-Lizenz von JUCE.
