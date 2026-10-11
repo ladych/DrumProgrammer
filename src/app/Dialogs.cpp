@@ -4,6 +4,7 @@
 #include "app/KeymapDialog.h"
 #include "app/KitPanel.h"
 #include "app/Theme.h"
+#include "i18n/Translate.h"
 #include "ui/PatternListPresenter.h"
 
 #include <memory>
@@ -48,12 +49,12 @@ void showAudioSettingsDialog(juce::AudioDeviceManager& deviceManager, juce::Comp
                                                                          true,  // stereo pairs
                                                                          false);
     selector->setSize(560, 440);
-    launch(std::move(selector), "Audio/MIDI-Einstellungen", centreAround);
+    launch(std::move(selector), i18n::trJuce("Audio/MIDI settings"), centreAround);
 }
 
 void showKeymapDialog(ui::KeymapPresenter& presenter, juce::Component* centreAround)
 {
-    launch(std::make_unique<KeymapDialog>(presenter), "Tastatur-Mapping", centreAround);
+    launch(std::make_unique<KeymapDialog>(presenter), i18n::trJuce("Keyboard mapping"), centreAround);
 }
 
 juce::DialogWindow* showKitDialog(ui::KitPresenter& kit,
@@ -64,7 +65,7 @@ juce::DialogWindow* showKitDialog(ui::KitPresenter& kit,
 {
     auto panel = std::make_unique<KitPanel>(kit, keymap, sampleWildcard);
     panel->setSize(kKitDialogWidth, kKitDialogHeight);
-    auto* window = launch(std::move(panel), "Kit", centreAround, true);
+    auto* window = launch(std::move(panel), i18n::trJuce("Kit"), centreAround, true);
     for (auto* listener : keyListeners)
         window->addKeyListener(listener);
     return window;
@@ -72,10 +73,7 @@ juce::DialogWindow* showKitDialog(ui::KitPresenter& kit,
 
 void showAboutDialog(const ui::AboutInfo& info, juce::Component* centreAround)
 {
-    launch(std::make_unique<AboutDialog>(info),
-           juce::String::fromUTF8("Info über Drum Programmer"),
-           centreAround,
-           true);
+    launch(std::make_unique<AboutDialog>(info), i18n::trJuce("About Drum Programmer"), centreAround, true);
 }
 
 void askForText(const juce::String& title,
@@ -85,8 +83,8 @@ void askForText(const juce::String& title,
 {
     auto* window = new juce::AlertWindow(title, label, juce::MessageBoxIconType::NoIcon);
     window->addTextEditor("text", initialText);
-    window->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
-    window->addButton("Abbrechen", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+    window->addButton(i18n::trJuce("OK"), 1, juce::KeyPress(juce::KeyPress::returnKey));
+    window->addButton(i18n::trJuce("Cancel"), 0, juce::KeyPress(juce::KeyPress::escapeKey));
     // The window deletes itself after the callback (deleteWhenDismissed).
     window->enterModalState(true,
                             juce::ModalCallbackFunction::create(
@@ -113,11 +111,11 @@ void askForNewPattern(const juce::String& name,
                       int bars,
                       std::function<void(const std::string& name, int bars)> onOk)
 {
-    auto* window = new juce::AlertWindow("Neues Pattern", {}, juce::MessageBoxIconType::NoIcon);
-    window->addTextEditor("name", name, "Name");
-    window->addTextEditor("bars", juce::String(bars), juce::String::fromUTF8("Länge in Takten (1–64)"));
-    window->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
-    window->addButton("Abbrechen", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+    auto* window = new juce::AlertWindow(i18n::trJuce("New pattern"), {}, juce::MessageBoxIconType::NoIcon);
+    window->addTextEditor("name", name, i18n::trJuce("Name"));
+    window->addTextEditor("bars", juce::String(bars), i18n::trJuce("Length in bars (1–64)"));
+    window->addButton(i18n::trJuce("OK"), 1, juce::KeyPress(juce::KeyPress::returnKey));
+    window->addButton(i18n::trJuce("Cancel"), 0, juce::KeyPress(juce::KeyPress::escapeKey));
     auto* barsEditor = window->getTextEditor("bars");
     barsEditor->setInputRestrictions(2, "0123456789");
     barsEditor->onTextChange = [window, barsEditor]
@@ -125,7 +123,7 @@ void askForNewPattern(const juce::String& name,
         const bool valid =
             ui::PatternListPresenter::parseBars(barsEditor->getText().toStdString()).has_value();
         markInput(*barsEditor, valid);
-        window->getButton("OK")->setEnabled(valid);
+        window->getButton(i18n::trJuce("OK"))->setEnabled(valid);
     };
     // The window deletes itself after the callback (deleteWhenDismissed).
     window->enterModalState(true,
@@ -146,7 +144,7 @@ void askToConfirm(const juce::String& title,
                   std::function<void()> onYes)
 {
     const auto options = juce::MessageBoxOptions::makeOptionsOkCancel(
-        juce::MessageBoxIconType::QuestionIcon, title, question, yesButton, "Abbrechen");
+        juce::MessageBoxIconType::QuestionIcon, title, question, yesButton, i18n::trJuce("Cancel"));
     juce::AlertWindow::showAsync(options,
                                  [onYes = std::move(onYes)](int result)
                                  {

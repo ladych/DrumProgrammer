@@ -1,5 +1,6 @@
 #pragma once
 
+#include "i18n/Translate.h"
 #include "io/IFileSystem.h"
 #include "io/MidiFileReader.h"
 #include "io/MidiImport.h"
@@ -26,7 +27,7 @@ namespace drumprog::ui
 class MidiImportController
 {
 public:
-    static constexpr const char* kUndoName = "MIDI-Import";
+    static constexpr const char* kUndoName = i18n::marked("MIDI import");
 
     /// What the project takes from the file; empty parts stay as they are.
     struct FileTempo

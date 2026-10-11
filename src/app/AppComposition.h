@@ -17,6 +17,7 @@
 #include "engine/SampleEngine.h"
 #include "engine/Sequencer.h"
 #include "engine/TestToneSource.h"
+#include "i18n/LanguageCatalog.h"
 #include "input/EngineNoteSinks.h"
 #include "input/InputActivity.h"
 #include "input/KeyboardInput.h"
@@ -96,12 +97,17 @@ private:
     void showKit();
     /// Copies the default kit's samples again if they were deleted, then resets the shown kit.
     void resetKitToDefault();
+    /// Saves the language of "Hilfe > Sprache"; it shows after a restart.
+    void chooseLanguage(const std::string& setting);
     [[nodiscard]] EditActions editActions();
     [[nodiscard]] PatternActions patternActions();
     [[nodiscard]] SongActions songActions();
     [[nodiscard]] MidiActions midiActions();
 
     io::StdFileSystem fileSystem_;
+    // Language (AP15): applied before any other member, so every text is created in it.
+    io::SettingsStore languageSettings_;
+    i18n::LanguageCatalog languages_;
     io::SettingsStore deviceSettings_;
     io::SettingsStore keymapSettings_;
     io::SettingsStore recordOffsetSettings_;

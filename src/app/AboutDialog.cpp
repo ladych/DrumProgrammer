@@ -1,5 +1,7 @@
 #include "app/AboutDialog.h"
 
+#include "i18n/Translate.h"
+
 #include <cmath>
 
 namespace drumprog::app
@@ -28,7 +30,7 @@ AboutDialog::AboutDialog(const ui::AboutInfo& info)
     for (const auto& link : info.links)
         addLink(link);
     addGap();
-    addText(juce::String::fromUTF8("Komponenten von Drittanbietern"), 18.0F, true);
+    addText(i18n::trJuce("Third-party components"), 18.0F, true);
     for (const auto& component : info.components)
         addComponent(component);
 
@@ -94,11 +96,14 @@ void AboutDialog::addComponent(const ui::ThirdPartyComponent& component)
 {
     addGap();
     addText(utf8(component.name), 16.0F, true);
-    addText(utf8(component.author + "\n" + component.usage + "\nLizenz: " + component.license), 14.0F, false);
+    addText(
+        utf8(component.author + "\n" + component.usage + "\n" + i18n::tr("License: %1", component.license)),
+        14.0F,
+        false);
     if (!component.notice.empty())
         addText(utf8(component.notice), 14.0F, false);
-    addLink({"Website: " + component.website.text, component.website.url});
-    addLink({"Lizenztext: " + component.licenseText.text, component.licenseText.url});
+    addLink({i18n::tr("Website: %1", component.website.text), component.website.url});
+    addLink({i18n::tr("License text: %1", component.licenseText.text), component.licenseText.url});
 }
 
 void AboutDialog::addGap()

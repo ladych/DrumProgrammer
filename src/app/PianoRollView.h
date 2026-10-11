@@ -3,6 +3,7 @@
 #include "app/IconButton.h"
 #include "app/PianoRollToolbar.h"
 #include "app/Splitter.h"
+#include "i18n/Translate.h"
 #include "ui/PaneSize.h"
 #include "ui/PatternListPresenter.h"
 #include "ui/PianoRollGeometry.h"
@@ -77,10 +78,10 @@ private:
     std::unique_ptr<VelocityLane> velocityLane_;
     juce::ScrollBar horizontalBar_{false};
     juce::ScrollBar verticalBar_{true};
-    IconButton zoomOutButton_{Icon::zoomOut, "Verkleinern (Strg+Mausrad)"};
-    IconButton zoomInButton_{Icon::zoomIn, juce::String::fromUTF8("Vergrößern (Strg+Mausrad)")};
+    IconButton zoomOutButton_{Icon::zoomOut, i18n::trJuce("Zoom out (Ctrl+mouse wheel)")};
+    IconButton zoomInButton_{Icon::zoomIn, i18n::trJuce("Zoom in (Ctrl+mouse wheel)")};
     juce::TextEditor lengthBox_;
-    juce::Label lengthLabel_{{}, "Takte"};
+    juce::Label lengthLabel_{{}, i18n::trJuce("Bars")};
     SnapControls snapControls_;
     PianoRollToolbar toolbar_;
     Splitter laneSplitter_{Splitter::Direction::upDown};

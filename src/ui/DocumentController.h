@@ -61,7 +61,8 @@ private:
     [[nodiscard]] std::string displayName() const;
 
     [[nodiscard]] static std::filesystem::path withFileExtension(std::filesystem::path file);
-    [[nodiscard]] static std::string loadErrorMessage(io::ProjectFileError error);
+    [[nodiscard]] static std::string loadErrorMessage(io::ProjectFileError error,
+                                                      const std::string& fileName);
     [[nodiscard]] static std::string missingSamplesMessage(const std::vector<io::MissingSample>& missing);
 
     juce::ValueTree project_;

@@ -1,5 +1,7 @@
 #include "ui/PatternListPresenter.h"
 
+#include "i18n/Translate.h"
+
 #include <algorithm>
 #include <array>
 #include <utility>
@@ -9,7 +11,6 @@ namespace drumprog::ui
 namespace
 {
 
-constexpr const char* kCopySuffix = " Kopie";
 constexpr std::array<const char*, 8> kPalette{
     "#E8743B", "#3B82F6", "#22C55E", "#EC4899", "#A855F7", "#EAB308", "#06B6D4", "#EF4444"};
 
@@ -60,7 +61,9 @@ std::string PatternListPresenter::lengthText(int index) const
     if (!isValid(index))
         return {};
     const int bars = lengthBars(index);
-    return std::to_string(bars) + (bars == 1 ? " Takt" : " Takte");
+    if (bars == 1)
+        return i18n::tr("%1 bar", std::to_string(bars));
+    return i18n::tr("%1 bars", std::to_string(bars));
 }
 
 std::optional<int> PatternListPresenter::parseBars(const std::string& text)
@@ -84,7 +87,7 @@ void PatternListPresenter::add(const std::string& name, int bars)
     auto trimmed = juce::String::fromUTF8(name.c_str()).trim().toStdString();
     if (trimmed.empty())
         trimmed = freeName();
-    undoManager_.beginNewTransaction("Pattern anlegen");
+    undoManager_.beginNewTransaction(i18n::trJuce("Add pattern"));
     auto pattern = project().addPattern(idGenerator_.next(), trimmed, std::clamp(bars, kMinBars, kMaxBars));
     pattern.setColour(kPalette.at(static_cast<std::size_t>(numPatterns() - 1) % kPalette.size()));
     active_.select(numPatterns() - 1);
@@ -95,7 +98,7 @@ void PatternListPresenter::rename(int index, const std::string& name)
     const auto trimmed = juce::String::fromUTF8(name.c_str()).trim().toStdString();
     if (!isValid(index) || trimmed.empty())
         return;
-    undoManager_.beginNewTransaction("Pattern umbenennen");
+    undoManager_.beginNewTransaction(i18n::trJuce("Rename pattern"));
     project().pattern(index).setName(trimmed);
 }
 
@@ -103,7 +106,7 @@ void PatternListPresenter::setColour(int index, const std::string& colour)
 {
     if (!isValid(index))
         return;
-    undoManager_.beginNewTransaction("Pattern-Farbe");
+    undoManager_.beginNewTransaction(i18n::trJuce("Pattern colour"));
     project().pattern(index).setColour(colour);
 }
 
@@ -111,7 +114,7 @@ void PatternListPresenter::setLengthBars(int index, int bars)
 {
     if (!isValid(index))
         return;
-    undoManager_.beginNewTransaction(juce::String::fromUTF8("Pattern-L\xc3\xa4nge"));
+    undoManager_.beginNewTransaction(i18n::trJuce("Pattern length"));
     project().pattern(index).setLengthBars(std::clamp(bars, kMinBars, kMaxBars));
 }
 
@@ -119,8 +122,8 @@ void PatternListPresenter::duplicate(int index)
 {
     if (!isValid(index))
         return;
-    undoManager_.beginNewTransaction("Pattern duplizieren");
-    project().duplicatePattern(index, idGenerator_.next(), name(index) + kCopySuffix);
+    undoManager_.beginNewTransaction(i18n::trJuce("Duplicate pattern"));
+    project().duplicatePattern(index, idGenerator_.next(), i18n::tr("%1 copy", name(index)));
     active_.select(index + 1);
 }
 
@@ -148,16 +151,16 @@ std::string PatternListPresenter::removeQuestion(int index) const
     const int uses = songUses(index);
     if (uses == 0)
         return {};
-    return "\xe2\x80\x9e" + name(index) + "\xe2\x80\x9c wird im Song " + std::to_string(uses) +
-           "-mal verwendet. Beim L\xc3\xb6schen werden alle Bl\xc3\xb6"
-           "cke entfernt.";
+    return i18n::tr("\"%1\" is used %2 times in the song. Deleting it removes all its blocks.",
+                    name(index),
+                    std::to_string(uses));
 }
 
 void PatternListPresenter::remove(int index)
 {
     if (!isValid(index) || !canRemove())
         return;
-    undoManager_.beginNewTransaction(juce::String::fromUTF8("Pattern l\xc3\xb6schen"));
+    undoManager_.beginNewTransaction(i18n::trJuce("Delete pattern"));
     project().removePattern(index);
 }
 
@@ -183,9 +186,9 @@ bool PatternListPresenter::nameExists(const std::string& name) const
 std::string PatternListPresenter::freeName() const
 {
     int number = numPatterns() + 1;
-    while (nameExists("Pattern " + std::to_string(number)))
+    while (nameExists(i18n::tr("Pattern %1", std::to_string(number))))
         ++number;
-    return "Pattern " + std::to_string(number);
+    return i18n::tr("Pattern %1", std::to_string(number));
 }
 
 } // namespace drumprog::ui

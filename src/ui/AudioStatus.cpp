@@ -1,5 +1,7 @@
 #include "ui/AudioStatus.h"
 
+#include "i18n/Translate.h"
+
 #include <cmath>
 #include <string>
 
@@ -10,21 +12,22 @@ namespace
 
 constexpr double kMsPerSecond = 1000.0;
 
-/// One decimal with a German decimal comma.
+/// One decimal with the decimal separator of the language.
 std::string formatMs(double milliseconds)
 {
     const long long tenths = std::llround(milliseconds * 10.0);
-    return std::to_string(tenths / 10) + "," + std::to_string(tenths % 10) + " ms";
+    return i18n::tr("%1 ms",
+                    std::to_string(tenths / 10) + i18n::decimalSeparator() + std::to_string(tenths % 10));
 }
 
 std::string midiText(const std::vector<std::string>& inputs)
 {
     if (inputs.empty())
-        return "MIDI: kein Eingang";
-    std::string text = "MIDI: ";
+        return i18n::tr("MIDI: no input");
+    std::string text;
     for (std::size_t index = 0; index < inputs.size(); ++index)
         text += (index > 0 ? ", " : "") + inputs[index];
-    return text;
+    return i18n::tr("MIDI: %1", text);
 }
 
 } // namespace
@@ -42,21 +45,26 @@ double hitToSoundLatencyMs(const AudioDeviceInfo& info)
 
 std::string audioStatusText(const AudioDeviceInfo& info)
 {
-    const std::string warning = info.stalled ? "Audio-Gerät antwortet nicht, neuer Versuch läuft | " : "";
+    std::string warning;
+    if (info.stalled)
+        warning = i18n::tr("Audio device not responding, retrying | ");
     if (!info.open || info.sampleRate <= 0.0)
-        return warning + "Kein Audio-Gerät geöffnet | " + midiText(info.midiInputs);
+        return warning + i18n::tr("No audio device open | ") + midiText(info.midiInputs);
     std::string replaced;
     if (!info.replacedDevice.empty())
-        replaced = "Ersatz für " + info.replacedDevice + " | ";
+        replaced = i18n::tr("Replacing %1 | ", info.replacedDevice);
     std::string xruns;
     if (info.xruns >= 0)
-        xruns = "XRuns: " + std::to_string(info.xruns) + " | ";
+        xruns = i18n::tr("XRuns: %1 | ", std::to_string(info.xruns));
     const double bufferMs = info.bufferSize * kMsPerSecond / info.sampleRate;
     return warning + replaced + info.driver + " | " + info.device + " | " +
-           std::to_string(std::llround(info.sampleRate)) + " Hz | Buffer " + std::to_string(info.bufferSize) +
-           " (" + formatMs(bufferMs) + ") | Latenz " + formatMs(outputLatencyMs(info)) +
-           ", Anschlag bis Ton max. " + formatMs(hitToSoundLatencyMs(info)) + " | " + xruns +
-           midiText(info.midiInputs);
+           i18n::tr("%1 Hz | Buffer %2 (%3) | Latency %4, hit to sound max. %5 | ",
+                    std::to_string(std::llround(info.sampleRate)),
+                    std::to_string(info.bufferSize),
+                    formatMs(bufferMs),
+                    formatMs(outputLatencyMs(info)),
+                    formatMs(hitToSoundLatencyMs(info))) +
+           xruns + midiText(info.midiInputs);
 }
 
 } // namespace drumprog::ui

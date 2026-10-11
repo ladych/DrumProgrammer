@@ -1,6 +1,7 @@
 #include "model/ProjectFactory.h"
 
 #include "engine/KitDescription.h"
+#include "i18n/Translate.h"
 #include "model/ModelIds.h"
 #include "model/Project.h"
 
@@ -9,8 +10,7 @@ namespace drumprog::model
 namespace
 {
 
-constexpr const char* kDefaultProjectName = "Neues Projekt";
-constexpr const char* kFirstPatternName = "Pattern 1";
+constexpr const char* kDefaultProjectName = i18n::marked("New project");
 
 } // namespace
 
@@ -19,7 +19,7 @@ ProjectFactory::ProjectFactory(IIdGenerator& idGenerator) : idGenerator_(idGener
 juce::ValueTree ProjectFactory::createDefault() const
 {
     juce::ValueTree tree{ids::project};
-    tree.setProperty(ids::name, kDefaultProjectName, nullptr);
+    tree.setProperty(ids::name, i18n::trJuce(kDefaultProjectName), nullptr);
     tree.setProperty(ids::bpm, kDefaultBpm, nullptr);
     tree.setProperty(ids::timeSigNumerator, 4, nullptr);
     tree.setProperty(ids::timeSigDenominator, 4, nullptr);
@@ -29,7 +29,7 @@ juce::ValueTree ProjectFactory::createDefault() const
     tree.appendChild(juce::ValueTree{ids::backingTrack}, nullptr);
     tree.appendChild(juce::ValueTree{ids::mix}, nullptr);
 
-    Project{tree, nullptr}.addPattern(idGenerator_.next(), kFirstPatternName, kDefaultPatternBars);
+    Project{tree, nullptr}.addPattern(idGenerator_.next(), i18n::tr("Pattern %1", "1"), kDefaultPatternBars);
     return tree;
 }
 

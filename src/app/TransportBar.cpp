@@ -1,6 +1,7 @@
 #include "app/TransportBar.h"
 
 #include "app/Theme.h"
+#include "i18n/Translate.h"
 
 #include <initializer_list>
 #include <optional>
@@ -60,7 +61,7 @@ void TransportBar::setUpTransport()
     positionLabel_.setColour(juce::Label::textColourId, theme::kPosition);
     positionLabel_.setColour(juce::Label::backgroundColourId, theme::kPositionBackground);
     positionLabel_.setColour(juce::Label::outlineColourId, theme::kOutline);
-    positionLabel_.setTooltip("Position Takt.Schlag.Tick");
+    positionLabel_.setTooltip(i18n::trJuce("Position bar.beat.tick"));
     positionTitle_.setColour(juce::Label::textColourId, theme::kTextDim);
     positionTitle_.setJustificationType(juce::Justification::centredRight);
     for (auto* component : std::initializer_list<juce::Component*>{&rewindButton_,
@@ -77,7 +78,7 @@ void TransportBar::setUpTempo()
 {
     bpmEditor_.setInputRestrictions(6, "0123456789.,");
     bpmEditor_.setJustification(juce::Justification::centred);
-    bpmEditor_.setTooltip("Tempo in BPM");
+    bpmEditor_.setTooltip(i18n::trJuce("Tempo in BPM"));
     bpmEditor_.onReturnKey = [] { unfocusAllComponents(); };
     bpmEditor_.onEscapeKey = [this]
     {
@@ -89,8 +90,8 @@ void TransportBar::setUpTempo()
         numeratorBox_.addItem(juce::String{numerator}, numerator);
     for (const int denominator : {4, 8, 16})
         denominatorBox_.addItem(juce::String{denominator}, denominator);
-    numeratorBox_.setTooltip(juce::String::fromUTF8("Schläge pro Takt"));
-    denominatorBox_.setTooltip("Notenwert eines Schlags");
+    numeratorBox_.setTooltip(i18n::trJuce("Beats per bar"));
+    denominatorBox_.setTooltip(i18n::trJuce("Note value of a beat"));
     numeratorBox_.onChange = [this] { commitTimeSignature(); };
     denominatorBox_.onChange = [this] { commitTimeSignature(); };
     for (auto* label : {&bpmLabel_, &signatureLabel_, &modeLabel_})

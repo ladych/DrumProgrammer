@@ -1,5 +1,7 @@
 #include "ui/TempoPresenter.h"
 
+#include "i18n/Translate.h"
+
 #include <algorithm>
 #include <charconv>
 #include <cmath>
@@ -35,7 +37,7 @@ std::string TempoPresenter::bpmText() const
 
 void TempoPresenter::setBpm(double bpm)
 {
-    undoManager_.beginNewTransaction("Tempo");
+    undoManager_.beginNewTransaction(i18n::trJuce("Tempo"));
     project().setBpm(validBpm(bpm));
 }
 
@@ -73,7 +75,7 @@ void TempoPresenter::setTimeSignature(int numerator, int denominator)
 {
     if (!isValidDenominator(denominator))
         return;
-    undoManager_.beginNewTransaction("Taktart");
+    undoManager_.beginNewTransaction(i18n::trJuce("Time signature"));
     project().setTimeSignature({std::clamp(numerator, 1, kMaxNumerator), denominator});
 }
 

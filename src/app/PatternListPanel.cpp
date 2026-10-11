@@ -1,6 +1,7 @@
 #include "app/PatternListPanel.h"
 
 #include "app/SongTimelineView.h"
+#include "i18n/Translate.h"
 
 #include <utility>
 
@@ -125,11 +126,11 @@ void PatternListPanel::showMenu(int row)
             static_cast<int>(index) + 100, utf8(palette[index]), colourOf(palette[index]));
 
     juce::PopupMenu menu;
-    menu.addItem(1, "Umbenennen...");
-    menu.addSubMenu("Farbe", colours);
-    menu.addItem(2, juce::String::fromUTF8("L\xc3\xa4nge..."));
-    menu.addItem(3, "Duplizieren");
-    menu.addItem(4, juce::String::fromUTF8("L\xc3\xb6schen"), presenter_.canRemove());
+    menu.addItem(1, i18n::trJuce("Rename..."));
+    menu.addSubMenu(i18n::trJuce("Colour"), colours);
+    menu.addItem(2, i18n::trJuce("Length..."));
+    menu.addItem(3, i18n::trJuce("Duplicate"));
+    menu.addItem(4, i18n::trJuce("Delete"), presenter_.canRemove());
     menu.showMenuAsync(juce::PopupMenu::Options{},
                        [this, row, palette](int result)
                        {

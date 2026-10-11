@@ -130,6 +130,6 @@ jobs:
       # Generated headers of the built-in default kit (DefaultKitData.h, included by src/app/AppComposition.cpp)
       # and of the button icons (IconData.h, included by src/app/IconButton.cpp).
       - name: Generate sources
-        run: cmake --build build --target DrumProgrammerDefaultKit DrumProgrammerIcons
+        run: cmake --build build --target DrumProgrammerDefaultKit DrumProgrammerIcons DrumProgrammerLanguages
       - name: Run clang-tidy
         run: tools/run-clang-tidy.sh build

@@ -1,6 +1,7 @@
 #include "app/PianoRollToolbar.h"
 
 #include "app/Theme.h"
+#include "i18n/Translate.h"
 
 #include <algorithm>
 #include <array>
@@ -93,8 +94,8 @@ SnapControls::SnapControls(ui::PianoRollPresenter& presenter) : presenter_(prese
         if (index >= 0)
             presenter_.setGrid(ui::kGridDivisions.at(static_cast<std::size_t>(index)));
     };
-    gridBox_.setTooltip("Raster");
-    snapButton_.setTooltip("Noten am Raster einrasten (mit gedrückter Alt-Taste frei)");
+    gridBox_.setTooltip(i18n::trJuce("Grid"));
+    snapButton_.setTooltip(i18n::trJuce("Snap notes to the grid (free while holding Alt)"));
     snapButton_.onClick = [this] { presenter_.setSnapEnabled(snapButton_.getToggleState()); };
     altHint_.setColour(juce::Label::textColourId, theme::kTextDim);
     for (auto* component : std::initializer_list<juce::Component*>{&snapButton_, &gridBox_, &altHint_})

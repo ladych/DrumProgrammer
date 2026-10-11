@@ -1,5 +1,6 @@
 #include "ui/DocumentController.h"
 
+#include "i18n/Translate.h"
 #include "io/Utf8Path.h"
 #include "model/Project.h"
 
@@ -78,7 +79,7 @@ void DocumentController::requestClose(std::function<void()> onClose)
 void DocumentController::reportMissingGlobalKitSamples(const std::vector<io::MissingSample>& missing)
 {
     if (!missing.empty())
-        view_.showMessage("Fehlende Samples im Programm-Kit", missingSamplesMessage(missing));
+        view_.showMessage(i18n::tr("Missing samples in the program kit"), missingSamplesMessage(missing));
 }
 
 void DocumentController::undo()
@@ -133,22 +134,21 @@ void DocumentController::openFile(const std::filesystem::path& file)
     const auto result = repository_.load(file);
     if (result.error != io::ProjectFileError::none)
     {
-        view_.showMessage("Öffnen fehlgeschlagen",
-                          "„" + io::utf8FromPath(file.filename()) + "“ " + loadErrorMessage(result.error));
+        view_.showMessage(i18n::tr("Opening failed"),
+                          loadErrorMessage(result.error, io::utf8FromPath(file.filename())));
         return;
     }
     replaceProject(result.project, file);
     if (!result.missingSamples.empty())
-        view_.showMessage("Fehlende Samples", missingSamplesMessage(result.missingSamples));
+        view_.showMessage(i18n::tr("Missing samples"), missingSamplesMessage(result.missingSamples));
 }
 
 bool DocumentController::saveTo(const std::filesystem::path& file)
 {
     if (repository_.save(project_, file) != io::ProjectFileError::none)
     {
-        view_.showMessage("Speichern fehlgeschlagen",
-                          "Das Projekt konnte nicht als „" + io::utf8FromPath(file) +
-                              "“ gespeichert werden.");
+        view_.showMessage(i18n::tr("Saving failed"),
+                          i18n::tr("The project could not be saved as \"%1\".", io::utf8FromPath(file)));
         return false;
     }
     currentFile_ = file;
@@ -184,25 +184,25 @@ std::filesystem::path DocumentController::withFileExtension(std::filesystem::pat
     return file;
 }
 
-std::string DocumentController::loadErrorMessage(io::ProjectFileError error)
+std::string DocumentController::loadErrorMessage(io::ProjectFileError error, const std::string& fileName)
 {
     switch (error)
     {
     case io::ProjectFileError::unreadable:
-        return "konnte nicht gelesen werden.";
+        return i18n::tr("\"%1\" could not be read.", fileName);
     case io::ProjectFileError::newerFormatVersion:
-        return "wurde mit einer neueren Version von Drum Programmer gespeichert. Bitte aktualisiere das "
-               "Programm.";
+        return i18n::tr(
+            "\"%1\" was saved with a newer version of Drum Programmer. Please update the program.", fileName);
     default:
-        return "ist keine Drum-Programmer-Projektdatei.";
+        return i18n::tr("\"%1\" is not a Drum Programmer project file.", fileName);
     }
 }
 
 std::string DocumentController::missingSamplesMessage(const std::vector<io::MissingSample>& missing)
 {
     std::string message =
-        "Diese Sample-Dateien wurden nicht gefunden. Die Slots sind als „kein Sample“ markiert, "
-        "bis du eine Datei zuweist:\n\n";
+        i18n::tr("These sample files were not found. Their slots are marked as \"no sample\" "
+                 "until you assign a file:\n\n");
     for (const auto& sample : missing)
         message += sample.slotName + ": " + sample.filePath + "\n";
     return message;

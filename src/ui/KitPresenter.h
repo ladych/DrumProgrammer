@@ -90,7 +90,8 @@ private:
     [[nodiscard]] model::Kit activeKit() const;
     [[nodiscard]] std::optional<model::SampleSlot> slotAt(int slotIndex) const;
     [[nodiscard]] std::optional<model::SampleSlot> selected() const;
-    void beginEdit(const model::SampleSlot& slot, const std::string& what);
+    /// `what` is an English undo name with %1 for the slot name, e.g. "Volume %1".
+    void beginEdit(const model::SampleSlot& slot, const char* what);
 
     juce::ValueTree project_;
     juce::ValueTree globalKit_;

@@ -279,6 +279,14 @@ Das Mapping wird über physische Tastenpositionen (Scancodes) umgesetzt, nicht �
 - Änderungen im Inspector wirken sofort, ohne „Übernehmen“-Taste
 - Fenstergröße frei; Piano-Roll und Timeline wachsen, Seitenleisten behalten ihre Breite
 
+### 6.5 Sprachen (AP15)
+
+| ID | Anforderung | Priorität |
+| --- | --- | --- |
+| F-UI-01 | Oberfläche auf Deutsch und Englisch, einschließlich der JUCE-eigenen Dialoge (Audio-Einstellungen, Dateiauswahl) | Muss (v1.0) |
+| F-UI-02 | Sprache im Menü Hilfe wählbar; Default ist die Sprache des Betriebssystems, sonst Englisch; die Wahl wird gespeichert und gilt ab dem nächsten Start | Muss (v1.0) |
+| F-UI-03 | Erweiterbar: eine weitere Sprache ist eine Übersetzungsdatei ohne Code-Änderung; fehlende Übersetzungen erscheinen englisch | Muss (v1.0) |
+
 ## 7 Qualitätsanforderungen
 
 Die Latenz ist das wichtigste Qualitätsziel: ein Anschlag muss sich beim Einspielen direkt anfühlen. Alle Werte gelten für die Referenz-Hardware (Kapitel 2) im Normalbetrieb.

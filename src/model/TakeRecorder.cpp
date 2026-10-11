@@ -1,6 +1,7 @@
 #include "model/TakeRecorder.h"
 
 #include "engine/TempoMath.h"
+#include "i18n/Translate.h"
 #include "model/Project.h"
 
 #include <algorithm>
@@ -25,7 +26,7 @@ bool TakeRecorder::begin(int patternIndex, RecordMode mode)
     const Project project{project_, &undoManager_};
     if (patternIndex < 0 || patternIndex >= project.numPatterns())
         return false;
-    undoManager_.beginNewTransaction(kUndoName);
+    undoManager_.beginNewTransaction(i18n::trJuce(kUndoName));
     auto pattern = project.pattern(patternIndex);
     patternId_ = pattern.id();
     if (mode == RecordMode::replace)
@@ -44,8 +45,9 @@ void TakeRecorder::add(int slotIndex, int velocity, std::int64_t tick)
     if (!pattern || slotIndex < 0 || slotIndex >= kit.numSlots())
         return;
     // Someone else's change in between (e.g. a kit edit) started its own undo step.
-    if (undoManager_.getCurrentTransactionName() != kUndoName)
-        undoManager_.beginNewTransaction(kUndoName);
+    const auto undoName = i18n::trJuce(kUndoName);
+    if (undoManager_.getCurrentTransactionName() != undoName)
+        undoManager_.beginNewTransaction(undoName);
     const std::int64_t length = pattern->lengthBars() * project.ticksPerBar();
     const std::int64_t start = engine::wrapTick(tick, length);
     const std::int64_t sixteenth = project.ticksPerQuarter() / kSixteenthsPerQuarter;

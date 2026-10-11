@@ -1,5 +1,7 @@
 #include "app/KitPanel.h"
 
+#include "i18n/Translate.h"
+
 #include <utility>
 
 namespace drumprog::app
@@ -155,8 +157,7 @@ void KitPanel::timerCallback()
 
 void KitPanel::refreshRows()
 {
-    kitSource_.setText("Kit: " + juce::String::fromUTF8(presenter_.kitSourceLabel().c_str()),
-                       juce::dontSendNotification);
+    kitSource_.setText(i18n::trJuce("Kit: %1", presenter_.kitSourceLabel()), juce::dontSendNotification);
     rows_ = presenter_.visibleSlots(showAllButton_.getToggleState());
     slotList_.updateContent();
     slotList_.repaint();
@@ -170,7 +171,7 @@ void KitPanel::refreshInspector()
         component->setEnabled(selected.has_value());
     if (!selected)
     {
-        slotName_.setText(juce::String::fromUTF8("Kein Slot ausgew\xc3\xa4hlt"), juce::dontSendNotification);
+        slotName_.setText(i18n::trJuce("No slot selected"), juce::dontSendNotification);
         sampleName_.setText({}, juce::dontSendNotification);
         keyButton_.setButtonText({});
         return;
@@ -187,7 +188,8 @@ void KitPanel::refreshInspector()
 
 void KitPanel::chooseSample()
 {
-    fileChooser_ = std::make_unique<juce::FileChooser>("Sample laden", juce::File{}, sampleWildcard_);
+    fileChooser_ =
+        std::make_unique<juce::FileChooser>(i18n::trJuce("Load sample"), juce::File{}, sampleWildcard_);
     fileChooser_->launchAsync(
         juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
         [this](const juce::FileChooser& chooser)
@@ -198,8 +200,8 @@ void KitPanel::chooseSample()
             const auto utf8 = file.getFullPathName().toStdString();
             if (!presenter_.loadSample(std::u8string{utf8.begin(), utf8.end()}))
                 juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
-                                                       "Sample laden",
-                                                       "Die Datei konnte nicht geladen werden:\n" +
+                                                       i18n::trJuce("Load sample"),
+                                                       i18n::trJuce("The file could not be loaded:") + "\n" +
                                                            file.getFullPathName());
             refreshInspector();
             slotList_.repaint();

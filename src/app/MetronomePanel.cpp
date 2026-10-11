@@ -1,6 +1,7 @@
 #include "app/MetronomePanel.h"
 
 #include "app/Theme.h"
+#include "i18n/Translate.h"
 
 #include <array>
 #include <initializer_list>
@@ -43,27 +44,26 @@ MetronomePanel::MetronomePanel(ui::TransportPresenter& transport) : transport_(t
 
 void MetronomePanel::setUpMetronome()
 {
-    metronomeButton_.setTooltip("Metronom bei der Wiedergabe");
+    metronomeButton_.setTooltip(i18n::trJuce("Metronome during playback"));
     metronomeButton_.setToggleState(transport_.metronomeOnPlayback(), juce::dontSendNotification);
     metronomeButton_.onClick = [this]
     { transport_.setMetronomeOnPlayback(metronomeButton_.getToggleState()); };
-    metronomeRecordButton_.setTooltip("Metronom bei der Aufnahme");
+    metronomeRecordButton_.setTooltip(i18n::trJuce("Metronome during recording"));
     metronomeRecordButton_.setToggleState(transport_.metronomeOnRecord(), juce::dontSendNotification);
     metronomeRecordButton_.onClick = [this]
     { transport_.setMetronomeOnRecord(metronomeRecordButton_.getToggleState()); };
     levelSlider_.setRange(0.0, 1.0);
     levelSlider_.setValue(transport_.metronomeLevel(), juce::dontSendNotification);
-    levelSlider_.setTooltip("Metronom-Pegel");
+    levelSlider_.setTooltip(i18n::trJuce("Metronome level"));
     levelSlider_.onValueChange = [this]
     { transport_.setMetronomeLevel(static_cast<float>(levelSlider_.getValue())); };
 }
 
 void MetronomePanel::setUpRecording()
 {
-    countInBox_.addItemList(
-        {juce::String::fromUTF8("aus"), juce::String::fromUTF8("1 Takt"), juce::String::fromUTF8("2 Takte")},
-        1);
-    countInBox_.setTooltip(juce::String::fromUTF8("Vorzähler vor der Aufnahme"));
+    countInBox_.addItemList({i18n::trJuce("off"), i18n::trJuce("%1 bar", "1"), i18n::trJuce("%1 bars", "2")},
+                            1);
+    countInBox_.setTooltip(i18n::trJuce("Count-in before recording"));
     countInBox_.setSelectedItemIndex(transport_.countInBars(), juce::dontSendNotification);
     countInBox_.onChange = [this] { transport_.setCountInBars(countInBox_.getSelectedItemIndex()); };
     const double maxOffset = ui::TransportPresenter::kMaxRecordOffsetMs;
@@ -71,7 +71,7 @@ void MetronomePanel::setUpRecording()
     offsetSlider_.setTextValueSuffix(" ms");
     offsetSlider_.setTextBoxStyle(juce::Slider::TextBoxRight, false, 64, 20);
     offsetSlider_.setValue(transport_.recordOffsetMs(), juce::dontSendNotification);
-    offsetSlider_.setTooltip(juce::String::fromUTF8("Verschiebt aufgenommene Noten; positiv = später"));
+    offsetSlider_.setTooltip(i18n::trJuce("Moves recorded notes; positive = later"));
     offsetSlider_.onValueChange = [this] { transport_.setRecordOffsetMs(offsetSlider_.getValue()); };
 }
 

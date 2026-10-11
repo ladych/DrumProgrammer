@@ -1,5 +1,6 @@
 #pragma once
 
+#include "i18n/Translate.h"
 #include "ui/MixPresenter.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -39,7 +40,7 @@ private:
 
     ui::MixPresenter& presenter_;
     std::uint32_t seenChangeCount_ = 0;
-    juce::Label title_{{}, "Mix (Referenz)"};
+    juce::Label title_{{}, i18n::trJuce("Mix (reference)")};
     std::array<Fader, ui::MixPresenter::kChannels.size()> faders_;
 };
 

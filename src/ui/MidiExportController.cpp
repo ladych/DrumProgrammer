@@ -1,5 +1,6 @@
 #include "ui/MidiExportController.h"
 
+#include "i18n/Translate.h"
 #include "io/PatternMidiExport.h"
 #include "io/SongMidiExport.h"
 #include "io/Utf8Path.h"
@@ -46,7 +47,7 @@ void MidiExportController::exportActivePattern()
         return;
 
     const auto pattern = model::Project{project_, nullptr}.pattern(activePattern_.index());
-    view_.chooseMidiFileToSave("Pattern als MIDI exportieren",
+    view_.chooseMidiFileToSave(i18n::tr("Export pattern as MIDI"),
                                pattern.name() + ".mid",
                                [this, tree = pattern.tree()](std::optional<std::filesystem::path> file)
                                {
@@ -55,7 +56,7 @@ void MidiExportController::exportActivePattern()
                                    const model::Project project{project_, nullptr};
                                    write(io::midiPatternOf(project, model::Pattern{tree, nullptr}),
                                          io::withMidiExtension(*file),
-                                         "Das Pattern");
+                                         i18n::marked("The pattern could not be saved as \"%1\"."));
                                });
 }
 
@@ -64,24 +65,23 @@ void MidiExportController::exportSong()
     if (!canExportSong())
         return;
 
-    view_.chooseMidiFileToSave("Song als MIDI exportieren",
+    view_.chooseMidiFileToSave(i18n::tr("Export song as MIDI"),
                                model::Project{project_, nullptr}.name() + ".mid",
                                [this](std::optional<std::filesystem::path> file)
                                {
                                    if (file)
                                        write(io::midiSongOf(model::Project{project_, nullptr}),
                                              io::withMidiExtension(*file),
-                                             "Der Song");
+                                             i18n::marked("The song could not be saved as \"%1\"."));
                                });
 }
 
 void MidiExportController::write(const io::MidiPattern& midi,
                                  const std::filesystem::path& file,
-                                 const std::string& what)
+                                 const char* failedMessage)
 {
     if (!fileSystem_.writeText(file, io::writeMidiFile(midi)))
-        view_.showMessage("Export fehlgeschlagen",
-                          what + " konnte nicht als „" + io::utf8FromPath(file) + "“ gespeichert werden.");
+        view_.showMessage(i18n::tr("Export failed"), i18n::tr(failedMessage, io::utf8FromPath(file)));
 }
 
 } // namespace drumprog::ui

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/IconButton.h"
+#include "i18n/Translate.h"
 #include "ui/TempoPresenter.h"
 #include "ui/TransportPresenter.h"
 
@@ -43,21 +44,21 @@ private:
     ui::TempoPresenter& tempo_;
     int blink_ = 0;
 
-    IconButton rewindButton_{Icon::rewind, juce::String::fromUTF8("Zurück zum Anfang")};
-    IconButton playButton_{Icon::play, "Wiedergabe (Leertaste)"};
-    IconButton stopButton_{Icon::stop, "Stopp (Leertaste)"};
+    IconButton rewindButton_{Icon::rewind, i18n::trJuce("Back to the start")};
+    IconButton playButton_{Icon::play, i18n::trJuce("Play (space bar)")};
+    IconButton stopButton_{Icon::stop, i18n::trJuce("Stop (space bar)")};
     IconButton loopButton_{Icon::loop, "Loop"};
-    IconButton recButton_{Icon::record, "Aufnahme scharf schalten (Strg+R)"};
-    juce::Label positionTitle_{{}, "Position"};
+    IconButton recButton_{Icon::record, i18n::trJuce("Arm recording (Ctrl+R)")};
+    juce::Label positionTitle_{{}, i18n::trJuce("Position")};
     juce::Label positionLabel_{{}, "001.1.000"};
     juce::Label bpmLabel_{{}, "BPM"};
     juce::TextEditor bpmEditor_;
-    juce::Label signatureLabel_{{}, "Takt"};
+    juce::Label signatureLabel_{{}, i18n::trJuce("Time")};
     juce::ComboBox numeratorBox_;
     juce::ComboBox denominatorBox_;
-    juce::Label modeLabel_{{}, "Modus"};
-    IconButton patternModeButton_{Icon::patternMode, "Modus Pattern: spielt das aktive Pattern"};
-    IconButton songModeButton_{Icon::songMode, "Modus Song: spielt die Song-Timeline"};
+    juce::Label modeLabel_{{}, i18n::trJuce("Mode")};
+    IconButton patternModeButton_{Icon::patternMode, i18n::trJuce("Pattern mode: plays the active pattern")};
+    IconButton songModeButton_{Icon::songMode, i18n::trJuce("Song mode: plays the song timeline")};
 };
 
 } // namespace drumprog::app

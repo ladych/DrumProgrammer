@@ -1,5 +1,7 @@
 #include "ui/AudioStatus.h"
 
+#include "i18n/TestLanguage.h"
+
 #include <gtest/gtest.h>
 
 namespace drumprog::ui
@@ -41,6 +43,14 @@ TEST(AudioStatusTest, Q02_StatusLineShowsDeviceBufferAndLatency)
         audioStatusText(jack128()),
         "JACK | system | 48000 Hz | Buffer 128 (2,7 ms) | Latenz 5,3 ms, Anschlag bis Ton max. 8,0 ms | "
         "MIDI: Alesis Nitro");
+}
+
+TEST(AudioStatusTest, FUI01_StatusLineInEnglishUsesDecimalPoints)
+{
+    const i18n::test::ScopedEnglish english;
+    EXPECT_EQ(audioStatusText(jack128()),
+              "JACK | system | 48000 Hz | Buffer 128 (2.7 ms) | Latency 5.3 ms, hit to sound max. 8.0 ms | "
+              "MIDI: Alesis Nitro");
 }
 
 TEST(AudioStatusTest, FAO05_ListsAllMidiInputs)

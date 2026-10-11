@@ -1,5 +1,6 @@
 #pragma once
 
+#include "i18n/Translate.h"
 #include "ui/TransportPresenter.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -24,14 +25,14 @@ private:
     void setUpRecording();
 
     ui::TransportPresenter& transport_;
-    juce::Label title_{{}, "Metronom und Aufnahme"};
-    juce::ToggleButton metronomeButton_{"Metronom"};
-    juce::ToggleButton metronomeRecordButton_{"bei Aufnahme"};
-    juce::Label levelLabel_{{}, "Pegel"};
+    juce::Label title_{{}, i18n::trJuce("Metronome and recording")};
+    juce::ToggleButton metronomeButton_{i18n::trJuce("Metronome")};
+    juce::ToggleButton metronomeRecordButton_{i18n::trJuce("when recording")};
+    juce::Label levelLabel_{{}, i18n::trJuce("Level")};
     juce::Slider levelSlider_{juce::Slider::LinearHorizontal, juce::Slider::NoTextBox};
-    juce::Label countInLabel_{{}, juce::String::fromUTF8("Vorzähler")};
+    juce::Label countInLabel_{{}, i18n::trJuce("Count-in")};
     juce::ComboBox countInBox_;
-    juce::Label offsetLabel_{{}, "Versatz"};
+    juce::Label offsetLabel_{{}, i18n::trJuce("Offset")};
     juce::Slider offsetSlider_{juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight};
 
     JUCE_LEAK_DETECTOR(MetronomePanel)

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "i18n/Translate.h"
+
 #include <juce_data_structures/juce_data_structures.h>
 
 #include <cstdint>
@@ -21,7 +23,7 @@ enum class RecordMode : std::uint8_t
 class TakeRecorder
 {
 public:
-    static constexpr const char* kUndoName = "Aufnahme";
+    static constexpr const char* kUndoName = i18n::marked("Recording");
 
     TakeRecorder(juce::ValueTree project, juce::ValueTree globalKit, juce::UndoManager& undoManager);
 

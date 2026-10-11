@@ -1,8 +1,10 @@
 #include "app/AppComposition.h"
 
 #include "DefaultKitData.h"
+#include "LanguageData.h"
 #include "app/Dialogs.h"
 #include "app/MainComponent.h"
+#include "i18n/Translate.h"
 #include "ui/AboutInfo.h"
 #include "ui/AudioStatus.h"
 
@@ -52,6 +54,30 @@ std::optional<std::string> defaultKitResource(std::string_view fileName)
     return std::nullopt;
 }
 
+/// The language of the operating system, e.g. "de-DE".
+std::string systemLanguage()
+{
+    return juce::SystemStats::getDisplayLanguage().toStdString();
+}
+
+/// The translation files built into the program (resources/Languages), with the saved language applied.
+i18n::LanguageCatalog appliedLanguages(const io::SettingsStore& settings)
+{
+    i18n::LanguageCatalog catalog;
+    for (const auto* name : std::span{&LanguageData::namedResourceList[0],
+                                      static_cast<std::size_t>(LanguageData::namedResourceListSize)})
+    {
+        int size = 0;
+        const auto* data = LanguageData::getNamedResource(name, size);
+        const juce::String fileName{LanguageData::getNamedResourceOriginalFilename(name)};
+        catalog.add(fileName.upToLastOccurrenceOf(".", false, false).toStdString(),
+                    std::string{data, static_cast<std::size_t>(size)});
+    }
+    catalog.apply(
+        catalog.resolve(settings.load().value_or(i18n::LanguageCatalog::kSystemLanguage), systemLanguage()));
+    return catalog;
+}
+
 io::DefaultKit installedDefaultKit(io::IFileSystem& fileSystem)
 {
     io::DefaultKit kit{fileSystem, settingsFile("DefaultKit"), &defaultKitResource};
@@ -63,7 +89,9 @@ io::DefaultKit installedDefaultKit(io::IFileSystem& fileSystem)
 } // namespace
 
 AppComposition::AppComposition()
-    : deviceSettings_(fileSystem_, settingsFile("audio-device.xml")),
+    : languageSettings_(fileSystem_, settingsFile("language.txt")),
+      languages_(appliedLanguages(languageSettings_)),
+      deviceSettings_(fileSystem_, settingsFile("audio-device.xml")),
       keymapSettings_(fileSystem_, settingsFile("keymap.txt")),
       recordOffsetSettings_(fileSystem_, settingsFile("recording-offset.txt")),
       globalKitSettings_(fileSystem_, settingsFile("kit.xml")), defaultKit_(installedDefaultKit(fileSystem_)),
@@ -102,29 +130,35 @@ AppComposition::AppComposition()
           project_, globalKit_.tree(), undoManager_, idGenerator_, activePattern_, fileSystem_, midiDialogs_),
       projectRepository_(fileSystem_),
       documentController_(project_, undoManager_, projectRepository_, projectFactory_, documentView_),
-      mainMenu_(documentController_,
-                [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); },
-                editActions(),
-                patternActions(),
-                songActions(),
-                midiActions(),
-                {.showKit = [this] { showKit(); },
-                 .resetToDefault = [this] { resetKitToDefault(); },
-                 .copyGlobalKitToProject = [this] { kitPresenter_.copyGlobalKitToProject(); },
-                 .useGlobalKit = [this] { kitPresenter_.useGlobalKit(); },
-                 .copyProjectKitToGlobal = [this] { kitPresenter_.copyProjectKitToGlobal(); },
-                 .usesProjectKit = [this] { return kitPresenter_.usesProjectKit(); }},
-                {.showSettings = [this] { showAudioSettingsDialog(deviceManager_, dialogParent_); },
-                 .showKeymap = [this] { showKeymapDialog(keymapPresenter_, dialogParent_); },
-                 .loadBackingTrack = [this] { chooseBackingTrack(); },
-                 .removeBackingTrack = [this] { backingTrackPresenter_.remove(); },
-                 .hasBackingTrack = [this] { return backingTrackPresenter_.hasTrack(); }},
-                {.showAbout =
-                     [this] {
-                         showAboutDialog(ui::makeAboutInfo(JUCE_APPLICATION_VERSION_STRING, kWithAsio),
-                                         dialogParent_);
-                     }},
-                {.toggleRecordArmed = [this] { transportPresenter_.toggleRecordArmed(); }})
+      mainMenu_(
+          documentController_,
+          [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); },
+          editActions(),
+          patternActions(),
+          songActions(),
+          midiActions(),
+          {.showKit = [this] { showKit(); },
+           .resetToDefault = [this] { resetKitToDefault(); },
+           .copyGlobalKitToProject = [this] { kitPresenter_.copyGlobalKitToProject(); },
+           .useGlobalKit = [this] { kitPresenter_.useGlobalKit(); },
+           .copyProjectKitToGlobal = [this] { kitPresenter_.copyProjectKitToGlobal(); },
+           .usesProjectKit = [this] { return kitPresenter_.usesProjectKit(); }},
+          {.showSettings = [this] { showAudioSettingsDialog(deviceManager_, dialogParent_); },
+           .showKeymap = [this] { showKeymapDialog(keymapPresenter_, dialogParent_); },
+           .loadBackingTrack = [this] { chooseBackingTrack(); },
+           .removeBackingTrack = [this] { backingTrackPresenter_.remove(); },
+           .hasBackingTrack = [this] { return backingTrackPresenter_.hasTrack(); }},
+          {.showAbout = [this]
+           { showAboutDialog(ui::makeAboutInfo(JUCE_APPLICATION_VERSION_STRING, kWithAsio), dialogParent_); },
+           .languages =
+               [this]
+           {
+               return languages_.choices(
+                   languageSettings_.load().value_or(i18n::LanguageCatalog::kSystemLanguage),
+                   systemLanguage());
+           },
+           .chooseLanguage = [this](const std::string& setting) { chooseLanguage(setting); }},
+          {.toggleRecordArmed = [this] { transportPresenter_.toggleRecordArmed(); }})
 {
     activePattern_.addOnChange([this](int index) { transportPresenter_.setActivePattern(index); });
     // A take recorded in the song mode opens in the piano roll (F-BT-08).
@@ -221,17 +255,16 @@ void AppComposition::addPattern()
 
 void AppComposition::renamePattern(int index)
 {
-    askForText("Pattern umbenennen",
-               "Name",
+    askForText(i18n::trJuce("Rename pattern"),
+               i18n::trJuce("Name"),
                juce::String::fromUTF8(patternListPresenter_.name(index).c_str()),
                [this, index](const std::string& name) { patternListPresenter_.rename(index, name); });
 }
 
 void AppComposition::askPatternLength(int index)
 {
-    askForText(juce::String::fromUTF8("Pattern-L\xc3\xa4nge"),
-               juce::String::fromUTF8("Takte (1\xe2\x80\x93"
-                                      "64)"),
+    askForText(i18n::trJuce("Pattern length"),
+               i18n::trJuce("Bars (1–64)"),
                juce::String(patternListPresenter_.lengthBars(index)),
                [this, index](const std::string& text)
                {
@@ -249,16 +282,16 @@ void AppComposition::removePattern(int index)
         patternListPresenter_.remove(index);
         return;
     }
-    askToConfirm(juce::String::fromUTF8("Pattern l\xc3\xb6schen"),
+    askToConfirm(i18n::trJuce("Delete pattern"),
                  juce::String::fromUTF8(question.c_str()),
-                 juce::String::fromUTF8("L\xc3\xb6schen"),
+                 i18n::trJuce("Delete"),
                  [this, index] { patternListPresenter_.remove(index); });
 }
 
 void AppComposition::chooseBackingTrack()
 {
     backingTrackChooser_ = std::make_unique<juce::FileChooser>(
-        "Backing-Track laden", juce::File{}, backingTrackLoader_.wildcardPattern());
+        i18n::trJuce("Load backing track"), juce::File{}, backingTrackLoader_.wildcardPattern());
     backingTrackChooser_->launchAsync(
         juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
         [this](const juce::FileChooser& chooser)
@@ -269,8 +302,8 @@ void AppComposition::chooseBackingTrack()
             const auto utf8 = file.getFullPathName().toStdString();
             if (!backingTrackPresenter_.load(std::u8string{utf8.begin(), utf8.end()}))
                 juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
-                                                       "Backing-Track laden",
-                                                       "Die Datei konnte nicht gelesen werden:\n" +
+                                                       i18n::trJuce("Load backing track"),
+                                                       i18n::trJuce("The file could not be read:") + "\n" +
                                                            file.getFullPathName());
         });
 }
@@ -293,6 +326,17 @@ void AppComposition::resetKitToDefault()
 {
     defaultKit_.install();
     kitPresenter_.resetToDefaultKit(defaultKit_.createKit());
+}
+
+void AppComposition::chooseLanguage(const std::string& setting)
+{
+    // An empty setting follows the system language, like no setting at all.
+    languageSettings_.save(setting);
+    const auto code = languages_.resolve(setting, systemLanguage());
+    juce::AlertWindow::showMessageBoxAsync(
+        juce::MessageBoxIconType::InfoIcon,
+        juce::String::fromUTF8(languages_.translate(code, "Language").c_str()),
+        juce::String::fromUTF8(languages_.restartNotice(setting, systemLanguage()).c_str()));
 }
 
 EditActions AppComposition::editActions()

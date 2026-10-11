@@ -1,6 +1,7 @@
 #include "app/KeymapDialog.h"
 
 #include "app/KeyboardInputGlue.h"
+#include "i18n/Translate.h"
 
 namespace drumprog::app
 {
@@ -22,7 +23,7 @@ juce::String utf8(const std::string& text)
 
 KeymapDialog::KeymapDialog(ui::KeymapPresenter& presenter) : presenter_(presenter)
 {
-    hint_.setText(utf8("Klick in die Spalte „Taste“, dann die gewünschte Taste drücken. Esc bricht ab."),
+    hint_.setText(i18n::trJuce("Click in the column \"Key\", then press the key you want. Esc cancels."),
                   juce::dontSendNotification);
     warning_.setColour(juce::Label::textColourId, juce::Colours::orangered);
     list_.setRowHeight(kRowHeight);

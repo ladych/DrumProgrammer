@@ -1,5 +1,6 @@
 #include "ui/BackingTrackPresenter.h"
 
+#include "i18n/Translate.h"
 #include "io/Utf8Path.h"
 
 #include <algorithm>
@@ -13,7 +14,7 @@ namespace
 
 constexpr double kMillisecondsPerSecond = 1000.0;
 constexpr double kSecondsPerMinute = 60.0;
-constexpr const char* kOffsetUndoName = "Versatz Backing-Track";
+constexpr const char* kOffsetUndoName = i18n::marked("Backing track offset");
 
 } // namespace
 
@@ -36,7 +37,7 @@ bool BackingTrackPresenter::load(const std::filesystem::path& file)
     sampleRate_ = stream->sampleRate();
     lengthSamples_ = stream->lengthInSamples();
     player_.setStream(std::move(stream));
-    undoManager_.beginNewTransaction("Backing-Track laden");
+    undoManager_.beginNewTransaction(i18n::trJuce("Load backing track"));
     auto track = project().backingTrack();
     track.setFilePath(io::utf8FromPath(file));
     track.setOffsetSamples(0);
@@ -48,7 +49,7 @@ void BackingTrackPresenter::remove()
 {
     if (!hasTrack())
         return;
-    undoManager_.beginNewTransaction("Backing-Track entfernen");
+    undoManager_.beginNewTransaction(i18n::trJuce("Remove backing track"));
     auto track = project().backingTrack();
     track.setFilePath({});
     track.setOffsetSamples(0);
@@ -76,7 +77,7 @@ std::string BackingTrackPresenter::label() const
         return {};
     auto name = io::utf8FromPath(file().filename());
     if (isMissing())
-        return name + " (Datei fehlt)";
+        return i18n::tr("%1 (file missing)", name);
     return name;
 }
 
@@ -120,8 +121,9 @@ void BackingTrackPresenter::setOffsetMs(double offsetMs)
 {
     if (sampleRate_ <= 0.0)
         return;
-    if (undoManager_.getCurrentTransactionName() != kOffsetUndoName)
-        undoManager_.beginNewTransaction(kOffsetUndoName);
+    const auto undoName = i18n::trJuce(kOffsetUndoName);
+    if (undoManager_.getCurrentTransactionName() != undoName)
+        undoManager_.beginNewTransaction(undoName);
     setOffsetSamples(std::llround(offsetMs / kMillisecondsPerSecond * sampleRate_));
 }
 
@@ -130,7 +132,7 @@ void BackingTrackPresenter::beginOffsetDrag()
     if (sampleRate_ <= 0.0)
         return;
     dragStart_ = project().backingTrack().offsetSamples();
-    undoManager_.beginNewTransaction("Backing-Track verschieben");
+    undoManager_.beginNewTransaction(i18n::trJuce("Move backing track"));
 }
 
 void BackingTrackPresenter::dragOffsetBy(double deltaBars)

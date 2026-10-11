@@ -1,10 +1,13 @@
 #pragma once
 
+#include "i18n/LanguageCatalog.h"
 #include "ui/DocumentController.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include <functional>
+#include <string>
+#include <vector>
 
 namespace drumprog::app
 {
@@ -30,10 +33,12 @@ struct KitMenuActions
     std::function<bool()> usesProjectKit;
 };
 
-/// Actions of the menu "Hilfe".
+/// Actions of the menu "Hilfe", with the submenu "Sprache" (AP15).
 struct HelpActions
 {
     std::function<void()> showAbout;
+    std::function<std::vector<i18n::LanguageChoice>()> languages;
+    std::function<void(const std::string& setting)> chooseLanguage;
 };
 
 /// Editing commands of the piano roll in the menu "Bearbeiten" (F-PR-02, F-PR-03, F-PR-05).
@@ -116,7 +121,8 @@ public:
 
     juce::StringArray getMenuBarNames() override;
     juce::PopupMenu getMenuForIndex(int menuIndex, const juce::String& menuName) override;
-    void menuItemSelected(int /*menuItemID*/, int /*topLevelMenuIndex*/) override {}
+    /// Entries of the submenu "Sprache"; the commands go through perform().
+    void menuItemSelected(int menuItemID, int topLevelMenuIndex) override;
 
     juce::ApplicationCommandTarget* getNextCommandTarget() override { return nullptr; }
     void getAllCommands(juce::Array<juce::CommandID>& commands) override;
