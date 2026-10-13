@@ -10,6 +10,16 @@ namespace drumprog::app
 namespace
 {
 
+/// Focus traversal of the main window without a default component. JUCE gives a click on a component
+/// that does not want the keyboard focus to the first focusable component of its parent (e.g. the
+/// pattern length field of the piano roll); that text field then took the drum keys. Now such a click
+/// leaves the focus with the window, whose key listeners play the drums (Tab still reaches the fields).
+class NoDefaultFocusTraverser final : public juce::KeyboardFocusTraverser
+{
+public:
+    juce::Component* getDefaultComponent(juce::Component* /*parentComponent*/) override { return nullptr; }
+};
+
 class MainWindow final : public juce::DocumentWindow
 {
 public:
@@ -38,6 +48,11 @@ public:
     MainWindow& operator=(const MainWindow&) = delete;
     MainWindow(MainWindow&&) = delete;
     MainWindow& operator=(MainWindow&&) = delete;
+
+    std::unique_ptr<juce::ComponentTraverser> createKeyboardFocusTraverser() override
+    {
+        return std::make_unique<NoDefaultFocusTraverser>();
+    }
 
     void closeButtonPressed() override { juce::JUCEApplication::getInstance()->systemRequestedQuit(); }
 };
