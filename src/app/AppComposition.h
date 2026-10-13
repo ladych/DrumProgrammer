@@ -9,6 +9,7 @@
 #include "app/KeyboardInputGlue.h"
 #include "app/MainMenu.h"
 #include "app/MidiInputCallback.h"
+#include "app/Theme.h"
 #include "engine/BackingTrackPlayer.h"
 #include "engine/KitBuilder.h"
 #include "engine/KitPublisher.h"
@@ -47,6 +48,7 @@
 #include "ui/PianoRollPresenter.h"
 #include "ui/SongTimelinePresenter.h"
 #include "ui/TempoPresenter.h"
+#include "ui/ThemeSetting.h"
 #include "ui/TransportPresenter.h"
 
 #include <juce_audio_utils/juce_audio_utils.h>
@@ -59,10 +61,13 @@ namespace drumprog::app
 /// Composition root (E-05): the only place where the object graph is created
 /// and wired. Members are declared in dependency order, so they are destroyed
 /// in reverse.
-class AppComposition final : private juce::ChangeListener, private juce::Timer
+class AppComposition final : private juce::ChangeListener,
+                             private juce::Timer,
+                             private juce::DarkModeSettingListener
 {
 public:
-    AppComposition();
+    /// The colour scheme (AP16) is shown through `lookAndFeel`, the program's default look and feel.
+    explicit AppComposition(theme::LookAndFeel& lookAndFeel);
     ~AppComposition() override;
 
     AppComposition(const AppComposition&) = delete;
@@ -81,6 +86,8 @@ public:
 
 private:
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
+    /// The operating system switched between light and dark mode.
+    void darkModeSettingChanged() override { themeSetting_.systemChanged(); }
     /// Saves changes of the global kit.
     void timerCallback() override;
     void saveDeviceSettings();
@@ -108,6 +115,9 @@ private:
     // Language (AP15): applied before any other member, so every text is created in it.
     io::SettingsStore languageSettings_;
     i18n::LanguageCatalog languages_;
+    // Colour scheme (AP16): applied before the components are created, which take its colours.
+    io::SettingsStore themeSettings_;
+    ui::ThemeSetting themeSetting_;
     io::SettingsStore deviceSettings_;
     io::SettingsStore keymapSettings_;
     io::SettingsStore recordOffsetSettings_;

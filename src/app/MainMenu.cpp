@@ -292,8 +292,9 @@ constexpr std::array kCommands{
 
 constexpr juce::CommandID kSeparator = 0;
 constexpr int kHelpMenu = 7;
-/// Item IDs of the submenu "Sprache", outside the command IDs.
+/// Item IDs of the submenus "Sprache" and "Farbschema", outside the command IDs.
 constexpr int kFirstLanguageItem = 0x9100;
+constexpr int kFirstThemeItem = 0x9200;
 
 std::vector<juce::CommandID> editMenuCommands()
 {
@@ -410,8 +411,13 @@ juce::PopupMenu MainMenu::getMenuForIndex(int menuIndex, const juce::String& /*m
         int itemId = kFirstLanguageItem;
         for (const auto& choice : help_.languages())
             languages.addItem(itemId++, juce::String::fromUTF8(choice.label.c_str()), true, choice.ticked);
+        juce::PopupMenu themes;
+        itemId = kFirstThemeItem;
+        for (const auto& choice : help_.themes())
+            themes.addItem(itemId++, juce::String::fromUTF8(choice.label.c_str()), true, choice.ticked);
         menu.addSeparator();
         menu.addSubMenu(i18n::trJuce("Language"), languages);
+        menu.addSubMenu(i18n::trJuce("Colour scheme"), themes);
     }
     return menu;
 }
@@ -420,6 +426,14 @@ void MainMenu::menuItemSelected(int menuItemID, int topLevelMenuIndex)
 {
     if (topLevelMenuIndex != kHelpMenu || menuItemID < kFirstLanguageItem)
         return;
+    if (menuItemID >= kFirstThemeItem)
+    {
+        const auto choices = help_.themes();
+        const auto index = static_cast<std::size_t>(menuItemID - kFirstThemeItem);
+        if (index < choices.size())
+            help_.chooseTheme(choices[index].setting);
+        return;
+    }
     const auto choices = help_.languages();
     const auto index = static_cast<std::size_t>(menuItemID - kFirstLanguageItem);
     if (index < choices.size())

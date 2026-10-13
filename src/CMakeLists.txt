@@ -73,6 +73,7 @@ add_library(drumprog_core STATIC
     ui/SongTimelineGeometry.cpp
     ui/SongTimelinePresenter.cpp
     ui/TempoPresenter.cpp
+    ui/ThemeSetting.cpp
     ui/TransportPresenter.cpp
 )
 target_include_directories(drumprog_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})

@@ -97,7 +97,6 @@ SnapControls::SnapControls(ui::PianoRollPresenter& presenter) : presenter_(prese
     gridBox_.setTooltip(i18n::trJuce("Grid"));
     snapButton_.setTooltip(i18n::trJuce("Snap notes to the grid (free while holding Alt)"));
     snapButton_.onClick = [this] { presenter_.setSnapEnabled(snapButton_.getToggleState()); };
-    altHint_.setColour(juce::Label::textColourId, theme::kTextDim);
     for (auto* component : std::initializer_list<juce::Component*>{&snapButton_, &gridBox_, &altHint_})
     {
         component->setWantsKeyboardFocus(false);

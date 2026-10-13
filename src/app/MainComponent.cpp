@@ -76,10 +76,7 @@ MainComponent::MainComponent(juce::AudioDeviceManager& deviceManager,
       mixPanel_(mix)
 {
     for (auto* label : {&status_, &editStatus_})
-    {
         label->setFont(juce::FontOptions{juce::Font::getDefaultMonospacedFontName(), 13.0F, 0});
-        label->setColour(juce::Label::textColourId, theme::kTextDim);
-    }
     editStatus_.setJustificationType(juce::Justification::centredRight);
     setUpSplitters();
     for (auto* component : std::initializer_list<juce::Component*>{&transportBar_,
@@ -138,12 +135,13 @@ MainComponent::~MainComponent()
 
 void MainComponent::paint(juce::Graphics& g)
 {
-    g.fillAll(theme::kGap);
+    const auto& colours = theme::colours();
+    g.fillAll(colours.gap);
     for (const auto& panel : panels_)
     {
-        g.setColour(theme::kPanel);
+        g.setColour(colours.panel);
         g.fillRect(panel);
-        g.setColour(theme::kOutline.withAlpha(0.5F));
+        g.setColour(colours.outline.withAlpha(0.5F));
         g.drawRect(panel);
     }
     auto leds = ledArea_;
@@ -233,7 +231,7 @@ void MainComponent::paintLed(juce::Graphics& g,
                              bool on) const
 {
     const auto led = area.removeFromLeft(kLedSize + 6).withSizeKeepingCentre(kLedSize, kLedSize).toFloat();
-    g.setColour(on ? juce::Colours::limegreen : juce::Colours::darkgrey);
+    g.setColour(on ? juce::Colours::limegreen : theme::colours().ledOff);
     g.fillEllipse(led);
     g.setColour(getLookAndFeel().findColour(juce::Label::textColourId));
     g.drawText(label, area, juce::Justification::centredLeft);

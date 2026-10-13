@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/IconButton.h"
+#include "app/Theme.h"
 #include "i18n/Translate.h"
 #include "ui/TempoPresenter.h"
 #include "ui/TransportPresenter.h"
@@ -29,6 +30,8 @@ public:
     static constexpr int kPreferredHeight = 30;
 
     void resized() override;
+    /// Takes the colours of a new theme (AP16).
+    void lookAndFeelChanged() override;
 
 private:
     void timerCallback() override;
@@ -49,14 +52,14 @@ private:
     IconButton stopButton_{Icon::stop, i18n::trJuce("Stop (space bar)")};
     IconButton loopButton_{Icon::loop, "Loop"};
     IconButton recButton_{Icon::record, i18n::trJuce("Arm recording (Ctrl+R)")};
-    juce::Label positionTitle_{{}, i18n::trJuce("Position")};
+    theme::DimLabel positionTitle_{{}, i18n::trJuce("Position")};
     juce::Label positionLabel_{{}, "001.1.000"};
-    juce::Label bpmLabel_{{}, "BPM"};
+    theme::DimLabel bpmLabel_{{}, "BPM"};
     juce::TextEditor bpmEditor_;
-    juce::Label signatureLabel_{{}, i18n::trJuce("Time")};
+    theme::DimLabel signatureLabel_{{}, i18n::trJuce("Time")};
     juce::ComboBox numeratorBox_;
     juce::ComboBox denominatorBox_;
-    juce::Label modeLabel_{{}, i18n::trJuce("Mode")};
+    theme::DimLabel modeLabel_{{}, i18n::trJuce("Mode")};
     IconButton patternModeButton_{Icon::patternMode, i18n::trJuce("Pattern mode: plays the active pattern")};
     IconButton songModeButton_{Icon::songMode, i18n::trJuce("Song mode: plays the song timeline")};
 };

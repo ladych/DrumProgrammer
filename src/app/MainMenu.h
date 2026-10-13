@@ -2,6 +2,7 @@
 
 #include "i18n/LanguageCatalog.h"
 #include "ui/DocumentController.h"
+#include "ui/ThemeSetting.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -33,12 +34,14 @@ struct KitMenuActions
     std::function<bool()> usesProjectKit;
 };
 
-/// Actions of the menu "Hilfe", with the submenu "Sprache" (AP15).
+/// Actions of the menu "Hilfe", with the submenus "Sprache" (AP15) and "Farbschema" (AP16).
 struct HelpActions
 {
     std::function<void()> showAbout;
     std::function<std::vector<i18n::LanguageChoice>()> languages;
     std::function<void(const std::string& setting)> chooseLanguage;
+    std::function<std::vector<ui::ThemeChoice>()> themes;
+    std::function<void(const std::string& setting)> chooseTheme;
 };
 
 /// Editing commands of the piano roll in the menu "Bearbeiten" (F-PR-02, F-PR-03, F-PR-05).
@@ -121,7 +124,7 @@ public:
 
     juce::StringArray getMenuBarNames() override;
     juce::PopupMenu getMenuForIndex(int menuIndex, const juce::String& menuName) override;
-    /// Entries of the submenu "Sprache"; the commands go through perform().
+    /// Entries of the submenus "Sprache" and "Farbschema"; the commands go through perform().
     void menuItemSelected(int menuItemID, int topLevelMenuIndex) override;
 
     juce::ApplicationCommandTarget* getNextCommandTarget() override { return nullptr; }

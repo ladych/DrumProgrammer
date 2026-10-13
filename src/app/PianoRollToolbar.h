@@ -1,6 +1,7 @@
 #pragma once
 
 #include "app/IconButton.h"
+#include "app/Theme.h"
 #include "i18n/Translate.h"
 #include "ui/PianoRollPresenter.h"
 #include "ui/TransportPresenter.h"
@@ -68,7 +69,7 @@ private:
     ui::PianoRollPresenter& presenter_;
     juce::ToggleButton snapButton_{"Snap"};
     juce::ComboBox gridBox_;
-    juce::Label altHint_{{}, i18n::trJuce("Alt = free")};
+    theme::DimLabel altHint_{{}, i18n::trJuce("Alt = free")};
 };
 
 } // namespace drumprog::app

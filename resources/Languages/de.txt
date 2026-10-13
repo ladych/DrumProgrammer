@@ -357,6 +357,14 @@ countries: de at ch li lu be
 "The language changes when Drum Programmer is started the next time." = "Die Sprache wechselt beim nächsten Start von Drum Programmer."
 "Language" = "Sprache (Language)"
 
+# Farbschema (AP16)
+"Colour scheme" = "Farbschema"
+"System setting (%1)" = "Systemeinstellung (%1)"
+"dark" = "dunkel"
+"light" = "hell"
+"Dark" = "Dunkel"
+"Light" = "Hell"
+
 # JUCE
 # Texte von JUCE selbst (Audio/MIDI-Einstellungen, Dateiauswahl), nicht im Code von Drum Programmer.
 "(no audio input channels found)" = "(keine Audio-Eingangskanäle gefunden)"

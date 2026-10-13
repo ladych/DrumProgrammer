@@ -98,12 +98,21 @@ void askForText(const juce::String& title,
 
 void markInput(juce::TextEditor& editor, bool valid)
 {
-    const auto& laf = editor.getLookAndFeel();
-    editor.setColour(juce::TextEditor::outlineColourId,
-                     valid ? laf.findColour(juce::TextEditor::outlineColourId) : theme::kRecord);
-    editor.setColour(juce::TextEditor::focusedOutlineColourId,
-                     valid ? laf.findColour(juce::TextEditor::focusedOutlineColourId) : theme::kRecord);
-    editor.applyColourToAllText(valid ? laf.findColour(juce::TextEditor::textColourId) : theme::kRecord);
+    // A valid input takes the colours of the look and feel, so it follows a change of the theme (AP16).
+    if (valid)
+    {
+        editor.removeColour(juce::TextEditor::outlineColourId);
+        editor.removeColour(juce::TextEditor::focusedOutlineColourId);
+    }
+    else
+    {
+        editor.setColour(juce::TextEditor::outlineColourId, theme::colours().record);
+        editor.setColour(juce::TextEditor::focusedOutlineColourId, theme::colours().record);
+    }
+    // applyColourToAllText() also sets the editor's own text colour, so the valid one comes from the look and
+    // feel.
+    editor.applyColourToAllText(valid ? editor.getLookAndFeel().findColour(juce::TextEditor::textColourId)
+                                      : theme::colours().record);
     editor.repaint();
 }
 

@@ -74,6 +74,7 @@ add_executable(drumprog_tests
     ui/SongTimelineGeometryTest.cpp
     ui/SongTimelinePresenterTest.cpp
     ui/TempoPresenterTest.cpp
+    ui/ThemeSettingTest.cpp
     ui/TransportPresenterTest.cpp
 )
 

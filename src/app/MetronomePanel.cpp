@@ -23,8 +23,6 @@ MetronomePanel::MetronomePanel(ui::TransportPresenter& transport) : transport_(t
     title_.setFont(juce::FontOptions(15.0F, juce::Font::bold));
     setUpMetronome();
     setUpRecording();
-    for (auto* label : {&levelLabel_, &countInLabel_, &offsetLabel_})
-        label->setColour(juce::Label::textColourId, theme::kTextDim);
     for (auto* component : std::initializer_list<juce::Component*>{&title_,
                                                                    &metronomeButton_,
                                                                    &metronomeRecordButton_,
