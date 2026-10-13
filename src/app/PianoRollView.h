@@ -3,6 +3,7 @@
 #include "app/IconButton.h"
 #include "app/PianoRollToolbar.h"
 #include "app/Splitter.h"
+#include "app/Theme.h"
 #include "i18n/Translate.h"
 #include "ui/PaneSize.h"
 #include "ui/PatternListPresenter.h"
@@ -39,6 +40,8 @@ public:
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+    /// Takes the colours of a new theme (AP16).
+    void lookAndFeelChanged() override;
 
 private:
     class NoteArea;
@@ -81,7 +84,7 @@ private:
     IconButton zoomOutButton_{Icon::zoomOut, i18n::trJuce("Zoom out (Ctrl+mouse wheel)")};
     IconButton zoomInButton_{Icon::zoomIn, i18n::trJuce("Zoom in (Ctrl+mouse wheel)")};
     juce::TextEditor lengthBox_;
-    juce::Label lengthLabel_{{}, i18n::trJuce("Bars")};
+    theme::DimLabel lengthLabel_{{}, i18n::trJuce("Bars")};
     SnapControls snapControls_;
     PianoRollToolbar toolbar_;
     Splitter laneSplitter_{Splitter::Direction::upDown};

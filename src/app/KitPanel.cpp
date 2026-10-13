@@ -1,5 +1,6 @@
 #include "app/KitPanel.h"
 
+#include "app/Theme.h"
 #include "i18n/Translate.h"
 
 #include <utility>
@@ -114,7 +115,7 @@ void KitPanel::paintListBoxItem(int rowNumber, juce::Graphics& g, int width, int
 
     const auto led =
         juce::Rectangle<float>(6.0F, (static_cast<float>(height) - kLedSize) / 2.0F, kLedSize, kLedSize);
-    g.setColour(presenter_.isLedOn(slot) ? juce::Colours::orange : juce::Colours::darkgrey);
+    g.setColour(presenter_.isLedOn(slot) ? juce::Colours::orange : theme::colours().ledOff);
     g.fillEllipse(led);
 
     g.setColour(laf.findColour(juce::Label::textColourId));

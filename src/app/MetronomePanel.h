@@ -1,5 +1,6 @@
 #pragma once
 
+#include "app/Theme.h"
 #include "i18n/Translate.h"
 #include "ui/TransportPresenter.h"
 
@@ -28,11 +29,11 @@ private:
     juce::Label title_{{}, i18n::trJuce("Metronome and recording")};
     juce::ToggleButton metronomeButton_{i18n::trJuce("Metronome")};
     juce::ToggleButton metronomeRecordButton_{i18n::trJuce("when recording")};
-    juce::Label levelLabel_{{}, i18n::trJuce("Level")};
+    theme::DimLabel levelLabel_{{}, i18n::trJuce("Level")};
     juce::Slider levelSlider_{juce::Slider::LinearHorizontal, juce::Slider::NoTextBox};
-    juce::Label countInLabel_{{}, i18n::trJuce("Count-in")};
+    theme::DimLabel countInLabel_{{}, i18n::trJuce("Count-in")};
     juce::ComboBox countInBox_;
-    juce::Label offsetLabel_{{}, i18n::trJuce("Offset")};
+    theme::DimLabel offsetLabel_{{}, i18n::trJuce("Offset")};
     juce::Slider offsetSlider_{juce::Slider::LinearHorizontal, juce::Slider::TextBoxRight};
 
     JUCE_LEAK_DETECTOR(MetronomePanel)

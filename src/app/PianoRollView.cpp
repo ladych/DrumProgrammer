@@ -28,10 +28,6 @@ constexpr double kEndGrabPixels = 6.0;
 constexpr double kVelocityGrabPixels = 5.0;
 constexpr double kZoomStep = 1.25;
 
-const juce::Colour kGridNote{0xFFF59E0B};
-const juce::Colour kLiveNote{0xFFA78BFA};
-const juce::Colour kPlayhead{0xFF22C55E};
-
 juce::String utf8(const std::string& text)
 {
     return juce::String::fromUTF8(text.c_str());
@@ -39,7 +35,7 @@ juce::String utf8(const std::string& text)
 
 juce::Colour noteColour(model::NoteOrigin origin)
 {
-    return origin == model::NoteOrigin::live ? kLiveNote : kGridNote;
+    return origin == model::NoteOrigin::live ? theme::kLiveNote : theme::kGridNote;
 }
 
 /// Bar lines are drawn strongest, beat lines weaker, grid steps faintest (F-PR-08).
@@ -136,8 +132,8 @@ private:
     void paintBackground(juce::Graphics& g) const
     {
         const auto& geometry = owner_.geometry_;
-        const auto background = findColour(juce::ResizableWindow::backgroundColourId);
-        g.fillAll(background.darker(0.4F));
+        const auto& colours = theme::colours();
+        g.fillAll(colours.canvas);
         const auto lane = owner_.presenter_.laneRow();
         for (int row = geometry.firstVisibleRow(); row <= geometry.lastVisibleRow(); ++row)
         {
@@ -145,12 +141,14 @@ private:
                                                         static_cast<float>(geometry.yOf(row)),
                                                         static_cast<float>(getWidth()),
                                                         static_cast<float>(geometry.rowHeight()));
-            g.setColour(lane == row ? kGridNote.withAlpha(0.12F)
-                                    : background.darker(row % 2 == 0 ? 0.2F : 0.3F));
+            auto fill = row % 2 == 0 ? colours.rowEven : colours.rowOdd;
+            if (lane == row)
+                fill = colours.rowEven.overlaidWith(theme::kGridNote.withAlpha(0.12F));
+            g.setColour(fill);
             g.fillRect(rowArea);
         }
         const auto end = static_cast<float>(geometry.xOf(owner_.presenter_.lengthTicks()));
-        g.setColour(juce::Colours::black.withAlpha(0.35F));
+        g.setColour(colours.shade);
         g.fillRect(juce::Rectangle<float>(
             end, 0.0F, static_cast<float>(getWidth()) - end, static_cast<float>(getHeight())));
     }
@@ -162,7 +160,7 @@ private:
             presenter.ticksPerBar(), presenter.ticksPerBeat(), presenter.gridStepTicks());
         for (const auto& line : lines)
         {
-            g.setColour(juce::Colours::white.withAlpha(lineAlpha(line.kind)));
+            g.setColour(theme::colours().contrast.withAlpha(lineAlpha(line.kind)));
             g.fillRect(juce::Rectangle<float>(static_cast<float>(owner_.geometry_.xOf(line.tick)),
                                               0.0F,
                                               line.kind == ui::GridLineKind::bar ? 2.0F : 1.0F,
@@ -179,7 +177,7 @@ private:
         g.fillRoundedRectangle(area, 3.0F);
         if (note.selected)
         {
-            g.setColour(juce::Colours::white);
+            g.setColour(theme::colours().contrast);
             g.drawRoundedRectangle(area, 3.0F, 2.0F);
         }
     }
@@ -189,7 +187,7 @@ private:
         const auto ghosts = owner_.presenter_.ghosts();
         if (ghosts.empty())
             return;
-        g.setColour(juce::Colours::white.withAlpha(0.8F));
+        g.setColour(theme::colours().contrast.withAlpha(0.8F));
         for (const auto& ghost : ghosts)
         {
             const auto area = rectOf(ghost.row, ghost.start, ghost.length).reduced(0.5F, 2.0F);
@@ -221,9 +219,9 @@ private:
                                                        static_cast<float>(geometry.yOf(rect->firstRow)),
                                                        static_cast<float>(geometry.xOf(rect->endTick)),
                                                        static_cast<float>(geometry.yOf(rect->lastRow + 1)));
-        g.setColour(juce::Colours::white.withAlpha(0.12F));
+        g.setColour(theme::colours().contrast.withAlpha(0.12F));
         g.fillRect(area);
-        g.setColour(juce::Colours::white.withAlpha(0.6F));
+        g.setColour(theme::colours().contrast.withAlpha(0.6F));
         g.drawRect(area, 1.0F);
     }
 
@@ -231,7 +229,7 @@ private:
     {
         if (!owner_.playhead_)
             return;
-        g.setColour(kPlayhead);
+        g.setColour(theme::colours().position);
         g.fillRect(juce::Rectangle<float>(static_cast<float>(owner_.geometry_.xOf(*owner_.playhead_)) - 1.0F,
                                           0.0F,
                                           2.0F,
@@ -251,7 +249,7 @@ public:
 
     void paint(juce::Graphics& g) override
     {
-        g.fillAll(findColour(juce::ResizableWindow::backgroundColourId).darker(0.3F));
+        g.fillAll(theme::colours().lane);
         const auto row = owner_.presenter_.laneRow();
         if (!row)
             return;
@@ -267,7 +265,7 @@ public:
             g.fillEllipse(x - 2.5F, top - 4.0F, 8.0F, 8.0F);
             if (note.selected)
             {
-                g.setColour(juce::Colours::white);
+                g.setColour(theme::colours().contrast);
                 g.drawEllipse(x - 2.5F, top - 4.0F, 8.0F, 8.0F, 1.5F);
             }
         }
@@ -434,8 +432,14 @@ void PianoRollView::setUpLengthBox()
         unfocusAllComponents();
     };
     lengthBox_.onFocusLost = [this] { commitLength(); };
-    lengthLabel_.setColour(juce::Label::textColourId, theme::kTextDim);
+    lookAndFeelChanged();
     refreshLengthBox();
+}
+
+void PianoRollView::lookAndFeelChanged()
+{
+    markInput(lengthBox_,
+              ui::PatternListPresenter::parseBars(lengthBox_.getText().toStdString()).has_value());
 }
 
 void PianoRollView::commitLength()
@@ -562,7 +566,7 @@ void PianoRollView::paintRows(juce::Graphics& g) const
                         .reduced(6, 0);
         if (lane == row)
         {
-            g.setColour(kGridNote.withAlpha(0.15F));
+            g.setColour(theme::kGridNote.withAlpha(0.15F));
             g.fillRect(area);
         }
         g.setColour(text.withAlpha(0.5F));
@@ -579,8 +583,8 @@ void PianoRollView::paintRows(juce::Graphics& g) const
 void PianoRollView::paintLegend(juce::Graphics& g, juce::Rectangle<int> area) const
 {
     g.setFont(juce::FontOptions(13.0F));
-    for (const auto& [colour, label] : {std::pair{kGridNote, i18n::trJuce("on the grid")},
-                                        std::pair{kLiveNote, i18n::trJuce("played freely")}})
+    for (const auto& [colour, label] : {std::pair{theme::kGridNote, i18n::trJuce("on the grid")},
+                                        std::pair{theme::kLiveNote, i18n::trJuce("played freely")}})
     {
         auto item = area.removeFromLeft(label.length() * 7 + 30);
         g.setColour(colour);

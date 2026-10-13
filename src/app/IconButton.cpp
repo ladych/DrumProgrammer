@@ -73,18 +73,19 @@ void IconButton::setHighlight(std::optional<juce::Colour> colour)
 
 IconButton::Look IconButton::lookOf(bool highlighted, bool down) const
 {
-    Look look{.background = theme::kWidget, .outline = theme::kOutline, .icon = theme::kText};
+    const auto& colours = theme::colours();
+    Look look{.background = colours.widget, .outline = colours.outline, .icon = colours.text};
     if (highlight_)
         look = {
             .background = *highlight_, .outline = highlight_->brighter(0.2F), .icon = juce::Colours::white};
     else if (getToggleState())
-        look = {.background = theme::kWidget.overlaidWith(theme::kAccent.withAlpha(0.18F)),
-                .outline = theme::kAccent,
-                .icon = theme::kAccent};
+        look = {.background = colours.widget.overlaidWith(colours.accent.withAlpha(0.18F)),
+                .outline = colours.accent,
+                .icon = colours.accent};
     if (down)
         look.background = look.background.darker(0.2F);
     else if (highlighted)
-        look.background = look.background.brighter(0.15F);
+        look.background = look.background.overlaidWith(colours.contrast.withAlpha(0.08F));
     if (!isEnabled())
         look.icon = look.icon.withMultipliedAlpha(0.35F);
     return look;

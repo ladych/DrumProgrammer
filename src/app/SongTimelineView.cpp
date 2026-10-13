@@ -1,6 +1,7 @@
 #include "app/SongTimelineView.h"
 
 #include "app/Dialogs.h"
+#include "app/Theme.h"
 #include "i18n/Translate.h"
 #include "io/Utf8Path.h"
 
@@ -21,8 +22,6 @@ constexpr int kLabelWidth = 120;
 constexpr int kScrollBarSize = 12;
 constexpr int kBackingHeight = 52;
 constexpr int kThumbnailSamplesPerPoint = 512;
-
-const juce::Colour kPlayhead{0xFF22C55E};
 
 juce::String utf8(const std::string& text)
 {
@@ -55,7 +54,7 @@ public:
 
     void paint(juce::Graphics& g) override
     {
-        g.fillAll(findColour(juce::ResizableWindow::backgroundColourId).darker(0.25F));
+        g.fillAll(theme::colours().track);
         paintBarLines(g);
         for (const auto& block : owner_.presenter_.blocks())
             paintBlock(g, block);
@@ -157,7 +156,7 @@ private:
         g.fillRoundedRectangle(area, 3.0F);
         if (block.selected)
         {
-            g.setColour(juce::Colours::white);
+            g.setColour(theme::colours().contrast);
             g.drawRoundedRectangle(area.reduced(1.0F), 3.0F, 2.0F);
         }
         g.setColour(juce::Colours::black.withAlpha(0.85F));
@@ -176,9 +175,9 @@ private:
         if (!ghost)
             return;
         const auto area = blockArea(ghost->startBar, ghost->lengthBars);
-        g.setColour(juce::Colours::white.withAlpha(0.15F));
+        g.setColour(theme::colours().contrast.withAlpha(0.15F));
         g.fillRoundedRectangle(area, 3.0F);
-        g.setColour(juce::Colours::white);
+        g.setColour(theme::colours().contrast);
         const std::array dashes{4.0F, 3.0F};
         juce::Path outline;
         outline.addRoundedRectangle(area, 3.0F);
@@ -240,7 +239,7 @@ public:
 
     void paint(juce::Graphics& g) override
     {
-        g.fillAll(findColour(juce::ResizableWindow::backgroundColourId).darker(0.15F));
+        g.fillAll(theme::colours().backingTrack);
         const auto text = findColour(juce::Label::textColourId);
         if (!backing().hasTrack())
         {
@@ -415,7 +414,7 @@ void SongTimelineView::paintPlayhead(juce::Graphics& g, int height) const
     if (!playhead_)
         return;
     const double bar = static_cast<double>(*playhead_) / static_cast<double>(presenter_.ticksPerBar());
-    g.setColour(kPlayhead);
+    g.setColour(theme::colours().position);
     g.fillRect(static_cast<float>(geometry_.xOfBar(bar)) - 1.0F, 0.0F, 2.0F, static_cast<float>(height));
 }
 

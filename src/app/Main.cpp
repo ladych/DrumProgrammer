@@ -52,7 +52,7 @@ public:
     void initialise(const juce::String& /*commandLine*/) override
     {
         juce::LookAndFeel::setDefaultLookAndFeel(&lookAndFeel_);
-        composition_ = std::make_unique<AppComposition>();
+        composition_ = std::make_unique<AppComposition>(lookAndFeel_);
         mainWindow_ = std::make_unique<MainWindow>(getApplicationName(),
                                                    composition_->createMainComponent(),
                                                    composition_->mainMenu(),

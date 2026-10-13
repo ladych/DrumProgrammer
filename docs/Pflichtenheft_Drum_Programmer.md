@@ -287,6 +287,13 @@ Das Mapping wird über physische Tastenpositionen (Scancodes) umgesetzt, nicht �
 | F-UI-02 | Sprache im Menü Hilfe wählbar; Default ist die Sprache des Betriebssystems, sonst Englisch; die Wahl wird gespeichert und gilt ab dem nächsten Start | Muss (v1.0) |
 | F-UI-03 | Erweiterbar: eine weitere Sprache ist eine Übersetzungsdatei ohne Code-Änderung; fehlende Übersetzungen erscheinen englisch | Muss (v1.0) |
 
+### 6.6 Farbschema (AP16)
+
+| ID | Anforderung | Priorität |
+| --- | --- | --- |
+| F-UI-04 | Dunkles und helles Farbschema nach GUI-Entwurf v0.1; Default ist der Hell-/Dunkelmodus des Betriebssystems und folgt dessen Wechsel | Muss (v1.0) |
+| F-UI-05 | Farbschema im Menü Hilfe wählbar (Systemeinstellung, Dunkel, Hell); die Wahl wird gespeichert und gilt sofort, ohne Neustart | Muss (v1.0) |
+
 ## 7 Qualitätsanforderungen
 
 Die Latenz ist das wichtigste Qualitätsziel: ein Anschlag muss sich beim Einspielen direkt anfühlen. Alle Werte gelten für die Referenz-Hardware (Kapitel 2) im Normalbetrieb.
@@ -343,7 +350,7 @@ Die Umsetzung ist in 12 Arbeitspakete mit zusammen 242 Stunden gegliedert; mit 2
 | AP8 | Backing-Track und Aufnahme zum Track | Streaming mit Resampling, gemeinsamer Transport, AudioThumbnail, Offset, Mix-Regler; Aufnahme im Song-Modus, Take als neues Pattern und Block auf der Drums-Spur | F-BT-01 bis 09 | 20 | 24,0 |
 | AP9 | MIDI-Import und Song-Export | .mid lesen, Slot-Zuordnung, Song zu einer Datei rendern, Export-Dialog | F-MI-02 bis 05 | 8 | 9,6 |
 | AP10 | Windows und ASIO | ASIO-SDK (GPLv3) beim Bauen laden, WASAPI-Fallback, Tests auf Windows-Rechner, Gerätewechsel und Abziehen | F-AO-03, Q-03, Q-09 | 22 | 26,4 |
-| AP11 | Stabilisierung und Release | Bugfixing, Performance-Messung, helles Theme, README, Release-Pakete (AppImage, Windows-Installer) | Q-05 bis Q-11 | 30 | 36,0 |
+| AP11 | Stabilisierung und Release | Bugfixing, Performance-Messung, helles Theme (ausgelagert nach AP16), README, Release-Pakete (AppImage, Windows-Installer) | Q-05 bis Q-11 | 30 | 36,0 |
 |  | **Summe** |  |  | **242** | **290,4** |
 
 **Reihenfolge.** AP0 bis AP6 bilden den MVP (142 Std. netto, davon 12 Std. für die Aufnahme-Funktion in AP4). AP2 und AP3 liegen vor dem Editor, weil „Taste drücken, Drum klingt“ früh die Latenz-Architektur prüft. Soll-Anforderungen werden in ihrem AP umgesetzt, wenn der Puffer es zulässt, sonst nach AP11 verschoben.

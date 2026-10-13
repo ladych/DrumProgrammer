@@ -88,9 +88,17 @@ io::DefaultKit installedDefaultKit(io::IFileSystem& fileSystem)
 
 } // namespace
 
-AppComposition::AppComposition()
+AppComposition::AppComposition(theme::LookAndFeel& lookAndFeel)
     : languageSettings_(fileSystem_, settingsFile("language.txt")),
-      languages_(appliedLanguages(languageSettings_)),
+      languages_(appliedLanguages(languageSettings_)), themeSettings_(fileSystem_, settingsFile("theme.txt")),
+      themeSetting_(
+          themeSettings_,
+          [] { return juce::Desktop::getInstance().isDarkModeActive(); },
+          [&lookAndFeel](ui::Theme shown)
+          {
+              lookAndFeel.setTheme(shown);
+              theme::refreshWindows();
+          }),
       deviceSettings_(fileSystem_, settingsFile("audio-device.xml")),
       keymapSettings_(fileSystem_, settingsFile("keymap.txt")),
       recordOffsetSettings_(fileSystem_, settingsFile("recording-offset.txt")),
@@ -157,9 +165,13 @@ AppComposition::AppComposition()
                    languageSettings_.load().value_or(i18n::LanguageCatalog::kSystemLanguage),
                    systemLanguage());
            },
-           .chooseLanguage = [this](const std::string& setting) { chooseLanguage(setting); }},
+           .chooseLanguage = [this](const std::string& setting) { chooseLanguage(setting); },
+           .themes = [this] { return themeSetting_.choices(); },
+           .chooseTheme = [this](const std::string& setting) { themeSetting_.choose(setting); }},
           {.toggleRecordArmed = [this] { transportPresenter_.toggleRecordArmed(); }})
 {
+    themeSetting_.apply();
+    juce::Desktop::getInstance().addDarkModeSettingListener(this);
     activePattern_.addOnChange([this](int index) { transportPresenter_.setActivePattern(index); });
     // A take recorded in the song mode opens in the piano roll (F-BT-08).
     transportPresenter_.setOnSongTake([this](int index) { activePattern_.select(index); });
@@ -176,6 +188,7 @@ AppComposition::AppComposition()
 
 AppComposition::~AppComposition()
 {
+    juce::Desktop::getInstance().removeDarkModeSettingListener(this);
     stopTimer();
     // The kit dialog refers to the presenters.
     delete kitDialog_.getComponent();

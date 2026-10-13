@@ -58,11 +58,8 @@ void TransportBar::setUpTransport()
     // The current position stands out: green on a darker field with a frame (GUI draft, AP14).
     positionLabel_.setFont(juce::FontOptions{juce::Font::getDefaultMonospacedFontName(), 17.0F, 0});
     positionLabel_.setJustificationType(juce::Justification::centred);
-    positionLabel_.setColour(juce::Label::textColourId, theme::kPosition);
-    positionLabel_.setColour(juce::Label::backgroundColourId, theme::kPositionBackground);
-    positionLabel_.setColour(juce::Label::outlineColourId, theme::kOutline);
     positionLabel_.setTooltip(i18n::trJuce("Position bar.beat.tick"));
-    positionTitle_.setColour(juce::Label::textColourId, theme::kTextDim);
+    lookAndFeelChanged();
     positionTitle_.setJustificationType(juce::Justification::centredRight);
     for (auto* component : std::initializer_list<juce::Component*>{&rewindButton_,
                                                                    &playButton_,
@@ -72,6 +69,14 @@ void TransportBar::setUpTransport()
                                                                    &positionTitle_,
                                                                    &positionLabel_})
         addAndMakeVisible(component);
+}
+
+void TransportBar::lookAndFeelChanged()
+{
+    const auto& colours = theme::colours();
+    positionLabel_.setColour(juce::Label::textColourId, colours.position);
+    positionLabel_.setColour(juce::Label::backgroundColourId, colours.positionBackground);
+    positionLabel_.setColour(juce::Label::outlineColourId, colours.outline);
 }
 
 void TransportBar::setUpTempo()
@@ -95,10 +100,7 @@ void TransportBar::setUpTempo()
     numeratorBox_.onChange = [this] { commitTimeSignature(); };
     denominatorBox_.onChange = [this] { commitTimeSignature(); };
     for (auto* label : {&bpmLabel_, &signatureLabel_, &modeLabel_})
-    {
-        label->setColour(juce::Label::textColourId, theme::kTextDim);
         label->setJustificationType(juce::Justification::centredRight);
-    }
     for (auto* component : std::initializer_list<juce::Component*>{
              &bpmLabel_, &bpmEditor_, &signatureLabel_, &numeratorBox_, &denominatorBox_})
         addAndMakeVisible(component);
@@ -160,9 +162,9 @@ void TransportBar::refresh()
     std::optional<juce::Colour> recColour;
     const bool blinkOff = transport_.isCountingIn() && blink_ < kBlinkPeriod / 2;
     if (transport_.isRecording() && !blinkOff)
-        recColour = theme::kRecord;
+        recColour = theme::colours().record;
     else if (transport_.isRecordArmed())
-        recColour = theme::kRecord.darker(1.2F);
+        recColour = theme::colours().record.darker(1.2F);
     recButton_.setHighlight(recColour);
 }
 

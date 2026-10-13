@@ -25,7 +25,7 @@ void Splitter::paint(juce::Graphics& g)
 {
     if (!active_)
         return;
-    g.setColour(theme::kSliderFill);
+    g.setColour(theme::colours().sliderFill);
     const auto area = getLocalBounds();
     if (direction_ == Direction::leftRight)
         g.fillRect(area.withSizeKeepingCentre(2, area.getHeight()));

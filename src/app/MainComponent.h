@@ -8,6 +8,7 @@
 #include "app/PianoRollView.h"
 #include "app/SongTimelineView.h"
 #include "app/Splitter.h"
+#include "app/Theme.h"
 #include "app/TransportBar.h"
 #include "ui/InputLedPresenter.h"
 #include "ui/PaneSize.h"
@@ -86,8 +87,8 @@ private:
     Splitter leftSplitter_{Splitter::Direction::leftRight};
     Splitter rightSplitter_{Splitter::Direction::leftRight};
     Splitter songSplitter_{Splitter::Direction::upDown};
-    juce::Label status_;
-    juce::Label editStatus_;
+    theme::DimLabel status_;
+    theme::DimLabel editStatus_;
     juce::TooltipWindow tooltipWindow_{this};
 
     JUCE_LEAK_DETECTOR(MainComponent)
