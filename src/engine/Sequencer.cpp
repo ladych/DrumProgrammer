@@ -49,6 +49,11 @@ bool Sequencer::locate(std::int64_t tick) noexcept
     return commands_.push({CommandType::locate, {}, tick});
 }
 
+void Sequencer::setBackingStart(std::int64_t songTick) noexcept
+{
+    backingStart_.store(std::max<std::int64_t>(songTick, 0));
+}
+
 void Sequencer::setLoop(bool loop) noexcept
 {
     loop_.store(loop);
@@ -149,6 +154,7 @@ Sequencer::Timeline Sequencer::timelineOf(const ProjectSnapshot& snapshot) const
     Timeline timeline;
     timeline.snapshot = &snapshot;
     timeline.song = song_;
+    timeline.songOffset = song_ ? 0 : backingStart_.load();
     timeline.barTicks =
         ticksPerBar(snapshot.ticksPerQuarter, snapshot.timeSigNumerator, snapshot.timeSigDenominator);
     timeline.beatTicks = ticksPerBeat(snapshot.ticksPerQuarter, snapshot.timeSigDenominator);
@@ -243,8 +249,7 @@ void Sequencer::schedule(const Timeline& timeline, int numSamples, SequencerBloc
                           static_cast<std::int64_t>(std::ceil(tickAt(numSamples))) + 1};
     scheduleNotes(timeline, range, numSamples, block);
     scheduleClicks(timeline, range, numSamples, block);
-    if (timeline.song)
-        scheduleSongSpans(timeline, numSamples, block);
+    scheduleSongSpans(timeline, numSamples, block);
 }
 
 void Sequencer::scheduleNotes(const Timeline& timeline,
@@ -340,8 +345,8 @@ void Sequencer::scheduleSongSpans(const Timeline& timeline,
             endsInBlock ? std::clamp<std::int64_t>(sampleOffsetOf(passStop), from, numSamples) : numSamples;
         if (to > from)
         {
-            const auto anchorSample = static_cast<std::int64_t>(
-                std::floor((anchorTick_ - static_cast<double>(passStart)) * samplesPerTick_));
+            const auto anchorSample = static_cast<std::int64_t>(std::floor(
+                (anchorTick_ - static_cast<double>(passStart - timeline.songOffset)) * samplesPerTick_));
             block.songSpans.at(block.numSongSpans++) = {static_cast<int>(from),
                                                         static_cast<int>(to - from),
                                                         anchorSample + samplesSinceAnchor_ + from};

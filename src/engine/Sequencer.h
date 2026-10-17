@@ -35,7 +35,8 @@ struct MetronomeClick
 };
 
 /// Samples of a block that play the song continuously, for the backing track (F-BT-03). A block has a
-/// second span where the song loops back to its start.
+/// second span where the song loops back to its start, or in the pattern mode where the pattern loops
+/// back to the backing start (F-BT-10).
 struct SongSpan
 {
     int sampleOffset = 0;
@@ -55,7 +56,7 @@ struct SequencerBlock
     std::size_t numNotes = 0;
     std::array<MetronomeClick, kMaxClicks> clicks{};
     std::size_t numClicks = 0;
-    std::array<SongSpan, kMaxSongSpans> songSpans{}; ///< only in the song mode
+    std::array<SongSpan, kMaxSongSpans> songSpans{};
     std::size_t numSongSpans = 0;
 };
 
@@ -83,7 +84,8 @@ struct PlayRequest
 /// blocks of the snapshot one after another instead of one pattern (F-TR-05); loop, position and stop
 /// at the end then refer to the whole song, which lasts at least until the backing track ends. A
 /// recording in the song mode (F-BT-07) neither loops nor stops at the song end: it runs until Stop, and
-/// its hits keep their song tick.
+/// its hits keep their song tick. In the pattern mode the backing track plays from the backing start on
+/// and jumps back there with every pattern pass (F-BT-10).
 ///
 /// The GUI thread sends play, stop and rewind as commands through a lock-free queue and sets the
 /// options through atomics; it reads the state and position back through atomics, 30 times a second
@@ -111,6 +113,9 @@ public:
     /// Moves the position to the tick, also while running (F-BT-07); while running it is folded into the
     /// pattern or song. Negative ticks count as 0.
     bool locate(std::int64_t tick) noexcept;
+    /// Song tick the backing track plays from at the start of each pattern pass in the pattern mode
+    /// (F-BT-10), also while running. Negative ticks count as 0.
+    void setBackingStart(std::int64_t songTick) noexcept;
     /// Off: the transport stops at the end of the current pattern pass (F-TR-02).
     void setLoop(bool loop) noexcept;
     [[nodiscard]] bool loop() const noexcept;
@@ -162,6 +167,7 @@ private:
         const ProjectSnapshot* snapshot = nullptr;
         const PatternSnapshot* pattern = nullptr; ///< pattern mode only
         bool song = false;
+        std::int64_t songOffset = 0; ///< song tick of the start of each pass
         std::int64_t length = 0;
         std::int64_t barTicks = 0;
         std::int64_t beatTicks = 0;
@@ -212,6 +218,7 @@ private:
     std::atomic<double> latencySeconds_{0.0};
     std::atomic<std::int64_t> publishedPosition_{0};
     std::atomic<std::int64_t> publishedRecordStart_{0};
+    std::atomic<std::int64_t> backingStart_{0};
     std::atomic<std::uint32_t> publishedTake_{0};
     std::atomic<bool> loop_{true};
     std::atomic<bool> metronomeOnPlayback_{false};

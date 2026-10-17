@@ -204,6 +204,7 @@ Jede Anforderung hat eine feste ID, auf die sich Arbeitspakete (Kapitel 8) und T
 | F-BT-07 | Aufnahme zum Backing-Track: Rec + Play im Song-Modus nimmt die Live-Eingabe auf, während der Backing-Track synchron läuft; Start an beliebiger Song-Position, Vorzähler und Latenzkompensation wie F-IN-08 | Muss (v1.0) | 1, 6, 7 | 3.5 (ersetzt Out of Scope in 8) |
 | F-BT-08 | Ein Durchgang wird als neues Pattern „Take n“ über den aufgenommenen Takten (auf ganze Takte gerundet) als Block auf die Drums-Spur gelegt; bestehende Patterns werden nicht verändert; ein Take ist ein Undo-Schritt | Muss (v1.0) | 4, 6 | 3.4 |
 | F-BT-09 | Der Backing-Track selbst wird nicht aufgenommen oder verändert; aufgenommen werden nur Drum-Noten | Muss (v1.0) | – | 3.5 |
+| F-BT-10 | Im Pattern-Modus läuft der Backing-Track mit: ab der Song-Marke (Klick ins Lineal der Timeline, im Pattern-Modus ohne Wechsel in den Song-Modus) plus Pattern-Position, bei jedem Pattern-Durchlauf zurück zur Marke; beim Wechsel in den Pattern-Modus wird der Takt der Song-Position zur Marke, der Song-Modus startet an der Marke (entschieden 17.10.2026) | Muss (v1.0) | 7 | 3.5 |
 
 ### 5.8 MIDI-Import und -Export
 

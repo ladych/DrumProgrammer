@@ -76,14 +76,15 @@ void TransportPresenter::locate(std::int64_t songTick)
 {
     if (take_ != 0)
         return;
+    setSongMark(songTick);
     if (playMode_ == PlayMode::song)
-    {
-        sequencer_.locate(songTick);
-        return;
-    }
-    playMode_ = PlayMode::song;
-    restart();
-    sequencer_.locate(songTick);
+        sequencer_.locate(songMark_);
+}
+
+void TransportPresenter::setSongMark(std::int64_t songTick)
+{
+    songMark_ = std::max<std::int64_t>(songTick, 0);
+    sequencer_.setBackingStart(songMark_);
 }
 
 bool TransportPresenter::isPlaying() const
@@ -180,17 +181,22 @@ std::optional<std::int64_t> TransportPresenter::playheadTick() const
     return std::nullopt;
 }
 
-std::optional<std::int64_t> TransportPresenter::songPlayheadTick() const
+std::int64_t TransportPresenter::songPlayheadTick() const
 {
-    if (playMode_ != PlayMode::song)
-        return std::nullopt;
-    return sequencer_.position();
+    if (playMode_ == PlayMode::song)
+        return sequencer_.position();
+    return songMark_ + sequencer_.position();
 }
 
 void TransportPresenter::setPlayMode(PlayMode mode)
 {
     if (mode == playMode_ || take_ != 0)
         return;
+    if (mode == PlayMode::pattern)
+    {
+        const std::int64_t barTicks = model::Project{project_, nullptr}.ticksPerBar();
+        setSongMark(sequencer_.position() / barTicks * barTicks);
+    }
     playMode_ = mode;
     restart();
 }
@@ -200,7 +206,7 @@ void TransportPresenter::restart()
     // The sequencer still runs until the audio thread takes the commands, so play() would ignore it.
     const bool playing = isPlaying();
     sequencer_.stop();
-    sequencer_.rewind();
+    sequencer_.locate(playMode_ == PlayMode::song ? songMark_ : 0);
     if (playing)
         sequencer_.play({.patternIndex = activePattern_, .song = playMode_ == PlayMode::song});
 }

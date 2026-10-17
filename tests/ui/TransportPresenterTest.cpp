@@ -167,7 +167,7 @@ protected:
 TEST_F(TransportPresenterSongTest, FTR05_SongModePlaysTheTimeline)
 {
     EXPECT_EQ(transport.playMode(), PlayMode::pattern);
-    EXPECT_FALSE(transport.songPlayheadTick().has_value());
+    EXPECT_EQ(transport.songPlayheadTick(), 0); // the song mark
     transport.setPlayMode(PlayMode::song);
     EXPECT_EQ(transport.playMode(), PlayMode::song);
     EXPECT_EQ(transport.songPlayheadTick(), 0); // the stopped position
@@ -200,7 +200,7 @@ TEST_F(TransportPresenterSongTest, FTR05_SwitchingTheModeRestartsFromTheStart)
 {
     transport.play();
     audioBlock(1000 * kTick);
-    EXPECT_FALSE(transport.songPlayheadTick().has_value());
+    EXPECT_EQ(transport.songPlayheadTick(), 1000); // song mark 0 plus the pattern position
 
     transport.setPlayMode(PlayMode::song);
     audioBlock(0);
@@ -290,26 +290,51 @@ TEST_F(TransportPresenterSongTest, FBT07_RewindAndLocateWaitUntilTheSongTakeEnds
     EXPECT_EQ(transport.songPlayheadTick(), 0);
 }
 
-TEST_F(TransportPresenterSongTest, FBT07_LocateMovesTheSongPositionAndSwitchesToTheSongMode)
+TEST_F(TransportPresenterSongTest, FBT10_LocateInThePatternModeMovesOnlyTheSongMark)
 {
     transport.locate(5000);
     audioBlock(0);
-    EXPECT_EQ(transport.playMode(), PlayMode::song);
+    EXPECT_EQ(transport.playMode(), PlayMode::pattern);
     EXPECT_FALSE(transport.isPlaying());
     EXPECT_EQ(transport.songPlayheadTick(), 5000);
 
-    transport.setPlayMode(PlayMode::pattern);
     transport.play();
     audioBlock(100 * kTick);
-    transport.locate(2000);
+    EXPECT_EQ(transport.songPlayheadTick(), 5100);
+    transport.locate(2 * 3840);
     audioBlock(100 * kTick);
-    EXPECT_EQ(transport.playMode(), PlayMode::song);
+    EXPECT_EQ(transport.playMode(), PlayMode::pattern);
     EXPECT_TRUE(transport.isPlaying());
-    EXPECT_EQ(transport.songPlayheadTick(), 2100);
+    EXPECT_EQ(transport.positionText(), "001.1.200"); // the pattern plays on
+    EXPECT_EQ(transport.songPlayheadTick(), 2 * 3840 + 200);
+    ASSERT_EQ(block.numSongSpans, 1U);
+    EXPECT_EQ(block.songSpans[0].songSample, (2 * 3840 + 100) * kTick); // the backing track follows
+
+    transport.locate(-5);
+    audioBlock(0);
+    EXPECT_EQ(transport.songPlayheadTick(), 200);
+}
+
+TEST_F(TransportPresenterSongTest, FBT07_FBT10_TheSongModeContinuesAtTheSongMark)
+{
+    transport.locate(3840);
+    transport.play();
+    audioBlock(0);
+    transport.setPlayMode(PlayMode::song);
+    audioBlock(100 * kTick);
+    EXPECT_TRUE(transport.isPlaying());
+    EXPECT_EQ(transport.songPlayheadTick(), 3840 + 100);
 
     transport.locate(7000);
     audioBlock(0);
     EXPECT_EQ(transport.songPlayheadTick(), 7000);
+
+    // Back in the pattern mode the song mark is the bar of the song position.
+    transport.setPlayMode(PlayMode::pattern);
+    audioBlock(100 * kTick);
+    EXPECT_TRUE(transport.isPlaying());
+    EXPECT_EQ(transport.positionText(), "001.1.100");
+    EXPECT_EQ(transport.songPlayheadTick(), 3840 + 100);
 }
 
 TEST_F(TransportPresenterSongTest, FTR05_TheModeCannotChangeDuringARecording)

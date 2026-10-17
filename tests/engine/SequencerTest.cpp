@@ -747,11 +747,45 @@ TEST_F(SequencerSongTest, FBT03_ALoopOnTheFirstSampleOfABlockStartsTheNextPass)
     EXPECT_EQ(block.songSpans[0].songSample, -1); // less than a sample before the song start
 }
 
-TEST_F(SequencerSongTest, FBT03_ThePatternModeHasNoSpans)
+// ----- Backing track in the pattern mode (F-BT-10) ------------------------------------------------
+
+TEST_F(SequencerSongTest, FBT10_ThePatternModePlaysTheBackingFromTheBackingStartInALoop)
 {
     sequencer.play({});
     run(128);
-    EXPECT_TRUE(spans.empty());
+    EXPECT_EQ(spans, (std::vector<Span>{{0, 128, 0}})); // backing start 0 by default
+    spans.clear();
+    sequencer.setBackingStart(4 * kBarTicks); // also while running
+    run(128);
+    EXPECT_EQ(spans, (std::vector<Span>{{128, 128, 4 * kBar + 128}}));
+    spans.clear();
+    run(kBar - 256 - 64);
+    spans.clear();
+    run(128); // the pattern of one bar loops after 64 samples
+    EXPECT_EQ(spans, (std::vector<Span>{{kBar - 64, 64, 5 * kBar - 64}, {kBar, 64, 4 * kBar}}));
+}
+
+TEST_F(SequencerSongTest, FBT10_TheBackingFollowsThePatternPositionAndEndsWithThePass)
+{
+    sequencer.setBackingStart(-5); // counts as 0
+    sequencer.setLoop(false);
+    sequencer.locate(kBarTicks / 2);
+    sequencer.play({});
+    run(128);
+    EXPECT_EQ(spans, (std::vector<Span>{{0, 128, kBar / 2}}));
+    spans.clear();
+    run(kBar / 2 - 128 - 64);
+    spans.clear();
+    run(128);
+    EXPECT_EQ(spans, (std::vector<Span>{{kBar / 2 - 64, 64, kBar - 64}}));
+}
+
+TEST_F(SequencerSongTest, FBT10_TheSongModeIgnoresTheBackingStart)
+{
+    sequencer.setBackingStart(4 * kBarTicks);
+    sequencer.play({.song = true});
+    run(128);
+    EXPECT_EQ(spans, (std::vector<Span>{{0, 128, 0}}));
 }
 
 TEST_F(SequencerSongTest, FBT03_TheBackingTrackExtendsTheSongToWholeBars)
