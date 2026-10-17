@@ -1,18 +1,22 @@
 # Drum Programmer
 
-Desktop-Anwendung zum Programmieren von Schlagzeug-Patterns (JUCE/C++), mit Echtzeit-Eingabe über Tastatur und MIDI-Hardware, Piano-Roll-Editor, Song-Arrangement und Backing-Track. Zielplattformen: Linux (ALSA/JACK) und Windows (ASIO).
+Drum Programmer is a desktop application for programming drum patterns. You play beats in live on your computer keyboard or a MIDI controller, edit them in a piano roll, arrange them into a song, play along with a backing track and export the result as a MIDI file. It is built with JUCE/C++ and runs on Linux (ALSA/JACK) and Windows (ASIO/WASAPI).
 
-## Planung
+## Features
 
-- [Lastenheft](docs/Lastenheft_Drum_Programmer.md)
-- [Pflichtenheft](docs/Pflichtenheft_Drum_Programmer.md) – Arbeitspakete in Kapitel 8, Meilensteine in Kapitel 9
-- [GUI-Entwurf v0.1](docs/GUI-Entwurf_v0.1.png)
-- [Latenzmessung](docs/Latenzmessung.md) – Vorgehen für Q-01 und Q-02
-- Fortschritt: Issues und Meilensteine in diesem Repository
+- **Live input:** play drums on the computer keyboard or on MIDI hardware with low latency (target: 5 ms round trip with a suitable audio interface). Keys are mapped by physical position, so the layout is the same on QWERTY and QWERTZ keyboards, and can be changed freely.
+- **Recording:** Rec + Play records your hits with velocity into the active pattern in a loop, with metronome, count-in and latency compensation. Overdub and replace modes; every pass is one undo step.
+- **Piano roll:** add, move and delete notes with the mouse, edit velocity, snap to grid (1/4 to 1/32 and triplets) or place notes freely. Pattern length and time signature are adjustable.
+- **Song arrangement:** place patterns as blocks on a song timeline. Repeated blocks refer to the same pattern, so editing it once updates every occurrence.
+- **Backing track:** import a WAV file, see its waveform above the drum track and play along in sync. Each recording pass in song mode becomes a new pattern "Take n" on the drum track. Backing track and drums each have their own volume.
+- **MIDI import and export:** import a Standard MIDI File as a new pattern, export a single pattern or the whole song as a MIDI file for use in any DAW.
+- **Kits:** samples are assigned to slots following the General MIDI drum map (notes 35 to 59), each slot with its own pitch control. The kit is a program-wide setting; a project can carry its own kit if needed.
+- **Projects:** save and load projects as `.dpp` files with undo/redo for all edits. Samples and the backing track are referenced relative to the project file, so projects stay portable.
+- **Interface:** dark and light color scheme, English and German user interface.
 
-## Bauen
+## Building
 
-Voraussetzungen: CMake ≥ 3.22, Ninja, ein C++20-Compiler (GCC/Clang unter Linux, Visual Studio (MSVC) unter Windows). Unter Linux zusätzlich die JUCE-Abhängigkeiten:
+Requirements: CMake ≥ 3.22, Ninja and a C++20 compiler (GCC/Clang on Linux, Visual Studio (MSVC) on Windows). On Linux you also need the JUCE dependencies:
 
 ```sh
 sudo apt install libasound2-dev libjack-jackd2-dev libfreetype-dev libfontconfig1-dev \
@@ -20,43 +24,38 @@ sudo apt install libasound2-dev libjack-jackd2-dev libfreetype-dev libfontconfig
   libxrandr-dev libxrender-dev libgl1-mesa-dev
 ```
 
-JUCE und GoogleTest liegen als Git-Submodule unter `external/`:
+JUCE and GoogleTest are Git submodules under `external/`:
 
 ```sh
 git clone --recurse-submodules https://github.com/ladych/DrumProgrammer.git
-# bei bestehendem Klon: git submodule update --init --recursive
+# for an existing clone: git submodule update --init --recursive
 cmake --preset debug
 cmake --build --preset debug
 ctest --preset debug
 ```
 
-**Windows mit ASIO:** Steinberg stellt das ASIO-SDK seit Oktober 2025 unter GPLv3 bereit, das ist mit unserer AGPLv3 vereinbar. CMake lädt die festgelegte Version (2.3.4, mit SHA-256 geprüft) beim Konfigurieren von Steinberg; sie liegt nicht im Repository. Ohne Internet: SDK selbst entpacken und `-DDRUMPROG_ASIO_SDK_DIR=C:/pfad/zum/asiosdk` angeben (das Verzeichnis mit `common/iasiodrv.h`); `-DDRUMPROG_ASIO=OFF` baut ohne ASIO. Die CI stellt das fertige Windows-Programm als Artefakt `DrumProgrammer-Windows` bereit.
+**Windows with ASIO:** since October 2025 Steinberg provides the ASIO SDK under GPLv3, which is compatible with the AGPLv3 of this project. CMake downloads the pinned version (2.3.4, verified by SHA-256) from Steinberg while configuring; it is not part of the repository. Without internet access, unpack the SDK yourself and pass `-DDRUMPROG_ASIO_SDK_DIR=C:/path/to/asiosdk` (the directory containing `common/iasiodrv.h`); `-DDRUMPROG_ASIO=OFF` builds without ASIO. The CI provides the finished Windows program as the artifact `DrumProgrammer-Windows`.
 
-Beim ersten Start wählt das Programm ASIO, falls ein ASIO-Treiber installiert ist, sonst WASAPI (unter Linux ALSA). Fällt das gewählte Gerät aus (z. B. Interface abgezogen), spielt es über den nächsten Treiber weiter und kehrt zum gewählten Gerät zurück, sobald es wieder da ist; die Statusleiste zeigt das an.
+On first start the program uses ASIO if an ASIO driver is installed, otherwise WASAPI (ALSA on Linux). If the selected device fails (for example, the interface is unplugged), playback continues on the next driver and switches back as soon as the device returns; the status bar shows this.
 
-CLion liest `CMakePresets.json` direkt; die Presets `coverage`, `asan` und `tsan` bauen nur die Tests.
+CLion reads `CMakePresets.json` directly.
 
-## Qualitätsregeln
+## Default kit
 
-- Tests mit GoogleTest/GoogleMock, Testnamen mit Anforderungs-ID (E-01, E-09)
-- 100 % Zeilen- und Branch-Abdeckung für `src/`, Ausnahmen mit Begründung in `coverage-exclusions.txt` (E-02, E-03); lokal: `cmake --preset coverage && cmake --build --preset coverage && ctest --preset coverage && tools/check-coverage.py build/coverage`
-- `clang-format` und `tools/run-clang-tidy.sh <build-dir>` ohne Befund, Warnungen sind Fehler (E-08)
-- Composition Root in `src/app/AppComposition.cpp` (E-05)
+On first start the program plays the default kit: the GM slots 35 to 59 with samples from the kit "Black Pearl" of the [AVL Drumkits](http://www.bandshed.net/avldrumkits/) by Glen MacArthur, using the highest velocity layer of each instrument. The samples live in `resources/DefaultKit/`, are built into the program and copied to the settings folder on start (`DefaultKit/` next to `kit.xml`). **Kit → Reset to default** restores the kit, **Kit → Edit kit...** (Ctrl+K) opens the kit dialog.
 
-Die CI (GitHub Actions) prüft all das bei jedem Push: Linux- und Windows-Build mit Tests, Coverage-Gate, Address/UB- und Thread-Sanitizer, clang-format und clang-tidy.
+## Languages
 
-## Default-Kit
+The user interface is available in English and German; **Help → Language** selects it. The default is the operating system's language, otherwise English. The choice takes effect on the next start and is stored as `language.txt` in the settings folder.
 
-Beim ersten Start spielt das Programm mit dem Default-Kit: den GM-Slots 35 bis 59 mit Samples aus dem Kit „Black Pearl" der [AVL Drumkits](http://www.bandshed.net/avldrumkits/) von Glen MacArthur, pro Instrument die höchste Velocity-Stufe. Die Samples liegen unter `resources/DefaultKit/`, sind ins Programm eingebaut und werden beim Start in den Einstellungsordner kopiert (`DefaultKit/` neben `kit.xml`). Menü **Kit → Default zurücksetzen** stellt das angezeigte Kit wieder her, **Kit → Kit bearbeiten...** (Strg+K) öffnet den Kit-Dialog.
+In the code all texts are written in English inside `i18n::tr("...")` (or `i18n::marked("...")` in tables). Each additional language is a file `resources/Languages/<ISO-639-1 code>.txt` in the format of `juce::LocalisedStrings` that is built into the program; the header of [resources/Languages/de.txt](resources/Languages/de.txt) explains how to add a new language. Missing translations fall back to the English text. `tools/check-translations.py` (also run as the test `TranslationsComplete`) checks that every file contains every text.
 
-## Sprachen
+## Made with Claude
 
-Die Oberfläche gibt es auf Deutsch und Englisch; **Hilfe → Sprache** wählt sie, Default ist die Sprache des Betriebssystems, sonst Englisch. Die Wahl gilt ab dem nächsten Start und liegt als `language.txt` im Einstellungsordner.
+This program was created with [Claude](https://claude.ai) by Anthropic: requirements, design, code, tests and documentation were developed together with Claude Code.
 
-Im Code stehen alle Texte englisch in `i18n::tr("...")` (oder `i18n::marked("...")` in Tabellen). Jede weitere Sprache ist eine Datei `resources/Languages/<ISO-639-1-Code>.txt` im Format von `juce::LocalisedStrings`, die beim Bauen ins Programm kommt; der Kopf von [resources/Languages/de.txt](resources/Languages/de.txt) beschreibt, wie eine neue Sprache angelegt wird. Fehlt eine Übersetzung, erscheint der englische Text. `tools/check-translations.py` (auch als Test `TranslationsComplete`) prüft, dass jede Datei jeden Text enthält; die Unit-Tests laufen auf Deutsch und prüfen so auch die deutschen Texte.
+## License
 
-## Lizenz
+GNU Affero General Public License v3.0, see [LICENSE](LICENSE). The license follows from the open source license of JUCE.
 
-GNU Affero General Public License v3.0, siehe [LICENSE](LICENSE). Die Lizenz folgt aus der Open-Source-Lizenz von JUCE.
-
-Die Samples des Default-Kits stehen unter [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) (AVL Drumkits, Glen MacArthur), siehe [resources/DefaultKit/LIESMICH.txt](resources/DefaultKit/LIESMICH.txt). Die Icons der Buttons stammen aus [Lucide Icons](https://lucide.dev) (ISC License, einzelne Icons aus Feather unter MIT License), siehe [resources/Icons/LIESMICH.txt](resources/Icons/LIESMICH.txt). Alle Komponenten von Drittanbietern mit ihren Lizenzen zeigt das Programm unter **Hilfe → Info und Lizenzen...**.
+The samples of the default kit are licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) (AVL Drumkits, Glen MacArthur), see [resources/DefaultKit/LIESMICH.txt](resources/DefaultKit/LIESMICH.txt). The button icons come from [Lucide Icons](https://lucide.dev) (ISC License, some icons from Feather under MIT License), see [resources/Icons/LIESMICH.txt](resources/Icons/LIESMICH.txt). The program lists all third-party components and their licenses under **Help → About and licenses...**.
