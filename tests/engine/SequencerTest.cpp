@@ -747,11 +747,42 @@ TEST_F(SequencerSongTest, FBT03_ALoopOnTheFirstSampleOfABlockStartsTheNextPass)
     EXPECT_EQ(block.songSpans[0].songSample, -1); // less than a sample before the song start
 }
 
-TEST_F(SequencerSongTest, FBT03_ThePatternModeHasNoSpans)
+// ----- Backing track in the pattern mode (F-BT-10) ------------------------------------------------
+
+TEST_F(SequencerSongTest, FBT10_ThePatternModePlaysTheBackingAtItsSongBlockInALoop)
 {
+    sequencer.play({}); // "verse", in the song from bar 3 on
+    run(128);
+    EXPECT_EQ(spans, (std::vector<Span>{{0, 128, 2 * kBar}}));
+    spans.clear();
+    run(kBar - 128 - 64);
+    spans.clear();
+    run(128); // the pattern of one bar loops after 64 samples
+    EXPECT_EQ(spans, (std::vector<Span>{{kBar - 64, 64, 3 * kBar - 64}, {kBar, 64, 2 * kBar}}));
+}
+
+TEST_F(SequencerSongTest, FBT10_TheBackingFollowsThePatternPositionAndTheFirstBlock)
+{
+    setSong({{1, 0, kBarTicks}, {0, 2 * kBarTicks, kBarTicks}, {0, 4 * kBarTicks, kBarTicks}});
+    sequencer.setLoop(false);
+    sequencer.locate(kBarTicks / 4); // bar 1, beat 2 of the pattern
     sequencer.play({});
     run(128);
+    EXPECT_EQ(spans, (std::vector<Span>{{0, 128, 2 * kBar + kBar / 4}}));
+    spans.clear();
+    run(3 * kBar / 4 - 128 - 64);
+    spans.clear();
+    run(128); // without loop the spans end with the pass
+    EXPECT_EQ(spans, (std::vector<Span>{{3 * kBar / 4 - 64, 64, 3 * kBar - 64}}));
+}
+
+TEST_F(SequencerSongTest, FBT10_APatternWithoutSongBlockPlaysNoBacking)
+{
+    setSong({{1, 0, kBarTicks}});
+    sequencer.play({.patternIndex = 0});
+    run(128);
     EXPECT_TRUE(spans.empty());
+    EXPECT_EQ(notes.size(), 1U); // the pattern itself plays
 }
 
 TEST_F(SequencerSongTest, FBT03_TheBackingTrackExtendsTheSongToWholeBars)

@@ -141,11 +141,21 @@ TEST_F(PlaybackRendererBackingTest, FBT03_TheTrackLengthExtendsTheSong)
     EXPECT_EQ(sequencer.state(), TransportState::playing);
 }
 
-TEST_F(PlaybackRendererBackingTest, FBT03_ThePatternModeAndTheStoppedTransportAreSilent)
+TEST_F(PlaybackRendererBackingTest, FBT03_TheStoppedTransportIsSilent)
 {
     EXPECT_EQ(render(64).left[10], 0.0F);
+}
+
+TEST_F(PlaybackRendererBackingTest, FBT10_ThePatternModePlaysTheBackingAtItsSongBlock)
+{
     sequencer.play({});
-    EXPECT_EQ(render(64).left[10], 0.0F);
+    EXPECT_EQ(render(64).left[10], 0.0F); // the pattern is not in the song
+    sequencer.stop();
+    render(64);
+    sequencer.rewind();
+    snapshot.song = {{0, 2, 3840}}; // 50 samples at 120 BPM
+    sequencer.play({});
+    EXPECT_FLOAT_EQ(render(64).left[0], 0.5F * 61.0F);
 }
 
 TEST_F(PlaybackRendererBackingTest, FBT03_MonoOutputAndNoOutputs)

@@ -8,6 +8,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <utility>
 
@@ -35,7 +36,8 @@ struct MetronomeClick
 };
 
 /// Samples of a block that play the song continuously, for the backing track (F-BT-03). A block has a
-/// second span where the song loops back to its start.
+/// second span where the song loops back to its start, or in the pattern mode where the pattern loops
+/// back to the start of its song block (F-BT-10).
 struct SongSpan
 {
     int sampleOffset = 0;
@@ -55,7 +57,7 @@ struct SequencerBlock
     std::size_t numNotes = 0;
     std::array<MetronomeClick, kMaxClicks> clicks{};
     std::size_t numClicks = 0;
-    std::array<SongSpan, kMaxSongSpans> songSpans{}; ///< only in the song mode
+    std::array<SongSpan, kMaxSongSpans> songSpans{};
     std::size_t numSongSpans = 0;
 };
 
@@ -83,7 +85,8 @@ struct PlayRequest
 /// blocks of the snapshot one after another instead of one pattern (F-TR-05); loop, position and stop
 /// at the end then refer to the whole song, which lasts at least until the backing track ends. A
 /// recording in the song mode (F-BT-07) neither loops nor stops at the song end: it runs until Stop, and
-/// its hits keep their song tick.
+/// its hits keep their song tick. In the pattern mode the backing track plays at the song position of the
+/// first song block of the pattern plus the pattern position; without such a block it is silent (F-BT-10).
 ///
 /// The GUI thread sends play, stop and rewind as commands through a lock-free queue and sets the
 /// options through atomics; it reads the state and position back through atomics, 30 times a second
@@ -162,6 +165,7 @@ private:
         const ProjectSnapshot* snapshot = nullptr;
         const PatternSnapshot* pattern = nullptr; ///< pattern mode only
         bool song = false;
+        std::optional<std::int64_t> songOffset; ///< song tick of the start of each pass, none: no backing
         std::int64_t length = 0;
         std::int64_t barTicks = 0;
         std::int64_t beatTicks = 0;
@@ -194,7 +198,10 @@ private:
                         std::pair<std::int64_t, std::int64_t> range,
                         int numSamples,
                         SequencerBlock& block) const noexcept;
-    void scheduleSongSpans(const Timeline& timeline, int numSamples, SequencerBlock& block) const noexcept;
+    void scheduleSongSpans(const Timeline& timeline,
+                           std::int64_t songOffset,
+                           int numSamples,
+                           SequencerBlock& block) const noexcept;
     [[nodiscard]] std::int64_t songLength(const ProjectSnapshot& snapshot,
                                           std::int64_t barTicks) const noexcept;
     void advance(const Timeline& timeline, int numSamples) noexcept;

@@ -155,11 +155,17 @@ Sequencer::Timeline Sequencer::timelineOf(const ProjectSnapshot& snapshot) const
     timeline.sixteenthTicks = snapshot.ticksPerQuarter / kSixteenthsPerQuarter;
     timeline.length = timeline.barTicks;
     if (song_)
+    {
         timeline.length = take_ != 0 ? kEndlessTicks : songLength(snapshot, timeline.barTicks);
+        timeline.songOffset = 0;
+    }
     else if (patternIndex_ >= 0 && static_cast<std::size_t>(patternIndex_) < snapshot.patterns.size())
     {
         timeline.pattern = &snapshot.patterns[static_cast<std::size_t>(patternIndex_)];
         timeline.length = std::max(timeline.pattern->lengthTicks, timeline.barTicks);
+        const auto block = std::ranges::find(snapshot.song, patternIndex_, &SongEntrySnapshot::patternIndex);
+        if (block != snapshot.song.end())
+            timeline.songOffset = block->startTick;
     }
     return timeline;
 }
@@ -243,8 +249,8 @@ void Sequencer::schedule(const Timeline& timeline, int numSamples, SequencerBloc
                           static_cast<std::int64_t>(std::ceil(tickAt(numSamples))) + 1};
     scheduleNotes(timeline, range, numSamples, block);
     scheduleClicks(timeline, range, numSamples, block);
-    if (timeline.song)
-        scheduleSongSpans(timeline, numSamples, block);
+    if (timeline.songOffset.has_value())
+        scheduleSongSpans(timeline, *timeline.songOffset, numSamples, block);
 }
 
 void Sequencer::scheduleNotes(const Timeline& timeline,
@@ -322,6 +328,7 @@ void Sequencer::scheduleClicks(const Timeline& timeline,
 }
 
 void Sequencer::scheduleSongSpans(const Timeline& timeline,
+                                  std::int64_t songOffset,
                                   int numSamples,
                                   SequencerBlock& block) const noexcept
 {
@@ -341,7 +348,7 @@ void Sequencer::scheduleSongSpans(const Timeline& timeline,
         if (to > from)
         {
             const auto anchorSample = static_cast<std::int64_t>(
-                std::floor((anchorTick_ - static_cast<double>(passStart)) * samplesPerTick_));
+                std::floor((anchorTick_ - static_cast<double>(passStart - songOffset)) * samplesPerTick_));
             block.songSpans.at(block.numSongSpans++) = {static_cast<int>(from),
                                                         static_cast<int>(to - from),
                                                         anchorSample + samplesSinceAnchor_ + from};
