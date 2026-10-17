@@ -2,6 +2,8 @@
 
 Drum Programmer is a desktop application for programming drum patterns. You play beats in live on your computer keyboard or a MIDI controller, edit them in a piano roll, arrange them into a song, play along with a backing track and export the result as a MIDI file. It is built with JUCE/C++ and runs on Linux (ALSA/JACK) and Windows (ASIO/WASAPI).
 
+![Main window of Drum Programmer with song arrangement, backing track and piano roll](docs/MainWindow.png)
+
 ## Features
 
 - **Live input:** play drums on the computer keyboard or on MIDI hardware with low latency (target: 5 ms round trip with a suitable audio interface). Keys are mapped by physical position, so the layout is the same on QWERTY and QWERTZ keyboards, and can be changed freely.
