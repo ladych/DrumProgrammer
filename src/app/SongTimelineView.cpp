@@ -402,8 +402,7 @@ void SongTimelineView::paintTrackLabels(juce::Graphics& g) const
 
 void SongTimelineView::mouseDown(const juce::MouseEvent& event)
 {
-    // Click on the ruler: the song (F-BT-07) or in the pattern mode the backing track (F-BT-10) continues
-    // from this bar.
+    // Click on the ruler: the song continues from this bar (F-BT-07).
     if (!rulerArea_.contains(event.getPosition()))
         return;
     const int bar = geometry_.barAt(event.position.x - static_cast<float>(rulerArea_.getX()));

@@ -27,8 +27,7 @@ enum class PlayMode : std::uint8_t
 /// Logic of the transport bar (F-TR-01, 02, 04, 07 to 09), of the recording into the active pattern
 /// (F-IN-07 to 10) and of the recording to the backing track in the song mode (F-BT-07, F-BT-08). It sends
 /// commands to the sequencer, and its tick() takes the recorded hits from the audio thread and writes
-/// them into the model through the TakeRecorder or the SongTakeRecorder. It keeps the song mark: the song
-/// position the pattern mode plays the backing track from (F-BT-10). GUI thread only.
+/// them into the model through the TakeRecorder or the SongTakeRecorder. GUI thread only.
 class TransportPresenter final : public ITransportControl
 {
 public:
@@ -48,9 +47,8 @@ public:
     void togglePlay() override;
     /// Ignored while recording in the song mode, so the take keeps its bars.
     void rewind();
-    /// Click on the song timeline: moves the song mark to the tick, also while playing. In the song mode
-    /// the song continues there (F-BT-07), in the pattern mode the backing track (F-BT-10). Ignored while
-    /// recording.
+    /// Click on the song timeline: moves the song position to the tick, also while playing, and switches
+    /// to the song mode (F-BT-07). Ignored while recording.
     void locate(std::int64_t songTick);
     /// Called with the pattern index of each take recorded in the song mode.
     void setOnSongTake(std::function<void(int)> onSongTake) { onSongTake_ = std::move(onSongTake); }
@@ -89,9 +87,8 @@ public:
     void setActivePattern(int patternIndex);
     [[nodiscard]] int activePattern() const noexcept { return activePattern_; }
 
-    /// Switching restarts a running playback in the other mode: the song from the song mark, the pattern
-    /// from its start. Switching to the pattern mode moves the song mark to the bar of the song position
-    /// (F-BT-10). A running recording keeps the mode until Stop.
+    /// Switching restarts a running playback from the start in the other mode. A running recording keeps
+    /// the mode until Stop.
     void setPlayMode(PlayMode mode);
     [[nodiscard]] PlayMode playMode() const noexcept { return playMode_; }
 
@@ -101,16 +98,14 @@ public:
     /// Tick of the playback cursor in the active pattern, nothing while stopped (F-PR-11). In the song
     /// mode only while a block of the active pattern plays.
     [[nodiscard]] std::optional<std::int64_t> playheadTick() const;
-    /// Tick of the playback cursor in the song, also while stopped (F-PR-11). In the pattern mode the song
-    /// mark plus the pattern position: where the backing track plays (F-BT-10).
-    [[nodiscard]] std::int64_t songPlayheadTick() const;
+    /// Tick of the playback cursor in the song, also while stopped; nothing in the pattern mode (F-PR-11).
+    [[nodiscard]] std::optional<std::int64_t> songPlayheadTick() const;
 
     /// Call from the GUI timer: writes recorded hits into the pattern and ends a finished recording.
     void tick();
 
 private:
     void restart();
-    void setSongMark(std::int64_t songTick);
     void writeRecordedHits();
     void endTake();
     void endSongTake();
@@ -133,7 +128,6 @@ private:
     double recordOffsetMs_ = 0.0;
     int activePattern_ = 0;
     PlayMode playMode_ = PlayMode::pattern;
-    std::int64_t songMark_ = 0;
     std::uint32_t nextTake_ = 1;
     std::uint32_t take_ = 0; ///< recording that was started, 0 if none
     bool takeStarted_ = false;
