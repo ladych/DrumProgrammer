@@ -198,7 +198,10 @@ private:
                         std::pair<std::int64_t, std::int64_t> range,
                         int numSamples,
                         SequencerBlock& block) const noexcept;
-    void scheduleSongSpans(const Timeline& timeline, int numSamples, SequencerBlock& block) const noexcept;
+    void scheduleSongSpans(const Timeline& timeline,
+                           std::int64_t songOffset,
+                           int numSamples,
+                           SequencerBlock& block) const noexcept;
     [[nodiscard]] std::int64_t songLength(const ProjectSnapshot& snapshot,
                                           std::int64_t barTicks) const noexcept;
     void advance(const Timeline& timeline, int numSamples) noexcept;

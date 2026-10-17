@@ -249,8 +249,8 @@ void Sequencer::schedule(const Timeline& timeline, int numSamples, SequencerBloc
                           static_cast<std::int64_t>(std::ceil(tickAt(numSamples))) + 1};
     scheduleNotes(timeline, range, numSamples, block);
     scheduleClicks(timeline, range, numSamples, block);
-    if (timeline.songOffset)
-        scheduleSongSpans(timeline, numSamples, block);
+    if (timeline.songOffset.has_value())
+        scheduleSongSpans(timeline, *timeline.songOffset, numSamples, block);
 }
 
 void Sequencer::scheduleNotes(const Timeline& timeline,
@@ -328,6 +328,7 @@ void Sequencer::scheduleClicks(const Timeline& timeline,
 }
 
 void Sequencer::scheduleSongSpans(const Timeline& timeline,
+                                  std::int64_t songOffset,
                                   int numSamples,
                                   SequencerBlock& block) const noexcept
 {
@@ -346,8 +347,8 @@ void Sequencer::scheduleSongSpans(const Timeline& timeline,
             endsInBlock ? std::clamp<std::int64_t>(sampleOffsetOf(passStop), from, numSamples) : numSamples;
         if (to > from)
         {
-            const auto anchorSample = static_cast<std::int64_t>(std::floor(
-                (anchorTick_ - static_cast<double>(passStart - *timeline.songOffset)) * samplesPerTick_));
+            const auto anchorSample = static_cast<std::int64_t>(
+                std::floor((anchorTick_ - static_cast<double>(passStart - songOffset)) * samplesPerTick_));
             block.songSpans.at(block.numSongSpans++) = {static_cast<int>(from),
                                                         static_cast<int>(to - from),
                                                         anchorSample + samplesSinceAnchor_ + from};
