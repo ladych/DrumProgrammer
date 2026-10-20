@@ -44,7 +44,3 @@ jobs:
         run: flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest packaging/flatpak/io.github.ladych.DrumProgrammer.yml
       - name: Lint build
         run: flatpak run --command=flatpak-builder-lint org.flatpak.Builder repo repo
-      - name: Show JACK libraries of the runtime
-        run: |
-          flatpak run --command=sh org.freedesktop.Sdk//26.08 -c \
-            'ldconfig -p | grep -i jack; find /usr/lib -name "libjack*"; ls /usr/lib/*/pipewire-0.3' || true
