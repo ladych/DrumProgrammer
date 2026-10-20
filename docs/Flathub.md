@@ -37,7 +37,7 @@ flatpak run io.github.ladych.DrumProgrammer
 
 Das macht der Inhaber des GitHub-Kontos `ladych` selbst, weil die Einreichung eine Veröffentlichung ist und Flathub den Antragsteller als Betreuer einträgt.
 
-1. Release mit den Flatpak-Dateien erstellen (siehe [Release-Test.md](Release-Test.md)), z. B. `v1.0.1`. Der Screenshot in der Metainfo verweist auf `docs/MainWindow.png` in genau diesem Tag; bei einer neuen Version die URL und den Eintrag unter `<releases>` anpassen.
+1. Release mit den Flatpak-Dateien erstellen (siehe [Release-Test.md](Release-Test.md)), z. B. `v1.0.1`. Der Screenshot in der Metainfo verweist auf `docs/MainWindow.png` im Branch `main`; Flathub kopiert ihn beim Bau auf seine Server.
 2. Auf GitHub [flathub/flathub](https://github.com/flathub/flathub) forken, dabei „Copy the master branch only" abwählen.
 3. Im Fork vom Branch `new-pr` einen eigenen Branch anlegen und dort die Flathub-Fassung des Manifests ablegen:
    ```sh

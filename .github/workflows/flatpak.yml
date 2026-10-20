@@ -33,6 +33,8 @@ jobs:
           manifest-path: packaging/flatpak/io.github.ladych.DrumProgrammer.yml
           bundle: DrumProgrammer.flatpak
           upload-artifact: true
+          # As on Flathub: the screenshots are copied into the repository, the linter checks for that.
+          mirror-screenshots-url: https://dl.flathub.org/media
           cache-key: flatpak-builder-${{ github.sha }}
       - name: Install the Flathub linter
         run: |

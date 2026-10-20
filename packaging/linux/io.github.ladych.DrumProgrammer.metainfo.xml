@@ -26,21 +26,19 @@
     </p>
     <ul>
       <li>Live input with low latency, recording with metronome, count-in and overdub</li>
+      <li xml:lang="de">Live-Eingabe mit geringer Latenz, Aufnahme mit Metronom, Einzähler und Overdub</li>
       <li>Piano roll with velocity editing, grid snapping and triplets</li>
+      <li xml:lang="de">Piano-Roll mit Velocity-Bearbeitung, Raster und Triolen</li>
       <li>Song arrangement from reusable patterns</li>
+      <li xml:lang="de">Song-Arrangement aus wiederverwendbaren Patterns</li>
       <li>Backing track with waveform display</li>
+      <li xml:lang="de">Backing-Track mit Wellenform-Anzeige</li>
       <li>MIDI import and export of patterns and whole songs</li>
+      <li xml:lang="de">MIDI-Import und -Export einzelner Patterns und ganzer Songs</li>
       <li>General MIDI drum kit with a built-in default kit, own samples possible</li>
+      <li xml:lang="de">General-MIDI-Kit mit eingebautem Standard-Kit, eigene Samples möglich</li>
       <li>ALSA, PipeWire and JACK audio, English and German user interface</li>
-    </ul>
-    <ul xml:lang="de">
-      <li>Live-Eingabe mit geringer Latenz, Aufnahme mit Metronom, Einzähler und Overdub</li>
-      <li>Piano-Roll mit Velocity-Bearbeitung, Raster und Triolen</li>
-      <li>Song-Arrangement aus wiederverwendbaren Patterns</li>
-      <li>Backing-Track mit Wellenform-Anzeige</li>
-      <li>MIDI-Import und -Export einzelner Patterns und ganzer Songs</li>
-      <li>General-MIDI-Kit mit eingebautem Standard-Kit, eigene Samples möglich</li>
-      <li>Audio über ALSA, PipeWire und JACK, Oberfläche auf Englisch und Deutsch</li>
+      <li xml:lang="de">Audio über ALSA, PipeWire und JACK, Oberfläche auf Englisch und Deutsch</li>
     </ul>
   </description>
 
@@ -53,7 +51,7 @@
   <screenshots>
     <screenshot type="default">
       <caption>Song arrangement, backing track and piano roll</caption>
-      <image>https://raw.githubusercontent.com/ladych/DrumProgrammer/v1.0.1/docs/MainWindow.png</image>
+      <image>https://raw.githubusercontent.com/ladych/DrumProgrammer/main/docs/MainWindow.png</image>
     </screenshot>
   </screenshots>
 
