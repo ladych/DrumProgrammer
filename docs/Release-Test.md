@@ -35,9 +35,9 @@ Die automatische Sicherung liegt im Einstellungsordner (`~/.config/DrumProgramme
 
 ## Release erstellen
 
-1. Die Version steht in `CMakeLists.txt` (`project(DrumProgrammer VERSION 1.0.0 …)`).
+1. Die Version steht in `CMakeLists.txt` (`project(DrumProgrammer VERSION 1.0.0 …)`); jede Version bekommt außerdem einen `<release>`-Eintrag in `packaging/linux/io.github.ladych.DrumProgrammer.metainfo.xml`.
 2. Tag setzen und pushen: `git tag v1.0.0 && git push origin v1.0.0`.
 3. Der Workflow „Release" baut das AppImage (auf Ubuntu 22.04, läuft also auch auf älteren Distributionen wie Linux Mint 21) und den Windows-Installer (Inno Setup) und veröffentlicht beide als GitHub-Release `v1.0.0`. Passt der Tag nicht zur Version in `CMakeLists.txt`, bricht er ab. Gibt es das Release schon (z. B. auf GitHub von Hand angelegt), hängt er die Pakete daran an.
 4. Pakete nachträglich an ein bestehendes Release hängen: unter „Actions" → „Release" → „Run workflow" den Branch `main` wählen und bei „Release tag" z. B. `v1.0.0` eintragen. Der Lauf baut `main` und ersetzt gleichnamige Dateien am Release.
 
-Pull Requests, die die Pakete ändern (`packaging/`, `tools/make-appimage.sh`, `resources/AppIcon/`, der Workflow selbst), bauen beide Pakete nur; sie liegen dann unter „Artifacts" des Laufs. Lokal entsteht das AppImage aus einem Release-Build mit `tools/make-appimage.sh build`.
+Pull Requests, die die Pakete ändern (`packaging/`, `tools/make-appimage.sh`, `resources/AppIcon/`, der Workflow selbst), bauen beide Pakete nur; sie liegen dann unter „Artifacts" des Laufs. Lokal entsteht das AppImage aus einem Release-Build mit `tools/make-appimage.sh build`. Das Flatpak baut der Workflow „Flatpak", die Einreichung bei Flathub beschreibt [Flathub.md](Flathub.md).
