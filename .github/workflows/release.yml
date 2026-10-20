@@ -2,8 +2,10 @@ name: Release
 
 # Release packages (AP11): an AppImage for Linux and an installer for Windows.
 # A tag v<version> (e.g. v1.0.0) builds both and publishes them as a GitHub release; the version in
-# CMakeLists.txt has to match the tag. Pull requests that change the packaging only build them, so they
-# can be tried from the workflow's artifacts.
+# CMakeLists.txt has to match the tag. If the release already exists (e.g. created on GitHub by hand), the
+# packages are added to it. Started by hand with a tag, the workflow builds the selected branch and adds the
+# packages to that tag's release. Pull requests that change the packaging only build them, so they can be
+# tried from the workflow's artifacts.
 
 on:
   push:
@@ -15,6 +17,11 @@ on:
       - tools/make-appimage.sh
       - resources/AppIcon/**
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag the packages are added to, e.g. v1.0.0 (empty: only build them)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -80,18 +87,20 @@ jobs:
 
   publish:
     name: GitHub release
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.tag != ''
     needs: [appimage, windows-installer]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v5
       - name: Check the version
         run: |
           version="$(sed -n 's/^project(DrumProgrammer VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)"
-          if [[ "v$version" != "$GITHUB_REF_NAME" ]]; then
-            echo "tag $GITHUB_REF_NAME does not match version $version in CMakeLists.txt" >&2
+          if [[ "v$version" != "$TAG" ]]; then
+            echo "tag $TAG does not match version $version in CMakeLists.txt" >&2
             exit 1
           fi
       - uses: actions/download-artifact@v4
@@ -101,4 +110,9 @@ jobs:
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/* --title "Drum Programmer ${GITHUB_REF_NAME#v}" --generate-notes
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --verify-tag --title "Drum Programmer ${TAG#v}" --generate-notes
+          fi
