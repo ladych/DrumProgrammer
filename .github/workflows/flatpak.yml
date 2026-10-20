@@ -35,7 +35,9 @@ jobs:
           upload-artifact: true
           cache-key: flatpak-builder-${{ github.sha }}
       - name: Install the Flathub linter
-        run: flatpak install -y --noninteractive --user flathub org.flatpak.Builder
+        run: |
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install -y --noninteractive --user flathub org.flatpak.Builder
       - name: Lint manifest
         run: flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest packaging/flatpak/io.github.ladych.DrumProgrammer.yml
       - name: Lint build
