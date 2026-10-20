@@ -1,5 +1,6 @@
 #include "ui/DocumentController.h"
 #include "io/MockProjectRepository.h"
+#include "io/Utf8Path.h"
 #include "model/FakeIdGenerator.h"
 #include "model/Project.h"
 #include "model/ProjectFactory.h"
@@ -285,6 +286,40 @@ TEST_F(DocumentControllerTest, FPJ04_OpenAsksForUnsavedChangesFirst)
     EXPECT_EQ(view.askedToSave.size(), 1U);
 }
 
+TEST_F(DocumentControllerTest, FPJ02_OpensAFileGivenToTheProgram)
+{
+    EXPECT_CALL(repository, load(rockFile)).WillOnce(Return(loadableProject("Rock-Demo", 97.0)));
+
+    controller.open(rockFile);
+
+    EXPECT_DOUBLE_EQ(project.bpm(), 97.0);
+    EXPECT_EQ(controller.currentFile(), rockFile);
+}
+
+TEST_F(DocumentControllerTest, FPJ04_AFileGivenToTheProgramAsksForUnsavedChangesFirst)
+{
+    makeChange();
+    view.saveChangesAnswer = SaveChangesChoice::cancel;
+    EXPECT_CALL(repository, load(_)).Times(0);
+
+    controller.open(rockFile);
+
+    EXPECT_EQ(view.askedToSave.size(), 1U);
+}
+
+TEST_F(DocumentControllerTest, FPJ02_FindsTheProjectFileAmongTheProgramArguments)
+{
+    EXPECT_EQ(DocumentController::projectFileIn({}), std::nullopt);
+    EXPECT_EQ(DocumentController::projectFileIn({"--verbose", "song.mid", "x", ".dpp", "\"half"}),
+              std::nullopt);
+    EXPECT_EQ(DocumentController::projectFileIn({"--verbose", "/home/alex/Mein Song.dpp", "b.dpp"}),
+              std::optional{io::pathFromUtf8("/home/alex/Mein Song.dpp")});
+    EXPECT_EQ(DocumentController::projectFileIn({"C:\\Songs\\ROCK.DPP"}),
+              std::optional{io::pathFromUtf8("C:\\Songs\\ROCK.DPP")});
+    EXPECT_EQ(DocumentController::projectFileIn({"\"/home/alex/Ümlaut.dpp\""}),
+              std::optional{io::pathFromUtf8("/home/alex/Ümlaut.dpp")});
+}
+
 TEST_F(DocumentControllerTest, FPJ02_FailedOpenKeepsTheCurrentProject)
 {
     project.setBpm(90.0);
@@ -426,6 +461,57 @@ TEST_F(DocumentControllerTest, FPJ05_UndoCountsAsUnsavedChange)
     controller.undo();
 
     EXPECT_TRUE(controller.hasUnsavedChanges());
+}
+
+// ----- Automatic backup (Q-10) --------------------------------------------------------------------
+
+TEST_F(DocumentControllerTest, Q10_ReportsWhenNoChangesAreUnsavedAnyMore)
+{
+    int calls = 0;
+    controller.setOnNoUnsavedChanges([&] { ++calls; });
+    makeChange();
+    EXPECT_EQ(calls, 0);
+
+    saveAs(rockFile);
+    EXPECT_EQ(calls, 1);
+
+    controller.newProject();
+    EXPECT_EQ(calls, 2);
+}
+
+TEST_F(DocumentControllerTest, Q10_RestoredBackupKeepsItsChangesUnsaved)
+{
+    int cleanCalls = 0;
+    controller.setOnNoUnsavedChanges([&] { ++cleanCalls; });
+
+    controller.restoreBackup(loadableProject("Rock", 95.0), rockFile);
+
+    EXPECT_DOUBLE_EQ(project.bpm(), 95.0);
+    EXPECT_EQ(controller.currentFile(), rockFile);
+    EXPECT_TRUE(controller.hasUnsavedChanges());
+    EXPECT_EQ(view.windowTitle, "*Rock-Demo – Drum Programmer");
+    EXPECT_FALSE(controller.canUndo());
+    EXPECT_EQ(cleanCalls, 0);
+    EXPECT_TRUE(view.messages.empty());
+}
+
+TEST_F(DocumentControllerTest, Q10_RestoredBackupOfANewProjectHasNoFile)
+{
+    controller.restoreBackup(loadableProject("Rock", 95.0), std::nullopt);
+
+    EXPECT_FALSE(controller.currentFile().has_value());
+    EXPECT_EQ(view.windowTitle, "*Rock – Drum Programmer");
+}
+
+TEST_F(DocumentControllerTest, Q10_RestoredBackupReportsMissingSamples)
+{
+    auto backup = loadableProject("Rock", 95.0);
+    backup.missingSamples = {{"Kick", "/samples/kick.wav"}};
+
+    controller.restoreBackup(backup, std::nullopt);
+
+    ASSERT_EQ(view.messages.size(), 1U);
+    EXPECT_EQ(view.messages[0].title, "Fehlende Samples");
 }
 
 } // namespace

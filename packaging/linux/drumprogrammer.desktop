@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Drum Programmer
+GenericName=Drum Sequencer
+GenericName[de]=Schlagzeug-Sequencer
+Comment=Record drum patterns live, edit them in a piano roll and arrange them into songs
+Comment[de]=Schlagzeug-Patterns live einspielen, im Piano-Roll bearbeiten und zu Songs verketten
+Exec=drumprogrammer %f
+Icon=drumprogrammer
+Terminal=false
+Categories=AudioVideo;Audio;Midi;Sequencer;
+Keywords=drums;MIDI;sequencer;pattern;

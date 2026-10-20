@@ -8,6 +8,7 @@ add_executable(drumprog_tests
     engine/KitBuilderTest.cpp
     engine/KitDescriptionTest.cpp
     engine/KitPublisherTest.cpp
+    engine/LongRunTest.cpp
     engine/MetronomeTest.cpp
     engine/PlaybackRendererTest.cpp
     engine/SampleBufferTest.cpp
@@ -56,6 +57,7 @@ add_executable(drumprog_tests
     ui/ActivePatternTest.cpp
     ui/ActivityLedTest.cpp
     ui/AudioStatusTest.cpp
+    ui/AutosaveTest.cpp
     ui/BackingTrackPresenterTest.cpp
     ui/DocumentControllerTest.cpp
     ui/InputLedPresenterTest.cpp
@@ -99,4 +101,23 @@ find_package(Python3 COMPONENTS Interpreter)
 if(Python3_FOUND)
     add_test(NAME TranslationsComplete
              COMMAND Python3::Interpreter ${PROJECT_SOURCE_DIR}/tools/check-translations.py ${PROJECT_SOURCE_DIR})
+endif()
+
+# Performance measurements (Q-05, Q-07): timings only mean something in an optimised build without instrumentation,
+# so they are not built for the coverage and sanitizer builds and skip themselves in a debug build.
+if(NOT DRUMPROG_COVERAGE AND NOT DRUMPROG_SANITIZERS)
+    add_executable(drumprog_benchmarks benchmarks/RenderBenchmark.cpp)
+    target_link_libraries(drumprog_benchmarks PRIVATE drumprog_core GTest::gtest_main)
+    target_include_directories(drumprog_benchmarks PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    drumprog_enable_warnings(drumprog_benchmarks)
+    gtest_discover_tests(drumprog_benchmarks DISCOVERY_MODE PRE_TEST)
+
+    # Q-07 paints the program's own piano roll into an image; it needs no window or display.
+    if(DRUMPROG_BUILD_APP)
+        add_executable(drumprog_gui_benchmarks benchmarks/PianoRollBenchmark.cpp)
+        target_link_libraries(drumprog_gui_benchmarks PRIVATE drumprog_app GTest::gtest_main)
+        target_include_directories(drumprog_gui_benchmarks PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+        drumprog_enable_warnings(drumprog_gui_benchmarks)
+        gtest_discover_tests(drumprog_gui_benchmarks DISCOVERY_MODE PRE_TEST)
+    endif()
 endif()

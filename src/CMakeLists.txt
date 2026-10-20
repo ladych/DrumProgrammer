@@ -55,6 +55,7 @@ add_library(drumprog_core STATIC
     ui/ActivePattern.cpp
     ui/ActivityLed.cpp
     ui/AudioStatus.cpp
+    ui/Autosave.cpp
     ui/BackingTrackPresenter.cpp
     ui/DocumentController.cpp
     ui/InputLedPresenter.cpp
@@ -84,9 +85,9 @@ if(NOT DRUMPROG_BUILD_APP)
     return()
 endif()
 
-# Humble objects (E-03): JUCE glue without logic, listed in coverage-exclusions.txt.
+# Humble objects (E-03): JUCE glue without logic, listed in coverage-exclusions.txt. They form a library of
+# their own, so the program (app/Main.cpp) and the GUI benchmark (tests/benchmarks) share them.
 set(DRUMPROG_APP_SOURCES
-    app/Main.cpp
     app/AboutDialog.cpp
     app/AppComposition.cpp
     app/AudioDeviceSupervisor.cpp
@@ -121,18 +122,12 @@ else()
     list(APPEND DRUMPROG_APP_SOURCES app/NativeKeyboard_other.cpp)
 endif()
 
-juce_add_gui_app(DrumProgrammer
-    PRODUCT_NAME "Drum Programmer"
-    COMPANY_NAME "ladych"
-    VERSION ${PROJECT_VERSION}
-)
-
-target_sources(DrumProgrammer PRIVATE ${DRUMPROG_APP_SOURCES})
-drumprog_enable_warnings_for_sources(${DRUMPROG_APP_SOURCES})
-
-target_compile_definitions(DrumProgrammer PRIVATE
-    JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:DrumProgrammer,JUCE_PRODUCT_NAME>"
-    JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:DrumProgrammer,JUCE_VERSION>"
+add_library(drumprog_app STATIC ${DRUMPROG_APP_SOURCES})
+target_include_directories(drumprog_app PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+drumprog_enable_warnings(drumprog_app)
+target_compile_definitions(drumprog_app PUBLIC
+    JUCE_APPLICATION_NAME_STRING="Drum Programmer"
+    JUCE_APPLICATION_VERSION_STRING="${PROJECT_VERSION}"
 )
 
 # Default kit (io::DefaultKit): its samples and license text are built into the program.
@@ -141,10 +136,6 @@ juce_add_binary_data(DrumProgrammerDefaultKit
     HEADER_NAME DefaultKitData.h
     NAMESPACE DefaultKitData
     SOURCES ${DRUMPROG_DEFAULT_KIT_FILES})
-# Its generated header is included as a system header, so clang-tidy does not check it.
-target_link_libraries(DrumProgrammer PRIVATE $<LINK_ONLY:DrumProgrammerDefaultKit>)
-target_include_directories(DrumProgrammer SYSTEM PRIVATE
-    $<TARGET_PROPERTY:DrumProgrammerDefaultKit,INTERFACE_INCLUDE_DIRECTORIES>)
 
 # Button icons (app::IconButton): the SVG files of Lucide Icons, see resources/Icons/LIESMICH.txt.
 file(GLOB DRUMPROG_ICON_FILES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/resources/Icons/*.svg")
@@ -152,9 +143,6 @@ juce_add_binary_data(DrumProgrammerIcons
     HEADER_NAME IconData.h
     NAMESPACE IconData
     SOURCES ${DRUMPROG_ICON_FILES})
-target_link_libraries(DrumProgrammer PRIVATE $<LINK_ONLY:DrumProgrammerIcons>)
-target_include_directories(DrumProgrammer SYSTEM PRIVATE
-    $<TARGET_PROPERTY:DrumProgrammerIcons,INTERFACE_INCLUDE_DIRECTORIES>)
 
 # Translation files (AP15, i18n::LanguageCatalog): one file per language, see resources/Languages/de.txt.
 file(GLOB DRUMPROG_LANGUAGE_FILES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/resources/Languages/*.txt")
@@ -162,12 +150,26 @@ juce_add_binary_data(DrumProgrammerLanguages
     HEADER_NAME LanguageData.h
     NAMESPACE LanguageData
     SOURCES ${DRUMPROG_LANGUAGE_FILES})
-target_link_libraries(DrumProgrammer PRIVATE $<LINK_ONLY:DrumProgrammerLanguages>)
-target_include_directories(DrumProgrammer SYSTEM PRIVATE
-    $<TARGET_PROPERTY:DrumProgrammerLanguages,INTERFACE_INCLUDE_DIRECTORIES>)
+
+# The generated headers are included as system headers, so clang-tidy does not check them.
+foreach(data DrumProgrammerDefaultKit DrumProgrammerIcons DrumProgrammerLanguages)
+    target_link_libraries(drumprog_app PRIVATE $<LINK_ONLY:${data}>)
+    target_include_directories(drumprog_app SYSTEM PRIVATE $<TARGET_PROPERTY:${data},INTERFACE_INCLUDE_DIRECTORIES>)
+endforeach()
 
 # JUCE itself comes compiled from drumprog_juce through drumprog_core (cmake/DrumProgrammerJuce.cmake).
-target_link_libraries(DrumProgrammer PRIVATE drumprog_core)
+target_link_libraries(drumprog_app PUBLIC drumprog_core)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_libraries(DrumProgrammer PRIVATE X11::X11)
+    target_link_libraries(drumprog_app PUBLIC X11::X11)
 endif()
+
+juce_add_gui_app(DrumProgrammer
+    PRODUCT_NAME "Drum Programmer"
+    COMPANY_NAME "ladych"
+    VERSION ${PROJECT_VERSION}
+    # Drawn by tools/make-app-icon.py (AP11).
+    ICON_BIG "${PROJECT_SOURCE_DIR}/resources/AppIcon/DrumProgrammer.png"
+)
+target_sources(DrumProgrammer PRIVATE app/Main.cpp)
+drumprog_enable_warnings_for_sources(app/Main.cpp)
+target_link_libraries(DrumProgrammer PRIVATE drumprog_app)

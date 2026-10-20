@@ -32,6 +32,8 @@ public:
     virtual void chooseFileToOpen(FileChosenCallback onChosen) = 0;
     /// Reports std::nullopt if the user cancels.
     virtual void chooseFileToSave(const std::string& suggestedFileName, FileChosenCallback onChosen) = 0;
+    /// At program start, after a backup of unsaved changes was left behind (Q-10).
+    virtual void askToRestoreBackup(std::function<void(bool restore)> onChoice) = 0;
     virtual void showMessage(const std::string& title, const std::string& message) = 0;
 
 protected:

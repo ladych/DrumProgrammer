@@ -13,8 +13,17 @@ Drum Programmer is a desktop application for programming drum patterns. You play
 - **Backing track:** import a WAV file, see its waveform above the drum track and play along in sync. Each recording pass in song mode becomes a new pattern "Take n" on the drum track. Backing track and drums each have their own volume.
 - **MIDI import and export:** import a Standard MIDI File as a new pattern, export a single pattern or the whole song as a MIDI file for use in any DAW.
 - **Kits:** samples are assigned to slots following the General MIDI drum map (notes 35 to 59), each slot with its own pitch control. The kit is a program-wide setting; a project can carry its own kit if needed.
-- **Projects:** save and load projects as `.dpp` files with undo/redo for all edits. Samples and the backing track are referenced relative to the project file, so projects stay portable.
+- **Projects:** save and load projects as `.dpp` files with undo/redo for all edits. Samples and the backing track are referenced relative to the project file, so projects stay portable. Unsaved changes are backed up every five minutes and offered for restoring after a crash.
 - **Interface:** dark and light color scheme, English and German user interface.
+
+## Download
+
+The [releases](https://github.com/ladych/DrumProgrammer/releases) provide:
+
+- **Linux:** `DrumProgrammer-<version>-x86_64.AppImage`. Make it executable (`chmod +x`) and start it; a project file can be passed as an argument. It runs on distributions with glibc 2.35 or newer (e.g. Ubuntu 22.04, Linux Mint 21) and uses ALSA, or JACK if it is installed.
+- **Windows:** `DrumProgrammer-<version>-Setup.exe`, an installer for 64-bit Windows 10 and 11. It can associate `.dpp` files with the program. ASIO drivers are used if installed, otherwise WASAPI.
+
+How a release is made and checked is described in [docs/Release-Test.md](docs/Release-Test.md).
 
 ## Building
 

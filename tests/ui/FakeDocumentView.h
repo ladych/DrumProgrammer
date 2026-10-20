@@ -37,6 +37,12 @@ public:
         onChosen(fileToSave);
     }
 
+    void askToRestoreBackup(std::function<void(bool restore)> onChoice) override
+    {
+        ++askedToRestore;
+        onChoice(restoreAnswer);
+    }
+
     void showMessage(const std::string& title, const std::string& message) override
     {
         messages.push_back({title, message});
@@ -46,11 +52,13 @@ public:
     SaveChangesChoice saveChangesAnswer = SaveChangesChoice::cancel;
     std::optional<std::filesystem::path> fileToOpen;
     std::optional<std::filesystem::path> fileToSave;
+    bool restoreAnswer = false;
 
     // Recorded calls
     std::string windowTitle;
     std::vector<std::string> askedToSave;
     std::vector<std::string> suggestedSaveNames;
+    int askedToRestore = 0;
     std::vector<Message> messages;
 };
 

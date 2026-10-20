@@ -102,5 +102,27 @@ TEST_F(StdFileSystemTest, Q10_RenamingMissingFileFails)
     EXPECT_FALSE(fileSystem.rename(root / "missing.tmp", root / "rock.dpp"));
 }
 
+TEST_F(StdFileSystemTest, Q10_RemovesAFile)
+{
+    const auto file = root / "autosave.dpp";
+    ASSERT_TRUE(fileSystem.writeText(file, "backup"));
+
+    EXPECT_TRUE(fileSystem.remove(file));
+
+    EXPECT_FALSE(fs::exists(file));
+}
+
+TEST_F(StdFileSystemTest, Q10_RemovingAMissingFileSucceeds)
+{
+    EXPECT_TRUE(fileSystem.remove(root / "autosave.dpp"));
+}
+
+TEST_F(StdFileSystemTest, Q10_RemovingAFolderWithFilesFails)
+{
+    ASSERT_TRUE(fileSystem.writeText(root / "autosave.dpp", "backup"));
+
+    EXPECT_FALSE(fileSystem.remove(root));
+}
+
 } // namespace
 } // namespace drumprog::io

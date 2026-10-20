@@ -45,4 +45,11 @@ bool StdFileSystem::rename(const std::filesystem::path& from, const std::filesys
     return !error;
 }
 
+bool StdFileSystem::remove(const std::filesystem::path& file)
+{
+    std::error_code error;
+    std::filesystem::remove(file, error);
+    return !error;
+}
+
 } // namespace drumprog::io
