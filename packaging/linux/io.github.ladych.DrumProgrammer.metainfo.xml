@@ -3,14 +3,14 @@
 <component type="desktop-application">
   <id>io.github.ladych.DrumProgrammer</id>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>AGPL-3.0-only AND CC-BY-SA-3.0</project_license>
+  <project_license>AGPL-3.0-or-later AND CC-BY-SA-3.0</project_license>
 
   <name>Drum Programmer</name>
   <summary>Record drum patterns and arrange them into songs</summary>
   <summary xml:lang="de">Schlagzeug-Patterns einspielen und zu Songs verketten</summary>
 
   <developer id="io.github.ladych">
-    <name>ladych</name>
+    <name>Alexander Gornostaev</name>
   </developer>
 
   <description>

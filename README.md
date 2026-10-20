@@ -68,6 +68,6 @@ This program was created with [Claude](https://claude.ai) by Anthropic: requirem
 
 ## License
 
-GNU Affero General Public License v3.0, see [LICENSE](LICENSE). The license follows from the open source license of JUCE.
+GNU Affero General Public License v3.0 or (at your option) any later version (`AGPL-3.0-or-later`), see [LICENSE](LICENSE). The AGPLv3 follows from the open source license of JUCE.
 
 The samples of the default kit are licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) (AVL Drumkits, Glen MacArthur), see [resources/DefaultKit/LIESMICH.txt](resources/DefaultKit/LIESMICH.txt). The button icons come from [Lucide Icons](https://lucide.dev) (ISC License, some icons from Feather under MIT License), see [resources/Icons/LIESMICH.txt](resources/Icons/LIESMICH.txt). The program lists all third-party components and their licenses under **Help → About and licenses...**.

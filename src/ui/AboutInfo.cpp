@@ -125,8 +125,8 @@ AboutInfo makeAboutInfo(std::string_view version, bool withAsio)
     info.title = "Drum Programmer " + std::string{version};
     info.lines.push_back(i18n::tr("Program drum patterns, play them in and export them as MIDI."));
     info.lines.push_back(
-        i18n::tr("Free software under the GNU Affero General Public License v3.0, without any "
-                 "warranty. The source code is public."));
+        i18n::tr("Free software under the GNU Affero General Public License v3.0 or later, without "
+                 "any warranty. The source code is public."));
     info.lines.push_back(i18n::tr("Made with Claude (Anthropic) and Claude Code."));
     info.links.push_back({i18n::tr("Source code on GitHub"), "https://github.com/ladych/DrumProgrammer"});
     info.links.push_back({i18n::tr("License AGPLv3"), "https://www.gnu.org/licenses/agpl-3.0.html"});
