@@ -26,6 +26,7 @@ public:
                           std::function<void(ui::SaveChangesChoice)> onChoice) override;
     void chooseFileToOpen(ui::FileChosenCallback onChosen) override;
     void chooseFileToSave(const std::string& suggestedFileName, ui::FileChosenCallback onChosen) override;
+    void askToRestoreBackup(std::function<void(bool restore)> onChoice) override;
     void showMessage(const std::string& title, const std::string& message) override;
 
 private:

@@ -35,6 +35,7 @@
 #include "model/TakeRecorder.h"
 #include "model/UuidGenerator.h"
 #include "ui/ActivePattern.h"
+#include "ui/Autosave.h"
 #include "ui/BackingTrackPresenter.h"
 #include "ui/DocumentController.h"
 #include "ui/InputLedPresenter.h"
@@ -81,6 +82,8 @@ public:
     [[nodiscard]] MainMenu& mainMenu() { return mainMenu_; }
     /// Key listener for the main window: computer keyboard as drum trigger (F-IN-01).
     [[nodiscard]] juce::KeyListener& keyboardListener() { return keyboardListener_; }
+    /// Call once the main window is shown: offers a backup a crash left behind (Q-10).
+    void offerBackupRecovery() { autosave_.offerRecovery(); }
     /// Component the dialogs of the menu "Audio" are centred on.
     void setDialogParent(juce::Component* parent) { dialogParent_ = parent; }
 
@@ -88,7 +91,7 @@ private:
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
     /// The operating system switched between light and dark mode.
     void darkModeSettingChanged() override { themeSetting_.systemChanged(); }
-    /// Saves changes of the global kit.
+    /// Saves changes of the global kit, and the automatic backup of the project (Q-10).
     void timerCallback() override;
     void saveDeviceSettings();
     void updateSampleRate();
@@ -192,6 +195,7 @@ private:
     io::ProjectRepository projectRepository_;
     JuceDocumentView documentView_;
     ui::DocumentController documentController_;
+    ui::Autosave autosave_;
     juce::Component* dialogParent_ = nullptr;
     juce::Component::SafePointer<juce::DialogWindow> kitDialog_;
     MainMenu mainMenu_;

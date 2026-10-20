@@ -4,6 +4,8 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace drumprog::app
 {
@@ -75,6 +77,16 @@ public:
         composition_->setDialogParent(mainWindow_.get());
         composition_->documentView().setTitleSink([this](const juce::String& title)
                                                   { mainWindow_->setName(title); });
+        composition_->offerBackupRecovery();
+        openProjectFileIn(getCommandLineParameterArray());
+    }
+
+    // A .dpp file opened with the program while it runs, e.g. by a double-click: only one instance runs. JUCE
+    // passes the second start's command line on under Windows only; under Linux the second start just ends.
+    void anotherInstanceStarted(const juce::String& commandLine) override
+    {
+        openProjectFileIn(juce::StringArray::fromTokens(commandLine, true));
+        mainWindow_->toFront(true);
     }
 
     void shutdown() override
@@ -91,6 +103,16 @@ public:
     }
 
 private:
+    /// A project file given to the program (file manager, file association).
+    void openProjectFileIn(const juce::StringArray& arguments)
+    {
+        std::vector<std::string> utf8;
+        for (const auto& argument : arguments)
+            utf8.push_back(argument.toStdString());
+        if (const auto file = ui::DocumentController::projectFileIn(utf8))
+            composition_->documentController().open(*file);
+    }
+
     theme::LookAndFeel lookAndFeel_;
     std::unique_ptr<AppComposition> composition_;
     std::unique_ptr<MainWindow> mainWindow_;

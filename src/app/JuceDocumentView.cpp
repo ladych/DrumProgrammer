@@ -77,6 +77,20 @@ void JuceDocumentView::chooseFileToSave(const std::string& suggestedFileName, ui
                   std::move(onChosen));
 }
 
+void JuceDocumentView::askToRestoreBackup(std::function<void(bool restore)> onChoice)
+{
+    const auto options = juce::MessageBoxOptions::makeOptionsOkCancel(
+        juce::MessageBoxIconType::QuestionIcon,
+        i18n::trJuce("Restore unsaved changes"),
+        i18n::trJuce(
+            "Drum Programmer was not closed properly. Restore the unsaved changes from the automatic "
+            "backup?"),
+        i18n::trJuce("Restore"),
+        i18n::trJuce("Discard"));
+    juce::AlertWindow::showAsync(options,
+                                 [onChoice = std::move(onChoice)](int button) { onChoice(button == 1); });
+}
+
 void JuceDocumentView::showMessage(const std::string& title, const std::string& message)
 {
     juce::AlertWindow::showAsync(juce::MessageBoxOptions::makeOptionsOk(

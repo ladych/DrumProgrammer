@@ -4,6 +4,8 @@
 #include "io/Utf8Path.h"
 #include "model/Project.h"
 
+#include <algorithm>
+#include <cctype>
 #include <utility>
 
 namespace drumprog::ui
@@ -44,6 +46,29 @@ void DocumentController::open()
                         openFile(*file);
                 });
         });
+}
+
+void DocumentController::open(const std::filesystem::path& file)
+{
+    ifChangesSaved([this, file] { openFile(file); });
+}
+
+std::optional<std::filesystem::path>
+DocumentController::projectFileIn(const std::vector<std::string>& arguments)
+{
+    const std::string extension = kFileExtension;
+    for (auto argument : arguments)
+    {
+        if (argument.size() >= 2 && argument.front() == '"' && argument.back() == '"')
+            argument = argument.substr(1, argument.size() - 2);
+        if (argument.size() <= extension.size())
+            continue;
+        auto ending = argument.substr(argument.size() - extension.size());
+        std::ranges::transform(ending, ending.begin(), [](unsigned char c) { return std::tolower(c); });
+        if (ending == extension)
+            return io::pathFromUtf8(argument);
+    }
+    return std::nullopt;
 }
 
 void DocumentController::save(std::function<void(bool saved)> onDone)
@@ -139,8 +164,20 @@ void DocumentController::openFile(const std::filesystem::path& file)
         return;
     }
     replaceProject(result.project, file);
-    if (!result.missingSamples.empty())
-        view_.showMessage(i18n::tr("Missing samples"), missingSamplesMessage(result.missingSamples));
+    reportMissingSamples(result.missingSamples);
+}
+
+void DocumentController::restoreBackup(const io::LoadResult& backup,
+                                       std::optional<std::filesystem::path> file)
+{
+    replaceProject(backup.project, std::move(file), true);
+    reportMissingSamples(backup.missingSamples);
+}
+
+void DocumentController::reportMissingSamples(const std::vector<io::MissingSample>& missing)
+{
+    if (!missing.empty())
+        view_.showMessage(i18n::tr("Missing samples"), missingSamplesMessage(missing));
 }
 
 bool DocumentController::saveTo(const std::filesystem::path& file)
@@ -157,18 +194,21 @@ bool DocumentController::saveTo(const std::filesystem::path& file)
 }
 
 void DocumentController::replaceProject(const juce::ValueTree& newProject,
-                                        std::optional<std::filesystem::path> file)
+                                        std::optional<std::filesystem::path> file,
+                                        bool unsavedChanges)
 {
     project_.copyPropertiesAndChildrenFrom(newProject, nullptr);
     undoManager_.clearUndoHistory();
     currentFile_ = std::move(file);
-    setUnsavedChanges(false);
+    setUnsavedChanges(unsavedChanges);
 }
 
 void DocumentController::setUnsavedChanges(bool unsavedChanges)
 {
     unsavedChanges_ = unsavedChanges;
     view_.setWindowTitle(windowTitle());
+    if (!unsavedChanges)
+        onNoUnsavedChanges_();
 }
 
 std::string DocumentController::displayName() const

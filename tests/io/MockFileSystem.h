@@ -18,6 +18,7 @@ public:
                 rename,
                 (const std::filesystem::path& from, const std::filesystem::path& to),
                 (override));
+    MOCK_METHOD(bool, remove, (const std::filesystem::path& file), (override));
 };
 
 } // namespace drumprog::io

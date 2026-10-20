@@ -138,6 +138,12 @@ AppComposition::AppComposition(theme::LookAndFeel& lookAndFeel)
           project_, globalKit_.tree(), undoManager_, idGenerator_, activePattern_, fileSystem_, midiDialogs_),
       projectRepository_(fileSystem_),
       documentController_(project_, undoManager_, projectRepository_, projectFactory_, documentView_),
+      autosave_(project_,
+                documentController_,
+                projectRepository_,
+                fileSystem_,
+                {.backup = settingsFile("autosave.dpp"), .source = settingsFile("autosave-source.txt")},
+                documentView_),
       mainMenu_(
           documentController_,
           [] { juce::JUCEApplication::getInstance()->systemRequestedQuit(); },
@@ -193,6 +199,8 @@ AppComposition::~AppComposition()
     // The kit dialog refers to the presenters.
     delete kitDialog_.getComponent();
     globalKit_.saveIfChanged();
+    // The program ends normally: the user saved or discarded the changes.
+    autosave_.discard();
     deviceManager_.removeChangeListener(this);
     deviceManager_.removeMidiInputDeviceCallback({}, &midiInputCallback_);
     deviceManager_.removeAudioCallback(&audioCallback_);
@@ -230,6 +238,7 @@ void AppComposition::changeListenerCallback(juce::ChangeBroadcaster* /*source*/)
 void AppComposition::timerCallback()
 {
     globalKit_.saveIfChanged();
+    autosave_.tick(juce::Time::getMillisecondCounterHiRes() / 1000.0);
 }
 
 void AppComposition::saveDeviceSettings()
