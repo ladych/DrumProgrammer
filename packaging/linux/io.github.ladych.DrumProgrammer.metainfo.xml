@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metadata for software centers and Flathub (AP24). -->
+<component type="desktop-application">
+  <id>io.github.ladych.DrumProgrammer</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>AGPL-3.0-only AND CC-BY-SA-3.0</project_license>
+
+  <name>Drum Programmer</name>
+  <summary>Record drum patterns and arrange them into songs</summary>
+  <summary xml:lang="de">Schlagzeug-Patterns einspielen und zu Songs verketten</summary>
+
+  <developer id="io.github.ladych">
+    <name>ladych</name>
+  </developer>
+
+  <description>
+    <p>
+      Drum Programmer is a tool for programming drum tracks. Play beats in live on the computer keyboard
+      or a MIDI controller, edit them in a piano roll, arrange them into a song, play along with a
+      backing track and export the result as a MIDI file for any DAW.
+    </p>
+    <p xml:lang="de">
+      Drum Programmer ist ein Werkzeug zum Programmieren von Schlagzeugspuren. Beats werden live über die
+      Computertastatur oder einen MIDI-Controller eingespielt, im Piano-Roll bearbeitet, zu einem Song
+      verkettet, zu einem Backing-Track abgespielt und als MIDI-Datei für jede DAW exportiert.
+    </p>
+    <ul>
+      <li>Live input with low latency, recording with metronome, count-in and overdub</li>
+      <li>Piano roll with velocity editing, grid snapping and triplets</li>
+      <li>Song arrangement from reusable patterns</li>
+      <li>Backing track with waveform display</li>
+      <li>MIDI import and export of patterns and whole songs</li>
+      <li>General MIDI drum kit with a built-in default kit, own samples possible</li>
+      <li>ALSA, PipeWire and JACK audio, English and German user interface</li>
+    </ul>
+    <ul xml:lang="de">
+      <li>Live-Eingabe mit geringer Latenz, Aufnahme mit Metronom, Einzähler und Overdub</li>
+      <li>Piano-Roll mit Velocity-Bearbeitung, Raster und Triolen</li>
+      <li>Song-Arrangement aus wiederverwendbaren Patterns</li>
+      <li>Backing-Track mit Wellenform-Anzeige</li>
+      <li>MIDI-Import und -Export einzelner Patterns und ganzer Songs</li>
+      <li>General-MIDI-Kit mit eingebautem Standard-Kit, eigene Samples möglich</li>
+      <li>Audio über ALSA, PipeWire und JACK, Oberfläche auf Englisch und Deutsch</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">io.github.ladych.DrumProgrammer.desktop</launchable>
+  <provides>
+    <binary>drumprogrammer</binary>
+    <mediatype>application/x-drumprogrammer-project</mediatype>
+  </provides>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Song arrangement, backing track and piano roll</caption>
+      <image>https://raw.githubusercontent.com/ladych/DrumProgrammer/v1.0.1/docs/MainWindow.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://github.com/ladych/DrumProgrammer</url>
+  <url type="bugtracker">https://github.com/ladych/DrumProgrammer/issues</url>
+  <url type="vcs-browser">https://github.com/ladych/DrumProgrammer</url>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#93c5fd</color>
+    <color type="primary" scheme_preference="dark">#1e222b</color>
+  </branding>
+
+  <categories>
+    <category>AudioVideo</category>
+    <category>Audio</category>
+  </categories>
+  <keywords>
+    <keyword>drums</keyword>
+    <keyword>MIDI</keyword>
+    <keyword>sequencer</keyword>
+    <keyword>pattern</keyword>
+  </keywords>
+
+  <requires>
+    <display_length compare="ge">768</display_length>
+  </requires>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </supports>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="1.0.1" date="2026-10-20">
+      <description>
+        <p>Packaging for Flathub: desktop entry, AppStream metadata and file type for projects (.dpp).</p>
+      </description>
+    </release>
+    <release version="1.0.0" date="2026-10-20">
+      <description>
+        <p>First release.</p>
+      </description>
+    </release>
+  </releases>
+</component>

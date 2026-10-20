@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-drumprogrammer-project">
+    <sub-class-of type="application/xml"/>
+    <comment>Drum Programmer project</comment>
+    <comment xml:lang="de">Drum-Programmer-Projekt</comment>
+    <glob pattern="*.dpp"/>
+  </mime-type>
+</mime-info>

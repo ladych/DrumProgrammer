@@ -21,6 +21,7 @@ Drum Programmer is a desktop application for programming drum patterns. You play
 The [releases](https://github.com/ladych/DrumProgrammer/releases) provide:
 
 - **Linux:** `DrumProgrammer-<version>-x86_64.AppImage`. Make it executable (`chmod +x`) and start it; a project file can be passed as an argument. It runs on distributions with glibc 2.35 or newer (e.g. Ubuntu 22.04, Linux Mint 21) and uses ALSA, or JACK if it is installed.
+- **Flatpak:** `io.github.ladych.DrumProgrammer`, submitted to [Flathub](https://flathub.org); the CI provides the bundle `DrumProgrammer.flatpak`, see [docs/Flathub.md](docs/Flathub.md).
 - **Windows:** `DrumProgrammer-<version>-Setup.exe`, an installer for 64-bit Windows 10 and 11. It can associate `.dpp` files with the program. ASIO drivers are used if installed, otherwise WASAPI.
 
 How a release is made and checked is described in [docs/Release-Test.md](docs/Release-Test.md).
