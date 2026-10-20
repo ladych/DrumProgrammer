@@ -47,4 +47,4 @@ jobs:
       - name: Show JACK libraries of the runtime
         run: |
           flatpak run --command=sh org.freedesktop.Sdk//26.08 -c \
-            'find / -xdev -name "libjack*" 2>/dev/null; ls /usr/include/jack 2>&1 | head -3' || true
+            'ldconfig -p | grep -i jack; find /usr/lib -name "libjack*"; ls /usr/lib/*/pipewire-0.3' || true
