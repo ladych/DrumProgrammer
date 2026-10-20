@@ -17,8 +17,13 @@ finish-args:
   - --filesystem=xdg-run/pipewire-0
   - --device=all
   # JUCE has no file chooser portal and falls back to its own file browser, so projects, samples,
-  # backing tracks and MIDI files are opened and saved directly in the home folder.
-  - --filesystem=home
+  # backing tracks and MIDI files are opened and saved directly in these folders. Flathub does not allow
+  # the whole home folder; `flatpak override --user --filesystem=home io.github.ladych.DrumProgrammer`
+  # grants it.
+  - --filesystem=xdg-documents
+  - --filesystem=xdg-music
+  - --filesystem=xdg-download
+  - --filesystem=xdg-desktop
 modules:
   - name: drumprogrammer
     buildsystem: cmake-ninja

@@ -14,7 +14,7 @@ Drum Programmer wird auf [Flathub](https://flathub.org) unter der App-ID `io.git
 
 `cmake --install build` legt Programm (`bin/drumprogrammer`), Startmenü-Eintrag, Metainfo, Dateityp, Icon und Lizenz so ab, wie Flatpak und AppImage sie brauchen.
 
-Das Flatpak läuft mit der Freedesktop-Runtime. Es zeichnet über X11 (unter Wayland über XWayland), spielt über ALSA (in der Runtime an PulseAudio/PipeWire angebunden) oder JACK (über PipeWire) und liest MIDI-Controller über den ALSA-Sequencer, dafür braucht es `--device=all`. Weil JUCE keine Dateiauswahl über Portale kennt, darf es den Home-Ordner lesen und schreiben. Die Einstellungen liegen im Flatpak unter `~/.var/app/io.github.ladych.DrumProgrammer/config/DrumProgrammer`.
+Das Flatpak läuft mit der Freedesktop-Runtime. Es zeichnet über X11 (unter Wayland über XWayland), spielt über ALSA (in der Runtime an PulseAudio/PipeWire angebunden) oder JACK (über PipeWire) und liest MIDI-Controller über den ALSA-Sequencer, dafür braucht es `--device=all`. Weil JUCE keine Dateiauswahl über Portale kennt, liest und schreibt es direkt in den Ordnern Dokumente, Musik, Downloads und Schreibtisch; den ganzen Home-Ordner lässt der Flathub-Linter nicht zu. Wer Projekte oder Samples woanders liegen hat, gibt ihn mit `flatpak override --user --filesystem=home io.github.ladych.DrumProgrammer` frei. Die Einstellungen liegen im Flatpak unter `~/.var/app/io.github.ladych.DrumProgrammer/config/DrumProgrammer`.
 
 ## Bauen und testen
 
@@ -47,7 +47,7 @@ Das macht der Inhaber des GitHub-Kontos `ladych` selbst, weil die Einreichung ei
    git add io.github.ladych.DrumProgrammer.yml && git commit -m "Add io.github.ladych.DrumProgrammer" && git push -u origin HEAD
    ```
 4. Pull Request gegen **`new-pr`** (nicht `master`) von flathub/flathub öffnen, Titel `Add io.github.ladych.DrumProgrammer`, die Checkliste der Vorlage ausfüllen.
-5. Im PR mit dem Kommentar `bot, build` einen Testbau starten. Die Reviewer prüfen Manifest, Rechte (`finish-args`) und Metainfo und stellen eventuell Rückfragen, z. B. zu `--device=all` und `--filesystem=home` (Begründung steht im Manifest).
+5. Im PR mit dem Kommentar `bot, build` einen Testbau starten. Die Reviewer prüfen Manifest, Rechte (`finish-args`) und Metainfo und stellen eventuell Rückfragen, z. B. zu `--device=all` (Begründung steht im Manifest).
 6. Nach der Annahme legt Flathub das Repository `flathub/io.github.ladych.DrumProgrammer` an und lädt `ladych` als Betreuer ein. Dafür muss auf GitHub die Zwei-Faktor-Authentifizierung aktiv sein. Einige Stunden nach dem ersten Bau erscheint die App auf flathub.org.
 7. Optional auf flathub.org mit GitHub anmelden und die App als „verifiziert" bestätigen (Developer Portal → Verification).
 
