@@ -21,6 +21,7 @@ Drum Programmer is a desktop application for programming drum patterns. You play
 The [releases](https://github.com/ladych/DrumProgrammer/releases) provide:
 
 - **Linux:** `DrumProgrammer-<version>-x86_64.AppImage`. Make it executable (`chmod +x`) and start it; a project file can be passed as an argument. It runs on distributions with glibc 2.35 or newer (e.g. Ubuntu 22.04, Linux Mint 21) and uses ALSA, or JACK if it is installed.
+- **Flatpak:** `io.github.ladych.DrumProgrammer`, submitted to [Flathub](https://flathub.org); the CI provides the bundle `DrumProgrammer.flatpak`, see [docs/Flathub.md](docs/Flathub.md).
 - **Windows:** `DrumProgrammer-<version>-Setup.exe`, an installer for 64-bit Windows 10 and 11. It can associate `.dpp` files with the program. ASIO drivers are used if installed, otherwise WASAPI.
 
 How a release is made and checked is described in [docs/Release-Test.md](docs/Release-Test.md).
@@ -67,6 +68,6 @@ This program was created with [Claude](https://claude.ai) by Anthropic: requirem
 
 ## License
 
-GNU Affero General Public License v3.0, see [LICENSE](LICENSE). The license follows from the open source license of JUCE.
+GNU Affero General Public License v3.0 or (at your option) any later version (`AGPL-3.0-or-later`), see [LICENSE](LICENSE). The AGPLv3 follows from the open source license of JUCE.
 
 The samples of the default kit are licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) (AVL Drumkits, Glen MacArthur), see [resources/DefaultKit/LIESMICH.txt](resources/DefaultKit/LIESMICH.txt). The button icons come from [Lucide Icons](https://lucide.dev) (ISC License, some icons from Feather under MIT License), see [resources/Icons/LIESMICH.txt](resources/Icons/LIESMICH.txt). The program lists all third-party components and their licenses under **Help → About and licenses...**.

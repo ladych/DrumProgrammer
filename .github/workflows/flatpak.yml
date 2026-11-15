@@ -1,0 +1,46 @@
+name: Flatpak
+
+# Flatpak build (AP24) with the manifest from packaging/flatpak, checked with the Flathub linter. The bundle
+# is uploaded as an artifact, so it can be installed and tried with `flatpak install --user <file>`.
+
+on:
+  push:
+    tags: ['v*']
+  pull_request:
+    paths:
+      - .github/workflows/flatpak.yml
+      - packaging/**
+      - CMakeLists.txt
+      - tools/make-flathub-manifest.sh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  flatpak:
+    name: Flatpak bundle
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-26.08
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          manifest-path: packaging/flatpak/io.github.ladych.DrumProgrammer.yml
+          bundle: DrumProgrammer.flatpak
+          upload-artifact: true
+          # As on Flathub: the screenshots are copied into the repository, the linter checks for that.
+          mirror-screenshots-url: https://dl.flathub.org/media
+          cache-key: flatpak-builder-${{ github.sha }}
+      - name: Install the Flathub linter
+        run: |
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install -y --noninteractive --user flathub org.flatpak.Builder
+      - name: Lint manifest
+        run: flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest packaging/flatpak/io.github.ladych.DrumProgrammer.yml
+      - name: Lint build
+        run: flatpak run --command=flatpak-builder-lint org.flatpak.Builder repo repo

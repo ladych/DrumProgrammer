@@ -24,21 +24,17 @@ if [[ ! -x "$linuxdeploy" ]]; then
 fi
 
 appdir="$build_dir/AppDir"
+app_id=io.github.ladych.DrumProgrammer
 rm -rf "$appdir"
-install -Dm755 "$executable" "$appdir/usr/bin/drumprogrammer"
-install -Dm644 "$repo_root/packaging/linux/drumprogrammer.desktop" \
-    "$appdir/usr/share/applications/drumprogrammer.desktop"
-install -Dm644 "$repo_root/resources/AppIcon/DrumProgrammer.png" \
-    "$appdir/usr/share/icons/hicolor/512x512/apps/drumprogrammer.png"
-install -Dm644 "$repo_root/LICENSE" "$appdir/usr/share/doc/drumprogrammer/LICENSE"
+cmake --install "$build_dir" --prefix "$appdir/usr"
 
 mkdir -p "$output_dir"
 cd "$output_dir"
 # Runs without FUSE, e.g. in containers.
 APPIMAGE_EXTRACT_AND_RUN=1 LINUXDEPLOY_OUTPUT_VERSION="$version" ARCH=x86_64 "$linuxdeploy" \
     --appdir "$appdir" \
-    --desktop-file "$appdir/usr/share/applications/drumprogrammer.desktop" \
-    --icon-file "$appdir/usr/share/icons/hicolor/512x512/apps/drumprogrammer.png" \
+    --desktop-file "$appdir/usr/share/applications/$app_id.desktop" \
+    --icon-file "$appdir/usr/share/icons/hicolor/512x512/apps/$app_id.png" \
     --output appimage
 mv -f "Drum_Programmer-$version-x86_64.AppImage" "DrumProgrammer-$version-x86_64.AppImage"
 echo "$output_dir/DrumProgrammer-$version-x86_64.AppImage"

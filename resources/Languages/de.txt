@@ -148,7 +148,7 @@ countries: de at ch li lu be
 "ISC License, some icons from Feather under the MIT License" = "ISC License, einzelne Icons aus Feather unter MIT License"
 "Copyright (c) 2026 Lucide Icons and Contributors. Parts from Feather: Copyright (c) 2013-present Cole Bemis (MIT License)." = "Copyright (c) 2026 Lucide Icons and Contributors. Teile aus Feather: Copyright (c) 2013-present Cole Bemis (MIT License)."
 "Program drum patterns, play them in and export them as MIDI." = "Schlagzeug-Patterns programmieren, einspielen und als MIDI exportieren."
-"Free software under the GNU Affero General Public License v3.0, without any warranty. The source code is public." = "Freie Software unter der GNU Affero General Public License v3.0, ohne jede Gewährleistung. Der Quellcode ist öffentlich."
+"Free software under the GNU Affero General Public License v3.0 or later, without any warranty. The source code is public." = "Freie Software unter der GNU Affero General Public License v3.0 oder neuer, ohne jede Gewährleistung. Der Quellcode ist öffentlich."
 "Made with Claude (Anthropic) and Claude Code." = "Erstellt mit Claude (Anthropic) und Claude Code."
 "Source code on GitHub" = "Quellcode auf GitHub"
 "License AGPLv3" = "Lizenz AGPLv3"
