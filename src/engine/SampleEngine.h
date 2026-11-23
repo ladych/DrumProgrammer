@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/EngineKit.h"
+#include "engine/LayerSelection.h"
 #include "engine/LiveHit.h"
 #include "engine/SpscQueue.h"
 #include "engine/TriggerIndicators.h"
@@ -10,6 +11,7 @@
 #include <atomic>
 #include <memory>
 #include <span>
+#include <utility>
 
 namespace drumprog::engine
 {
@@ -73,6 +75,9 @@ private:
     };
 
     bool play(const EngineSlot* slot, int velocity, int sampleOffset) noexcept;
+    /// The sample to play and its gain; a DrumGizmo slot picks a hit by velocity (F-DG-02).
+    [[nodiscard]] std::pair<const SampleBuffer*, float> soundFor(const EngineSlot& slot,
+                                                                 int velocity) noexcept;
     void playQueuedTriggers() noexcept;
     void playQueued(const TriggerEvent& event) noexcept;
     void pickUpPendingKit() noexcept;
@@ -88,6 +93,8 @@ private:
     EngineKit* drainingKit_ = nullptr;                     ///< audio thread only
     std::array<LiveHit, kMaxLiveHitsPerBlock> liveHits_{}; ///< audio thread only
     std::size_t numLiveHits_ = 0;
+    FastRandom random_;                                         ///< audio thread only
+    std::array<int, TriggerIndicators::kMaxSlots> lastLayer_{}; ///< audio thread only
 };
 
 } // namespace drumprog::engine

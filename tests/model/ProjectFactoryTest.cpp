@@ -102,5 +102,22 @@ TEST_F(ProjectFactoryTest, FPJ01_EachNewProjectGetsANewPatternId)
     EXPECT_EQ(second.pattern(0).id(), "id-2");
 }
 
+TEST_F(ProjectFactoryTest, FDG04_DrumGizmoKitIsTheGmKitWithInstruments)
+{
+    const auto kit = ProjectFactory::createDrumGizmoKit(
+        "/kits/A/drumkit.xml",
+        {{36, {.instrument = "Kdrum", .chokeGroup = 0}}, {49, {.instrument = "Crash", .chokeGroup = 3}}});
+
+    const Kit wrapped{kit, nullptr};
+    EXPECT_TRUE(wrapped.isDrumGizmo());
+    EXPECT_EQ(wrapped.drumkitFile(), "/kits/A/drumkit.xml");
+    EXPECT_EQ(wrapped.numSlots(), ProjectFactory::createDefaultKit().getNumChildren());
+    EXPECT_EQ(wrapped.findSlot(36)->instrument(), "Kdrum");
+    EXPECT_EQ(wrapped.findSlot(49)->chokeGroup(), 3);
+    // Slots without a mapping keep the GM default.
+    EXPECT_EQ(wrapped.findSlot(42)->instrument(), "");
+    EXPECT_EQ(wrapped.findSlot(42)->chokeGroup(), 1);
+}
+
 } // namespace
 } // namespace drumprog::model

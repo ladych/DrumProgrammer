@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace drumprog::io
 {
@@ -21,6 +22,9 @@ public:
     virtual bool rename(const std::filesystem::path& from, const std::filesystem::path& to) = 0;
     /// Deletes the file; true if it is gone afterwards, also if it did not exist.
     virtual bool remove(const std::filesystem::path& file) = 0;
+    /// The regular files directly inside the directory, sorted; empty if it cannot be read.
+    [[nodiscard]] virtual std::vector<std::filesystem::path>
+    listFiles(const std::filesystem::path& directory) const = 0;
 
 protected:
     IFileSystem() = default;

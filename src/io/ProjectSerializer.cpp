@@ -35,7 +35,9 @@ std::string ProjectSerializer::toXml(const juce::ValueTree& project,
     auto copy = project.createCopy();
     copy.setProperty(ids::formatVersion, kFormatVersion, nullptr);
     convertPaths(copy, projectDirectory, true);
-    for (auto slot : copy.getChildWithName(ids::kit))
+    auto kit = copy.getChildWithName(ids::kit);
+    kit.removeProperty(ids::sampleMissing, nullptr);
+    for (auto slot : kit)
         slot.removeProperty(ids::sampleMissing, nullptr);
     return copy.toXmlString().toStdString();
 }
@@ -59,23 +61,26 @@ void ProjectSerializer::convertPaths(juce::ValueTree& project,
                                      const std::filesystem::path& projectDirectory,
                                      bool toRelative)
 {
-    for (auto slot : project.getChildWithName(ids::kit))
-        convertPath(slot, projectDirectory, toRelative);
+    auto kit = project.getChildWithName(ids::kit);
+    convertPath(kit, ids::drumkitFile, projectDirectory, toRelative);
+    for (auto slot : kit)
+        convertPath(slot, ids::filePath, projectDirectory, toRelative);
     auto backingTrack = project.getChildWithName(ids::backingTrack);
-    convertPath(backingTrack, projectDirectory, toRelative);
+    convertPath(backingTrack, ids::filePath, projectDirectory, toRelative);
 }
 
 void ProjectSerializer::convertPath(juce::ValueTree& tree,
+                                    const juce::Identifier& property,
                                     const std::filesystem::path& projectDirectory,
                                     bool toRelative)
 {
-    const auto stored = tree[ids::filePath].toString().toStdString();
+    const auto stored = tree[property].toString().toStdString();
     if (stored.empty())
         return;
     const auto path = pathFromUtf8(stored);
     const auto converted =
         toRelative ? makeRelative(path, projectDirectory) : makeAbsolute(path, projectDirectory);
-    tree.setProperty(ids::filePath, toJuce(converted), nullptr);
+    tree.setProperty(property, toJuce(converted), nullptr);
 }
 
 void ProjectSerializer::addMissingSections(juce::ValueTree& project)

@@ -15,7 +15,8 @@ namespace drumprog::app
 
 /// Humble object (E-03), content of the kit dialog: drum kit list with trigger LEDs (F-SE-04, F-SE-09) and
 /// the sample part of the inspector (F-SE-05 to F-SE-07, F-SE-10) with the slot's key (F-IN-02). All logic is
-/// in ui::KitPresenter and ui::KeymapPresenter.
+/// in ui::KitPresenter and ui::KeymapPresenter. In a DrumGizmo kit an instrument choice replaces the sample
+/// button and a line shows the kit's loading state (F-DG-07, F-DG-09, F-DG-10).
 class KitPanel final : public juce::Component, private juce::ListBoxModel, private juce::Timer
 {
 public:
@@ -40,6 +41,10 @@ private:
     void refreshRows();
     void refreshInspector();
     void chooseSample();
+    void setUpDrumGizmoControls();
+    void selectInstrument();
+    void refreshDrumGizmoStatus();
+    void refreshInstrumentChoices();
 
     ui::KitPresenter& presenter_;
     ui::KeymapPresenter& keymap_;
@@ -49,6 +54,9 @@ private:
     std::unique_ptr<juce::FileChooser> fileChooser_;
 
     juce::Label kitSource_;
+    juce::Label drumGizmoStatus_;
+    std::vector<std::string> instruments_;
+    juce::ComboBox instrumentBox_;
     juce::ListBox slotList_{i18n::trJuce("Drum kit"), this};
     juce::ToggleButton showAllButton_{i18n::trJuce("Show all slots")};
     juce::Label slotName_;

@@ -174,6 +174,10 @@ int SampleSlot::chokeGroup() const
 {
     return getInt(ids::chokeGroup, 0);
 }
+std::string SampleSlot::instrument() const
+{
+    return getString(ids::instrument);
+}
 bool SampleSlot::isSampleMissing() const
 {
     return static_cast<bool>(tree().getProperty(ids::sampleMissing));
@@ -208,6 +212,10 @@ void SampleSlot::setChokeGroup(int chokeGroup)
 {
     set(ids::chokeGroup, chokeGroup);
 }
+void SampleSlot::setInstrument(const std::string& instrument)
+{
+    setString(ids::instrument, instrument);
+}
 
 // ----- Kit ----------------------------------------------------------------------------------------
 
@@ -228,6 +236,19 @@ std::optional<SampleSlot> Kit::findSlot(int gmNote) const
     if (!slotTree.isValid())
         return std::nullopt;
     return SampleSlot{slotTree, undoManager()};
+}
+
+std::string Kit::drumkitFile() const
+{
+    return getString(ids::drumkitFile);
+}
+bool Kit::isDrumGizmo() const
+{
+    return !drumkitFile().empty();
+}
+bool Kit::isDrumkitMissing() const
+{
+    return static_cast<bool>(tree().getProperty(ids::sampleMissing));
 }
 
 // ----- Song ---------------------------------------------------------------------------------------

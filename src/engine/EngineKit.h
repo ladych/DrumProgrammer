@@ -9,6 +9,13 @@
 namespace drumprog::engine
 {
 
+/// One hit of a DrumGizmo instrument (F-DG-02): stereo at device rate, power 0 (softest) .. 1 (hardest).
+struct LayerSample
+{
+    std::shared_ptr<const SampleBuffer> sample;
+    float power = 0.0F;
+};
+
 /// One slot as the audio thread plays it: sample already at device rate,
 /// gain and pitch already converted.
 struct EngineSlot
@@ -16,6 +23,8 @@ struct EngineSlot
     int slotIndex = 0;
     int midiNote = -1;                          ///< -1: not playable
     std::shared_ptr<const SampleBuffer> sample; ///< null: no sample, trigger only lights the LED
+    /// Hits of a DrumGizmo instrument sorted by power; if not empty they are played instead of sample.
+    std::vector<LayerSample> layers;
     float gain = 1.0F;
     double playbackRate = 1.0;
     int chokeGroup = 0;

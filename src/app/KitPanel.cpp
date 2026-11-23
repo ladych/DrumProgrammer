@@ -3,6 +3,8 @@
 #include "app/Theme.h"
 #include "i18n/Translate.h"
 
+#include <algorithm>
+#include <string>
 #include <utility>
 
 namespace drumprog::app
@@ -23,6 +25,8 @@ KitPanel::KitPanel(ui::KitPresenter& presenter, ui::KeymapPresenter& keymap, juc
 {
     setUpControls();
     for (auto* component : std::initializer_list<juce::Component*>{&kitSource_,
+                                                                   &drumGizmoStatus_,
+                                                                   &instrumentBox_,
                                                                    &slotList_,
                                                                    &showAllButton_,
                                                                    &slotName_,
@@ -50,6 +54,7 @@ void KitPanel::setUpControls()
     showAllButton_.onClick = [this] { refreshRows(); };
     loadButton_.onClick = [this] { chooseSample(); };
     previewButton_.onClick = [this] { presenter_.previewSelected(); };
+    setUpDrumGizmoControls();
 
     gainSlider_.setRange(ui::KitPresenter::kMinGainDb, ui::KitPresenter::kMaxGainDb, 0.1);
     gainSlider_.onValueChange = [this] { presenter_.setGainDb(static_cast<float>(gainSlider_.getValue())); };
@@ -69,6 +74,19 @@ void KitPanel::setUpControls()
     };
 }
 
+void KitPanel::setUpDrumGizmoControls()
+{
+    // Item id 1 is "no instrument", id n + 2 the n-th instrument of the kit.
+    instrumentBox_.onChange = [this]
+    {
+        const int index = instrumentBox_.getSelectedId() - 2;
+        const bool valid = index >= 0 && index < static_cast<int>(instruments_.size());
+        presenter_.setInstrument(valid ? instruments_[static_cast<size_t>(index)] : std::string{});
+        slotList_.repaint();
+    };
+    drumGizmoStatus_.setMinimumHorizontalScale(0.7F);
+}
+
 KitPanel::~KitPanel()
 {
     stopTimer();
@@ -79,6 +97,7 @@ void KitPanel::resized()
     auto area = getLocalBounds().reduced(12);
     auto list = area.removeFromLeft(area.getWidth() - kInspectorWidth);
     kitSource_.setBounds(list.removeFromTop(24));
+    drumGizmoStatus_.setBounds(list.removeFromTop(drumGizmoStatus_.getText().isEmpty() ? 0 : 36));
     showAllButton_.setBounds(list.removeFromBottom(28));
     slotList_.setBounds(list);
 
@@ -86,7 +105,10 @@ void KitPanel::resized()
     slotName_.setBounds(inspector.removeFromTop(24));
     sampleName_.setBounds(inspector.removeFromTop(24));
     auto buttons = inspector.removeFromTop(28);
-    loadButton_.setBounds(buttons.removeFromLeft(100));
+    // The instrument choice of a DrumGizmo kit takes the place of the sample button.
+    const auto choice = buttons.removeFromLeft(presenter_.isDrumGizmoKit() ? 170 : 100);
+    loadButton_.setBounds(choice);
+    instrumentBox_.setBounds(choice);
     previewButton_.setBounds(buttons.removeFromLeft(100).withTrimmedLeft(8));
     for (auto [label, control] : {std::pair<juce::Label*, juce::Component*>{&gainLabel_, &gainSlider_},
                                   std::pair<juce::Label*, juce::Component*>{&pitchLabel_, &pitchSlider_},
@@ -144,6 +166,7 @@ void KitPanel::selectedRowsChanged(int lastRowSelected)
 void KitPanel::timerCallback()
 {
     presenter_.tick();
+    refreshDrumGizmoStatus();
     // Undo, redo and loading a project change the kit behind the panel's back.
     if (presenter_.changeCount() != seenChangeCount_)
     {
@@ -160,6 +183,9 @@ void KitPanel::refreshRows()
 {
     kitSource_.setText(i18n::trJuce("Kit: %1", presenter_.kitSourceLabel()), juce::dontSendNotification);
     rows_ = presenter_.visibleSlots(showAllButton_.getToggleState());
+    refreshDrumGizmoStatus();
+    refreshInstrumentChoices();
+    resized();
     slotList_.updateContent();
     slotList_.repaint();
 }
@@ -167,9 +193,16 @@ void KitPanel::refreshRows()
 void KitPanel::refreshInspector()
 {
     const auto selected = presenter_.selectedSlot();
-    for (auto* component : std::initializer_list<juce::Component*>{
-             &loadButton_, &previewButton_, &gainSlider_, &pitchSlider_, &noteSlider_, &keyButton_})
+    for (auto* component : std::initializer_list<juce::Component*>{&loadButton_,
+                                                                   &instrumentBox_,
+                                                                   &previewButton_,
+                                                                   &gainSlider_,
+                                                                   &pitchSlider_,
+                                                                   &noteSlider_,
+                                                                   &keyButton_})
         component->setEnabled(selected.has_value());
+    loadButton_.setVisible(!presenter_.isDrumGizmoKit());
+    instrumentBox_.setVisible(presenter_.isDrumGizmoKit());
     if (!selected)
     {
         slotName_.setText(i18n::trJuce("No slot selected"), juce::dontSendNotification);
@@ -181,10 +214,46 @@ void KitPanel::refreshInspector()
                       juce::dontSendNotification);
     sampleName_.setText(juce::String::fromUTF8(presenter_.sampleLabel(*selected).c_str()),
                         juce::dontSendNotification);
+    selectInstrument();
     gainSlider_.setValue(presenter_.gainDb(), juce::dontSendNotification);
     pitchSlider_.setValue(presenter_.pitch(), juce::dontSendNotification);
     noteSlider_.setValue(presenter_.midiNote(*selected), juce::dontSendNotification);
     keyButton_.setButtonText(juce::String::fromUTF8(keymap_.keyLabel(*selected).c_str()));
+}
+
+void KitPanel::selectInstrument()
+{
+    const auto found = std::ranges::find(instruments_, presenter_.instrument());
+    instrumentBox_.setSelectedId(
+        found != instruments_.end() ? static_cast<int>(found - instruments_.begin()) + 2 : 1,
+        juce::dontSendNotification);
+}
+
+void KitPanel::refreshDrumGizmoStatus()
+{
+    const auto text = juce::String::fromUTF8(presenter_.drumGizmoStatus().c_str());
+    const bool resize = text.isEmpty() != drumGizmoStatus_.getText().isEmpty();
+    drumGizmoStatus_.setText(text, juce::dontSendNotification);
+    drumGizmoStatus_.setTooltip(text);
+    drumGizmoStatus_.setColour(juce::Label::textColourId,
+                               presenter_.hasDrumGizmoWarning()
+                                   ? juce::Colours::orangered
+                                   : getLookAndFeel().findColour(juce::Label::textColourId));
+    if (resize)
+        resized();
+}
+
+void KitPanel::refreshInstrumentChoices()
+{
+    const auto names = presenter_.instrumentNames();
+    if (names == instruments_ && instrumentBox_.getNumItems() > 0)
+        return;
+    instruments_ = names;
+    instrumentBox_.clear(juce::dontSendNotification);
+    instrumentBox_.addItem(juce::String::fromUTF8(i18n::tr("no instrument").c_str()), 1);
+    for (std::size_t index = 0; index < instruments_.size(); ++index)
+        instrumentBox_.addItem(juce::String::fromUTF8(instruments_[index].c_str()),
+                               static_cast<int>(index) + 2);
 }
 
 void KitPanel::chooseSample()

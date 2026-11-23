@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/DrumGizmoKit.h"
 #include "engine/KitPublisher.h"
 #include "engine/SampleEngine.h"
 #include "model/Project.h"
@@ -21,18 +22,22 @@ namespace drumprog::ui
 /// Logic behind the kit panel, the sample part of the inspector (humble view in app/KitPanel) and the
 /// menu "Kit". It edits the active kit: the project's own kit, which is saved with the project, or
 /// otherwise the global kit (program setting). Every change is undoable (F-PJ-05); the
-/// SnapshotPublisher hands the changed kit to the engine. GUI thread only.
+/// SnapshotPublisher hands the changed kit to the engine. The active kit is a sample kit or a DrumGizmo kit,
+/// whose slots play instruments of the kit instead of sample files (F-DG-04). GUI thread only.
 class KitPresenter
 {
 public:
     static constexpr float kMinGainDb = -60.0F;
     static constexpr float kMaxGainDb = 6.0F;
+    /// Above this RAM use the kit panel warns (F-DG-10).
+    static constexpr std::uint64_t kLargeKitBytes = 5'000'000'000ULL;
 
     KitPresenter(juce::ValueTree project,
                  juce::ValueTree globalKit,
                  juce::UndoManager& undoManager,
                  engine::KitPublisher& kits,
-                 engine::SampleEngine& engine);
+                 engine::SampleEngine& engine,
+                 const engine::IDrumGizmoReader& drumGizmoReader);
 
     [[nodiscard]] int numSlots() const;
     /// Slot indices to show: only core slots unless showAll (F-SE-04).
@@ -41,7 +46,8 @@ public:
     [[nodiscard]] std::string slotName(int slotIndex) const;
     /// -1 for indices outside the kit.
     [[nodiscard]] int midiNote(int slotIndex) const;
-    /// File name of the slot's sample or "kein Sample".
+    /// File name of the slot's sample or "kein Sample"; in a DrumGizmo kit its instrument or "kein
+    /// Instrument".
     [[nodiscard]] std::string sampleLabel(int slotIndex) const;
     /// MIDI note, with " (GM-Default)" while not overridden (F-SE-05).
     [[nodiscard]] std::string noteLabel(int slotIndex) const;
@@ -78,7 +84,30 @@ public:
     /// every slot.
     void resetToDefaultKit(const juce::ValueTree& defaultKit);
 
-    /// Call from the GUI timer: updates LED states and frees retired kits.
+    // DrumGizmo kits (F-DG-04 to F-DG-10).
+    /// Makes the DrumGizmo kit the active kit, one undo step: the GM slots with the instruments that
+    /// mapToGmSlots() suggests. Returns the error and keeps the kit if drumkit.xml cannot be read.
+    [[nodiscard]] engine::DrumGizmoError loadDrumGizmoKit(const std::filesystem::path& drumkitFile);
+    [[nodiscard]] bool isDrumGizmoKit() const;
+    /// Instruments of the active DrumGizmo kit in kit order; empty for a sample kit.
+    [[nodiscard]] std::vector<std::string> instrumentNames() const;
+    /// Instrument of the selected slot; empty without a selection or instrument.
+    [[nodiscard]] std::string instrument() const;
+    /// Lets the selected slot play another instrument, empty for none (F-DG-07).
+    void setInstrument(const std::string& instrument);
+    /// Name, loading progress, RAM use and problems of the DrumGizmo kit; empty for a sample kit.
+    [[nodiscard]] std::string drumGizmoStatus() const;
+    /// True while the DrumGizmo kit failed, misses files or needs more than kLargeKitBytes.
+    [[nodiscard]] bool hasDrumGizmoWarning() const;
+    /// The status line for a DrumGizmo kit with this name (F-DG-09, F-DG-10).
+    [[nodiscard]] static std::string
+    describeDrumGizmoKit(const std::string& name, const engine::DrumGizmoStatus& status, float progress);
+    [[nodiscard]] static bool isDrumGizmoWarning(const engine::DrumGizmoStatus& status) noexcept;
+    /// Text for an error of loadDrumGizmoKit() or of the background load, in the current language.
+    [[nodiscard]] static std::string drumGizmoErrorMessage(engine::DrumGizmoError error,
+                                                           const std::filesystem::path& file);
+
+    /// Call from the GUI timer: updates LED states, frees retired kits and publishes a loaded DrumGizmo kit.
     void tick();
     [[nodiscard]] bool isLedOn(int slotIndex) const;
     /// Changes whenever the project or the global kit changed, also by undo or loading; the view refreshes on
@@ -92,12 +121,18 @@ private:
     [[nodiscard]] std::optional<model::SampleSlot> selected() const;
     /// `what` is an English undo name with %1 for the slot name, e.g. "Volume %1".
     void beginEdit(const model::SampleSlot& slot, const char* what);
+    /// The active DrumGizmo kit without samples, read once per drumkit.xml.
+    [[nodiscard]] const engine::DrumGizmoReadResult& drumGizmoKit() const;
+    [[nodiscard]] std::string drumGizmoKitName() const;
 
     juce::ValueTree project_;
     juce::ValueTree globalKit_;
     juce::UndoManager& undoManager_;
     engine::KitPublisher& kits_;
     engine::SampleEngine& engine_;
+    const engine::IDrumGizmoReader& drumGizmoReader_;
+    mutable std::filesystem::path readFile_;
+    mutable engine::DrumGizmoReadResult readKit_;
     std::optional<int> selected_;
     std::array<ActivityLed, engine::TriggerIndicators::kMaxSlots> leds_{};
     std::uint32_t changeCount_ = 0;

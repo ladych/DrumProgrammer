@@ -1,8 +1,12 @@
 #pragma once
 
+#include "engine/DrumGizmoMapping.h"
 #include "model/IIdGenerator.h"
 
 #include <juce_data_structures/juce_data_structures.h>
+
+#include <map>
+#include <string>
 
 namespace drumprog::model
 {
@@ -20,6 +24,11 @@ public:
 
     [[nodiscard]] juce::ValueTree createDefault() const;
     [[nodiscard]] static juce::ValueTree createDefaultKit();
+    /// The GM default kit as a DrumGizmo kit (F-DG-04): drumkitFile is the absolute UTF-8 path of
+    /// drumkit.xml, each slot plays the instrument and choke group of its mapping (F-DG-07, F-DG-08).
+    [[nodiscard]] static juce::ValueTree
+    createDrumGizmoKit(const std::string& drumkitFile,
+                       const std::map<int, engine::DrumGizmoSlotMapping>& mapping);
 
 private:
     IIdGenerator& idGenerator_;

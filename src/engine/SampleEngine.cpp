@@ -74,13 +74,28 @@ bool SampleEngine::play(const EngineSlot* slot, int velocity, int sampleOffset) 
     if (slot == nullptr || velocity <= 0)
         return false;
     indicators_.signal(slot->slotIndex);
-    voices_.trigger(VoiceStart{.sample = slot->sample.get(),
-                               .gain = slot->gain * velocityToGain(velocity),
+    const auto [sample, gain] = soundFor(*slot, velocity);
+    voices_.trigger(VoiceStart{.sample = sample,
+                               .gain = gain,
                                .playbackRate = slot->playbackRate,
                                .chokeGroup = slot->chokeGroup,
                                .startOffset = sampleOffset,
                                .owner = currentKit_});
     return true;
+}
+
+std::pair<const SampleBuffer*, float> SampleEngine::soundFor(const EngineSlot& slot, int velocity) noexcept
+{
+    if (slot.layers.empty())
+        return {slot.sample.get(), slot.gain * velocityToGain(velocity)};
+    // The hits carry the dynamics of a DrumGizmo instrument, so velocity only chooses the hit.
+    const auto slotIndex = static_cast<std::size_t>(slot.slotIndex);
+    const bool tracked = slotIndex < lastLayer_.size();
+    const int last = tracked ? lastLayer_.at(slotIndex) : -1;
+    const int layer = selectLayer(slot.layers, velocity, random_.next(), last);
+    if (tracked)
+        lastLayer_.at(slotIndex) = layer;
+    return {slot.layers[static_cast<std::size_t>(layer)].sample.get(), slot.gain};
 }
 
 void SampleEngine::render(float* const* outputs, int numOutputs, int numSamples) noexcept

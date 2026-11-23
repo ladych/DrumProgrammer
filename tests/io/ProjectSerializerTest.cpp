@@ -220,5 +220,23 @@ TEST_F(ProjectSerializerTest, FPJ02_FillsInMissingSectionsSoTheModelIsComplete)
     EXPECT_DOUBLE_EQ(Project(parsed.project, nullptr).bpm(), 100.0);
 }
 
+TEST_F(ProjectSerializerTest, FDG04_StoresTheDrumGizmoKitRelativeAndWithoutMissingMarker)
+{
+    auto kit = tree.getChildWithName(ids::kit);
+    kit.setProperty(ids::drumkitFile, juce::String{(projectDir / "kits" / "drumkit.xml").string()}, nullptr);
+    kit.setProperty(ids::sampleMissing, true, nullptr);
+    project.kit().findSlot(36)->setInstrument("Kdrum");
+
+    const auto xml = juce::parseXML(juce::String{ProjectSerializer::toXml(tree, projectDir)});
+    const auto parsed = roundTrip();
+
+    const auto* kitXml = xml->getChildByName("KIT");
+    EXPECT_EQ(kitXml->getStringAttribute("drumkitFile"), "kits/drumkit.xml");
+    EXPECT_FALSE(kitXml->hasAttribute("sampleMissing"));
+    const Project loaded{parsed.project, nullptr};
+    EXPECT_EQ(fs::path{loaded.kit().drumkitFile()}, projectDir / "kits" / "drumkit.xml");
+    EXPECT_EQ(loaded.kit().findSlot(36)->instrument(), "Kdrum");
+}
+
 } // namespace
 } // namespace drumprog::io

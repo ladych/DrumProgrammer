@@ -15,6 +15,8 @@ public:
     [[nodiscard]] bool exists(const std::filesystem::path& file) const override;
     bool rename(const std::filesystem::path& from, const std::filesystem::path& to) override;
     bool remove(const std::filesystem::path& file) override;
+    [[nodiscard]] std::vector<std::filesystem::path>
+    listFiles(const std::filesystem::path& directory) const override;
 };
 
 } // namespace drumprog::io

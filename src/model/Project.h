@@ -91,6 +91,8 @@ public:
     [[nodiscard]] double gain() const;
     [[nodiscard]] double pitch() const;
     [[nodiscard]] int chokeGroup() const;
+    /// DrumGizmo instrument the slot plays in a DrumGizmo kit; empty if none (F-DG-05).
+    [[nodiscard]] std::string instrument() const;
     /// True if the file was missing when the project was loaded (F-PJ-03).
     [[nodiscard]] bool isSampleMissing() const;
     /// False shows the slot as "kein Sample".
@@ -102,6 +104,7 @@ public:
     void setGain(double gain);
     void setPitch(double semitones);
     void setChokeGroup(int chokeGroup);
+    void setInstrument(const std::string& instrument);
 };
 
 class Kit : public TreeNode
@@ -112,6 +115,12 @@ public:
     [[nodiscard]] int numSlots() const;
     [[nodiscard]] SampleSlot slot(int index) const;
     [[nodiscard]] std::optional<SampleSlot> findSlot(int gmNote) const;
+    /// Absolute path of the DrumGizmo kit's drumkit.xml; empty for a sample kit (F-DG-04).
+    [[nodiscard]] std::string drumkitFile() const;
+    /// True for a DrumGizmo kit: its slots play instruments instead of sample files.
+    [[nodiscard]] bool isDrumGizmo() const;
+    /// True if drumkit.xml was missing when the kit was loaded (F-PJ-03, Q-09).
+    [[nodiscard]] bool isDrumkitMissing() const;
 };
 
 class SongEntry : public TreeNode

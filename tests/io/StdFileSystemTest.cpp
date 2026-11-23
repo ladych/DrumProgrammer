@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <vector>
 
 namespace drumprog::io
 {
@@ -122,6 +123,21 @@ TEST_F(StdFileSystemTest, Q10_RemovingAFolderWithFilesFails)
     ASSERT_TRUE(fileSystem.writeText(root / "autosave.dpp", "backup"));
 
     EXPECT_FALSE(fileSystem.remove(root));
+}
+
+TEST_F(StdFileSystemTest, FDG01_ListsTheFilesOfAFolderSortedWithoutSubfolders)
+{
+    ASSERT_TRUE(fileSystem.writeText(root / "midimap.xml", "x"));
+    ASSERT_TRUE(fileSystem.writeText(root / "drumkit.xml", "x"));
+    ASSERT_TRUE(fileSystem.createDirectories(root / "Instruments"));
+
+    EXPECT_EQ(fileSystem.listFiles(root),
+              (std::vector<fs::path>{root / "drumkit.xml", root / "midimap.xml"}));
+}
+
+TEST_F(StdFileSystemTest, FDG01_ListingAMissingFolderGivesNothing)
+{
+    EXPECT_TRUE(fileSystem.listFiles(root / "missing").empty());
 }
 
 } // namespace

@@ -131,5 +131,26 @@ TEST(PitchToPlaybackRateTest, FSE07_ClampsToTwelveSemitones)
     EXPECT_DOUBLE_EQ(pitchToPlaybackRate(-24), 0.5);
 }
 
+TEST_F(KitBuilderTest, FDG05_DrumGizmoSlotsTakeTheHitsOfTheirInstrument)
+{
+    LoadedDrumGizmoKit drumGizmo;
+    const auto hit = std::make_shared<const SampleBuffer>(kKick);
+    drumGizmo.instruments["Kdrum"] = {LayerSample{.sample = hit, .power = 1.0F}};
+    const KitDescription kit{
+        KitSlotDescription{
+            .gmNote = 36, .midiNote = 36, .drumkitFile = "/dg/drumkit.xml", .instrument = "Kdrum"},
+        KitSlotDescription{
+            .gmNote = 38, .midiNote = 38, .drumkitFile = "/dg/drumkit.xml", .instrument = "Gone"}};
+
+    const auto withKit = builder.build(kit, 48000.0, &drumGizmo);
+    const auto loading = builder.build(kit, 48000.0);
+
+    ASSERT_EQ(withKit.kit->slotForNote(36)->layers.size(), 1U);
+    EXPECT_EQ(withKit.kit->slotForNote(36)->layers[0].sample, hit);
+    EXPECT_TRUE(withKit.kit->slotForNote(38)->layers.empty());
+    EXPECT_TRUE(loading.kit->slotForNote(36)->layers.empty());
+    EXPECT_TRUE(withKit.missingSamples.empty());
+}
+
 } // namespace
 } // namespace drumprog::engine

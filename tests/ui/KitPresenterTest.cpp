@@ -1,8 +1,10 @@
 #include "ui/KitPresenter.h"
 
+#include "engine/MockDrumGizmoReader.h"
 #include "engine/MockSampleLoader.h"
 #include "engine/RenderHelpers.h"
 #include "engine/VelocityCurve.h"
+#include "io/Utf8Path.h"
 #include "model/FakeIdGenerator.h"
 #include "model/ModelIds.h"
 #include "model/ProjectFactory.h"
@@ -62,7 +64,8 @@ protected:
     engine::KitPublisher kits{builder, engine};
     model::ProjectSnapshotExchange snapshots;
     model::SnapshotPublisher publisher{tree, globalKit, snapshots, kits};
-    KitPresenter presenter{tree, globalKit, undoManager, kits, engine};
+    NiceMock<engine::MockDrumGizmoReader> drumGizmoReader;
+    KitPresenter presenter{tree, globalKit, undoManager, kits, engine, drumGizmoReader};
 };
 
 TEST_F(KitPresenterTest, FSE04_ShowsCoreSlotsUnlessExpanded)
@@ -411,6 +414,238 @@ TEST_F(KitPresenterTest, FSE09_LedLightsAfterHitAndGoesOffAfterHoldTime)
     EXPECT_FALSE(presenter.isLedOn(kSnare));
     EXPECT_FALSE(presenter.isLedOn(-1));
     EXPECT_FALSE(presenter.isLedOn(500));
+}
+
+const std::filesystem::path kDrumkit{"/kits/Monster/drumkit.xml"};
+
+engine::DrumGizmoKit testDrumGizmoKit(const std::string& name = "Testkit")
+{
+    const auto hitOf = [](const char* file)
+    {
+        return engine::DrumGizmoSample{
+            .name = file, .power = 1.0, .audioFiles = {{.channel = "Close", .file = file, .fileChannel = 1}}};
+    };
+    engine::DrumGizmoKit kit;
+    kit.name = name;
+    kit.instruments = {{.name = "Kdrum", .group = "", .samples = {hitOf("/kits/Monster/kick.wav")}},
+                       {.name = "Snare", .group = "", .samples = {hitOf("/kits/Monster/gone.wav")}},
+                       {.name = "Hihat", .group = "hihat", .samples = {}}};
+    return kit;
+}
+
+class KitPresenterDrumGizmoTest : public ::testing::Test
+{
+protected:
+    void SetUp() override
+    {
+        ON_CALL(loader, load(_)).WillByDefault(Return(std::nullopt));
+        ON_CALL(loader, load(std::filesystem::path{"/kits/Monster/kick.wav"}))
+            .WillByDefault(Return(kSnareSample));
+        ON_CALL(reader, read(kDrumkit, _))
+            .WillByDefault(Return(engine::DrumGizmoReadResult{.kit = testDrumGizmoKit()}));
+        engine.prepare(48000.0);
+    }
+
+    void finishLoading()
+    {
+        background.waitUntilFinished();
+        presenter.tick();
+    }
+
+    [[nodiscard]] model::Kit global() const { return {globalKit, nullptr}; }
+
+    model::FakeIdGenerator ids;
+    juce::ValueTree tree = model::ProjectFactory{ids}.createDefault();
+    juce::ValueTree globalKit = model::ProjectFactory::createDefaultKit();
+    juce::UndoManager undoManager;
+    NiceMock<engine::MockSampleLoader> loader;
+    NiceMock<engine::MockDrumGizmoReader> reader;
+    engine::KitBuilder builder{loader};
+    engine::SampleEngine engine;
+    engine::DrumGizmoBackgroundLoader background{reader, loader};
+    engine::KitPublisher kits{builder, engine, &background};
+    model::ProjectSnapshotExchange snapshots;
+    model::SnapshotPublisher publisher{tree, globalKit, snapshots, kits};
+    KitPresenter presenter{tree, globalKit, undoManager, kits, engine, reader};
+};
+
+TEST_F(KitPresenterDrumGizmoTest, FDG04_LoadingADrumGizmoKitMapsItsInstrumentsToTheGmSlots)
+{
+    EXPECT_EQ(presenter.loadDrumGizmoKit(kDrumkit), engine::DrumGizmoError::none);
+
+    EXPECT_TRUE(presenter.isDrumGizmoKit());
+    EXPECT_EQ(global().drumkitFile(), io::utf8FromPath(kDrumkit));
+    EXPECT_EQ(global().findSlot(36)->instrument(), "Kdrum");
+    EXPECT_EQ(global().findSlot(46)->chokeGroup(), engine::kHiHatChokeGroup);
+    EXPECT_EQ(presenter.sampleLabel(kKick), "Kdrum");
+    EXPECT_EQ(presenter.sampleLabel(kVibraslap), "kein Instrument");
+    EXPECT_EQ(presenter.instrumentNames(), (std::vector<std::string>{"Kdrum", "Snare", "Hihat"}));
+}
+
+TEST_F(KitPresenterDrumGizmoTest, FPJ05_LoadingADrumGizmoKitIsOneUndoStep)
+{
+    static_cast<void>(presenter.loadDrumGizmoKit(kDrumkit));
+
+    undoManager.undo();
+
+    EXPECT_FALSE(presenter.isDrumGizmoKit());
+    EXPECT_EQ(presenter.sampleLabel(kKick), "kein Sample");
+}
+
+TEST_F(KitPresenterDrumGizmoTest, Q09_AKitThatCannotBeReadKeepsTheKit)
+{
+    ON_CALL(reader, read(kDrumkit, false))
+        .WillByDefault(Return(engine::DrumGizmoReadResult{
+            .kit = std::nullopt, .error = engine::DrumGizmoError::notADrumkit, .errorFile = kDrumkit}));
+
+    EXPECT_EQ(presenter.loadDrumGizmoKit(kDrumkit), engine::DrumGizmoError::notADrumkit);
+
+    EXPECT_FALSE(presenter.isDrumGizmoKit());
+    EXPECT_FALSE(undoManager.canUndo());
+}
+
+TEST_F(KitPresenterDrumGizmoTest, FDG09_ShowsTheLoadingStateThenTheRamAndMissingFiles)
+{
+    static_cast<void>(presenter.loadDrumGizmoKit(kDrumkit));
+    EXPECT_THAT(presenter.drumGizmoStatus(),
+                ::testing::StartsWith("DrumGizmo-Kit „Testkit“ wird geladen..."));
+    EXPECT_FALSE(presenter.hasDrumGizmoWarning());
+    const auto changes = presenter.changeCount();
+
+    finishLoading();
+
+    EXPECT_NE(presenter.changeCount(), changes);
+    EXPECT_EQ(presenter.drumGizmoStatus(),
+              "DrumGizmo-Kit „Testkit“: 0 MB im Arbeitsspeicher | 1 Audiodateien fehlen");
+    EXPECT_TRUE(presenter.hasDrumGizmoWarning());
+    engine.queueTrigger(36, 100);
+    engine::StereoOutput out(1);
+    engine.render(out.channels.data(), 2, 1);
+    EXPECT_GT(out.left[0], 0.0F);
+}
+
+TEST_F(KitPresenterDrumGizmoTest, Q09_AFailedLoadShowsItsError)
+{
+    ON_CALL(reader, read(kDrumkit, true))
+        .WillByDefault(Return(engine::DrumGizmoReadResult{.kit = std::nullopt,
+                                                          .error = engine::DrumGizmoError::instrumentMissing,
+                                                          .errorFile = "/kits/Monster/Kdrum.xml"}));
+    static_cast<void>(presenter.loadDrumGizmoKit(kDrumkit));
+
+    finishLoading();
+
+    EXPECT_EQ(presenter.drumGizmoStatus(),
+              "Eine Instrument-Datei des DrumGizmo-Kits fehlt: " +
+                  io::utf8FromPath("/kits/Monster/Kdrum.xml"));
+    EXPECT_TRUE(presenter.hasDrumGizmoWarning());
+}
+
+TEST_F(KitPresenterDrumGizmoTest, FDG09_AKitWithoutNameIsNamedByItsFolder)
+{
+    ON_CALL(reader, read(kDrumkit, _))
+        .WillByDefault(Return(engine::DrumGizmoReadResult{.kit = testDrumGizmoKit("")}));
+    static_cast<void>(presenter.loadDrumGizmoKit(kDrumkit));
+
+    EXPECT_THAT(presenter.drumGizmoStatus(), ::testing::StartsWith("DrumGizmo-Kit „Monster“"));
+}
+
+TEST_F(KitPresenterDrumGizmoTest, Q09_AnUnreadableKitOfASavedKitHasNoInstruments)
+{
+    globalKit.setProperty(model::ids::drumkitFile, "/elsewhere/Lost/drumkit.xml", nullptr);
+
+    EXPECT_TRUE(presenter.isDrumGizmoKit());
+    EXPECT_TRUE(presenter.instrumentNames().empty());
+    EXPECT_THAT(presenter.drumGizmoStatus(), ::testing::StartsWith("DrumGizmo-Kit „Lost“"));
+}
+
+TEST_F(KitPresenterDrumGizmoTest, FDG07_TheSelectedSlotCanPlayAnotherInstrument)
+{
+    static_cast<void>(presenter.loadDrumGizmoKit(kDrumkit));
+    presenter.setInstrument("Snare");
+    EXPECT_EQ(presenter.instrument(), "");
+
+    presenter.select(kKick);
+    presenter.setInstrument("Snare");
+
+    EXPECT_EQ(presenter.instrument(), "Snare");
+    EXPECT_EQ(global().findSlot(36)->instrument(), "Snare");
+    undoManager.undo();
+    EXPECT_EQ(presenter.instrument(), "Kdrum");
+}
+
+TEST_F(KitPresenterDrumGizmoTest, FDG04_LoadingTheSameKitAgainReadsItsFilesAgain)
+{
+    EXPECT_CALL(reader, read(_, false)).Times(::testing::AnyNumber());
+    EXPECT_CALL(reader, read(kDrumkit, true)).Times(2);
+
+    static_cast<void>(presenter.loadDrumGizmoKit(kDrumkit));
+    finishLoading();
+    static_cast<void>(presenter.loadDrumGizmoKit(kDrumkit));
+    finishLoading();
+}
+
+TEST_F(KitPresenterDrumGizmoTest, FDG04_ASampleKitHasNoDrumGizmoStatus)
+{
+    EXPECT_FALSE(presenter.isDrumGizmoKit());
+    EXPECT_EQ(presenter.drumGizmoStatus(), "");
+    EXPECT_FALSE(presenter.hasDrumGizmoWarning());
+    EXPECT_TRUE(presenter.instrumentNames().empty());
+}
+
+TEST(KitPresenterDrumGizmoStatus, FDG10_DescribesEveryStateInGerman)
+{
+    using State = engine::DrumGizmoStatus::State;
+    EXPECT_EQ(KitPresenter::describeDrumGizmoKit("Aasi", {.state = State::none}, 0.0F),
+              "DrumGizmo-Kit „Aasi“");
+    EXPECT_EQ(KitPresenter::describeDrumGizmoKit("Aasi", {.state = State::loading}, 0.426F),
+              "DrumGizmo-Kit „Aasi“ wird geladen... 43 %");
+    EXPECT_EQ(
+        KitPresenter::describeDrumGizmoKit("Aasi", {.state = State::ready, .bytes = 1'260'000'000ULL}, 1.0F),
+        "DrumGizmo-Kit „Aasi“: 1,3 GB im Arbeitsspeicher");
+    EXPECT_EQ(
+        KitPresenter::describeDrumGizmoKit("Aasi", {.state = State::ready, .bytes = 349'600'000ULL}, 1.0F),
+        "DrumGizmo-Kit „Aasi“: 350 MB im Arbeitsspeicher");
+    EXPECT_EQ(
+        KitPresenter::describeDrumGizmoKit("Aasi", {.state = State::ready, .bytes = 6'000'000'000ULL}, 1.0F),
+        "DrumGizmo-Kit „Aasi“: 6,0 GB im Arbeitsspeicher | mehr als 5 GB, der Arbeitsspeicher könnte knapp "
+        "werden");
+}
+
+TEST(KitPresenterDrumGizmoStatus, FDG10_WarnsAboutFailuresMissingFilesAndLargeKits)
+{
+    using State = engine::DrumGizmoStatus::State;
+    EXPECT_FALSE(KitPresenter::isDrumGizmoWarning({.state = State::ready, .bytes = 1000}));
+    EXPECT_TRUE(KitPresenter::isDrumGizmoWarning({.state = State::failed}));
+    EXPECT_TRUE(KitPresenter::isDrumGizmoWarning({.state = State::ready, .missingFiles = 2}));
+    EXPECT_TRUE(
+        KitPresenter::isDrumGizmoWarning({.state = State::ready, .bytes = KitPresenter::kLargeKitBytes + 1}));
+}
+
+TEST(KitPresenterDrumGizmoStatus, Q09_NamesEveryErrorInGerman)
+{
+    using engine::DrumGizmoError;
+    const std::filesystem::path file{"x.xml"};
+    EXPECT_EQ(KitPresenter::drumGizmoErrorMessage(DrumGizmoError::fileMissing, file),
+              "Die Datei des DrumGizmo-Kits kann nicht gelesen werden: x.xml");
+    EXPECT_EQ(KitPresenter::drumGizmoErrorMessage(DrumGizmoError::notADrumkit, file),
+              "Die Datei ist kein DrumGizmo-Kit (drumkit.xml): x.xml");
+    EXPECT_EQ(KitPresenter::drumGizmoErrorMessage(DrumGizmoError::instrumentMissing, file),
+              "Eine Instrument-Datei des DrumGizmo-Kits fehlt: x.xml");
+    EXPECT_EQ(KitPresenter::drumGizmoErrorMessage(DrumGizmoError::instrumentBroken, file),
+              "Eine Instrument-Datei des DrumGizmo-Kits kann nicht gelesen werden: x.xml");
+    EXPECT_EQ(KitPresenter::drumGizmoErrorMessage(DrumGizmoError::outOfMemory, file),
+              "Das DrumGizmo-Kit passt nicht in den Arbeitsspeicher: x.xml");
+    EXPECT_EQ(KitPresenter::drumGizmoErrorMessage(DrumGizmoError::none, file), "");
+}
+
+TEST_F(KitPresenterTest, FDG04_WithoutBackgroundLoaderTheKitIsOnlyNamed)
+{
+    ON_CALL(drumGizmoReader, read(kDrumkit, false))
+        .WillByDefault(Return(engine::DrumGizmoReadResult{.kit = testDrumGizmoKit()}));
+
+    ASSERT_EQ(presenter.loadDrumGizmoKit(kDrumkit), engine::DrumGizmoError::none);
+
+    EXPECT_EQ(presenter.drumGizmoStatus(), "DrumGizmo-Kit „Testkit“");
 }
 
 } // namespace

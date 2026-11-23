@@ -43,6 +43,7 @@ std::unique_ptr<const engine::ProjectSnapshot> SnapshotBuilder::build(const Proj
 engine::KitDescription SnapshotBuilder::buildKit(const Kit& kit)
 {
     engine::KitDescription description;
+    const auto drumkitFile = io::pathFromUtf8(kit.drumkitFile());
     for (int index = 0; index < kit.numSlots(); ++index)
     {
         const auto slot = kit.slot(index);
@@ -53,7 +54,9 @@ engine::KitDescription SnapshotBuilder::buildKit(const Kit& kit)
                                .gain = static_cast<float>(slot.gain()),
                                .pitchSemitones = static_cast<int>(std::lround(slot.pitch())),
                                .chokeGroup = slot.chokeGroup(),
-                               .coreSlot = engine::isCoreGmNote(slot.gmNote())});
+                               .coreSlot = engine::isCoreGmNote(slot.gmNote()),
+                               .drumkitFile = drumkitFile,
+                               .instrument = kit.isDrumGizmo() ? slot.instrument() : std::string{}});
     }
     return description;
 }

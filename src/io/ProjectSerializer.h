@@ -44,8 +44,10 @@ public:
 private:
     static void
     convertPaths(juce::ValueTree& project, const std::filesystem::path& projectDirectory, bool toRelative);
-    static void
-    convertPath(juce::ValueTree& tree, const std::filesystem::path& projectDirectory, bool toRelative);
+    static void convertPath(juce::ValueTree& tree,
+                            const juce::Identifier& property,
+                            const std::filesystem::path& projectDirectory,
+                            bool toRelative);
     static void addMissingSections(juce::ValueTree& project);
 };
 
