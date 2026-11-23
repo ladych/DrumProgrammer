@@ -46,9 +46,13 @@ inline const juce::Identifier offsetSamples{"offsetSamples"};
 inline const juce::Identifier backingGain{"backingGain"};
 inline const juce::Identifier drumsGain{"drumsGain"};
 inline const juce::Identifier masterGain{"masterGain"};
+/// KIT: drumkit.xml of a DrumGizmo kit (F-DG-04); without it the kit is a sample kit.
+inline const juce::Identifier drumkitFile{"drumkitFile"};
+/// SLOT of a DrumGizmo kit: the instrument it plays (F-DG-05).
+inline const juce::Identifier instrument{"instrument"};
 
-/// Runtime-only marker for a slot whose sample file was missing when the project was loaded
-/// (F-PJ-03). It is never written to the .dpp file.
+/// Runtime-only marker for a slot whose sample file (or a KIT whose drumkit.xml) was missing when the project
+/// was loaded (F-PJ-03). It is never written to the .dpp file.
 inline const juce::Identifier sampleMissing{"sampleMissing"};
 
 } // namespace drumprog::model::ids

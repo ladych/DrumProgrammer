@@ -216,6 +216,23 @@ countries: de at ch li lu be
 "MIDI note" = "MIDI-Note"
 "Key (click, then press a key)" = "Taste (klicken, dann Taste drücken)"
 
+# DrumGizmo-Kits (AP12)
+"Load DrumGizmo kit" = "DrumGizmo-Kit laden"
+"no instrument" = "kein Instrument"
+"Instrument %1" = "Instrument %1"
+"%1 MB" = "%1 MB"
+"%1 GB" = "%1 GB"
+"DrumGizmo kit \"%1\"" = "DrumGizmo-Kit „%1“"
+"DrumGizmo kit \"%1\" is loading... %2 %" = "DrumGizmo-Kit „%1“ wird geladen... %2 %"
+"DrumGizmo kit \"%1\": %2 in RAM" = "DrumGizmo-Kit „%1“: %2 im Arbeitsspeicher"
+"%1 audio files missing" = "%1 Audiodateien fehlen"
+"more than 5 GB, the computer may run out of memory" = "mehr als 5 GB, der Arbeitsspeicher könnte knapp werden"
+"The DrumGizmo kit file cannot be read: %1" = "Die Datei des DrumGizmo-Kits kann nicht gelesen werden: %1"
+"The file is not a DrumGizmo kit (drumkit.xml): %1" = "Die Datei ist kein DrumGizmo-Kit (drumkit.xml): %1"
+"An instrument file of the DrumGizmo kit is missing: %1" = "Eine Instrument-Datei des DrumGizmo-Kits fehlt: %1"
+"An instrument file of the DrumGizmo kit cannot be read: %1" = "Eine Instrument-Datei des DrumGizmo-Kits kann nicht gelesen werden: %1"
+"The DrumGizmo kit does not fit into RAM: %1" = "Das DrumGizmo-Kit passt nicht in den Arbeitsspeicher: %1"
+
 # Hauptfenster
 "Keyboard" = "Tastatur"
 
@@ -350,6 +367,8 @@ countries: de at ch li lu be
 "The project's kit becomes the kit of all projects without their own kit" = "Das Kit des Projekts wird das Kit für alle Projekte ohne eigenes Kit"
 "Reset to default" = "Default zurücksetzen"
 "Reset the shown kit to the default kit with its samples" = "Das angezeigte Kit auf das Default-Kit mit seinen Samples zurücksetzen"
+"Load DrumGizmo kit..." = "DrumGizmo-Kit laden..."
+"Use a DrumGizmo kit (drumkit.xml) as the shown kit" = "Ein DrumGizmo-Kit (drumkit.xml) als angezeigtes Kit verwenden"
 "About and licenses..." = "Info und Lizenzen..."
 "Version, license, source code and third-party components" = "Version, Lizenz, Quellcode und Komponenten von Drittanbietern"
 "Help" = "Hilfe"

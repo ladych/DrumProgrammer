@@ -414,5 +414,30 @@ TEST_F(ProjectTest, FMI03_AddsAPatternWithAllItsNotesInOneChange)
     EXPECT_EQ(project.numPatterns(), 1);
 }
 
+TEST_F(ProjectTest, FDG05_SlotOfADrumGizmoKitPlaysAnInstrument)
+{
+    auto slot = snare();
+    EXPECT_EQ(slot.instrument(), "");
+
+    slot.setInstrument("Snare_top");
+
+    EXPECT_EQ(slot.instrument(), "Snare_top");
+}
+
+TEST_F(ProjectTest, FDG04_KitWithDrumkitFileIsADrumGizmoKit)
+{
+    auto kitTree = tree.getChildWithName(ids::kit);
+    EXPECT_FALSE(project.kit().isDrumGizmo());
+    EXPECT_EQ(project.kit().drumkitFile(), "");
+
+    kitTree.setProperty(ids::drumkitFile, "/kits/Aasimonster/drumkit.xml", nullptr);
+
+    EXPECT_TRUE(project.kit().isDrumGizmo());
+    EXPECT_EQ(project.kit().drumkitFile(), "/kits/Aasimonster/drumkit.xml");
+    EXPECT_FALSE(project.kit().isDrumkitMissing());
+    kitTree.setProperty(ids::sampleMissing, true, nullptr);
+    EXPECT_TRUE(project.kit().isDrumkitMissing());
+}
+
 } // namespace
 } // namespace drumprog::model

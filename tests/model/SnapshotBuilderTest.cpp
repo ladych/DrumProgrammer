@@ -173,5 +173,27 @@ TEST_F(SnapshotBuilderTest, FSO04_SkipsSongBlocksOfUnknownPatterns)
     EXPECT_TRUE(snapshot->song.empty());
 }
 
+TEST_F(SnapshotBuilderTest, FDG05_KitDescriptionOfADrumGizmoKitNamesKitAndInstruments)
+{
+    auto kitTree = activeKit().tree();
+    kitTree.setProperty(ids::drumkitFile, juce::String::fromUTF8("/kits/A/drumkit.xml"), nullptr);
+    activeKit().findSlot(36)->setInstrument("Kdrum");
+
+    const auto kit = SnapshotBuilder::buildKit(activeKit());
+
+    EXPECT_EQ(kit[kKickIndex].instrument, "Kdrum");
+    EXPECT_EQ(kit[kKickIndex].drumkitFile, io::pathFromUtf8("/kits/A/drumkit.xml"));
+}
+
+TEST_F(SnapshotBuilderTest, FDG04_InstrumentsOfASampleKitAreIgnored)
+{
+    activeKit().findSlot(36)->setInstrument("Kdrum");
+
+    const auto kit = SnapshotBuilder::buildKit(activeKit());
+
+    EXPECT_EQ(kit[kKickIndex].instrument, "");
+    EXPECT_TRUE(kit[kKickIndex].drumkitFile.empty());
+}
+
 } // namespace
 } // namespace drumprog::model

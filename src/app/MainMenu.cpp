@@ -48,6 +48,7 @@ constexpr juce::CommandID kitUseGlobal = 0x5002;
 constexpr juce::CommandID kitCopyToGlobal = 0x5003;
 constexpr juce::CommandID kitShow = 0x5004;
 constexpr juce::CommandID kitResetToDefault = 0x5005;
+constexpr juce::CommandID kitLoadDrumGizmo = 0x5006;
 constexpr juce::CommandID transportRecord = 0x4001;
 constexpr juce::CommandID helpAbout = 0x9001;
 } // namespace command
@@ -276,6 +277,12 @@ constexpr std::array kCommands{
                 i18n::marked("Kit"),
                 0,
                 0},
+    CommandSpec{command::kitLoadDrumGizmo,
+                i18n::marked("Load DrumGizmo kit..."),
+                i18n::marked("Use a DrumGizmo kit (drumkit.xml) as the shown kit"),
+                i18n::marked("Kit"),
+                0,
+                0},
     CommandSpec{command::helpAbout,
                 i18n::marked("About and licenses..."),
                 i18n::marked("Version, license, source code and third-party components"),
@@ -338,6 +345,7 @@ std::vector<juce::CommandID> menuCommands(int menuIndex)
                 kSeparator,
                 kitCopyToGlobal,
                 kSeparator,
+                kitLoadDrumGizmo,
                 kitResetToDefault};
     case 6:
         return {audioSettings, audioKeymap, kSeparator, audioLoadBackingTrack, audioRemoveBackingTrack};
@@ -615,6 +623,8 @@ std::function<void()> MainMenu::kitActionFor(juce::CommandID commandID) const
         return kit_.showKit;
     case command::kitResetToDefault:
         return kit_.resetToDefault;
+    case command::kitLoadDrumGizmo:
+        return kit_.loadDrumGizmoKit;
     case command::kitCopyToProject:
         return kit_.copyGlobalKitToProject;
     case command::kitUseGlobal:

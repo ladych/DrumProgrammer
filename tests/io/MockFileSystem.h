@@ -19,6 +19,10 @@ public:
                 (const std::filesystem::path& from, const std::filesystem::path& to),
                 (override));
     MOCK_METHOD(bool, remove, (const std::filesystem::path& file), (override));
+    MOCK_METHOD(std::vector<std::filesystem::path>,
+                listFiles,
+                (const std::filesystem::path& directory),
+                (const, override));
 };
 
 } // namespace drumprog::io

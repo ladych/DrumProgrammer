@@ -28,6 +28,7 @@ struct KitMenuActions
 {
     std::function<void()> showKit;
     std::function<void()> resetToDefault;
+    std::function<void()> loadDrumGizmoKit;
     std::function<void()> copyGlobalKitToProject;
     std::function<void()> useGlobalKit;
     std::function<void()> copyProjectKitToGlobal;

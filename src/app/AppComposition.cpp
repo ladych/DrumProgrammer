@@ -105,13 +105,15 @@ AppComposition::AppComposition(theme::LookAndFeel& lookAndFeel)
       globalKitSettings_(fileSystem_, settingsFile("kit.xml")), defaultKit_(installedDefaultKit(fileSystem_)),
       globalKit_(globalKitSettings_, fileSystem_, [this] { return defaultKit_.createKit(); }),
       testTone_(kTestToneFrequencyHz, kTestToneGain), kitBuilder_(sampleLoader_),
-      kitPublisher_(kitBuilder_, sampleEngine_),
+      drumGizmoReader_(fileSystem_), drumGizmoLoader_(drumGizmoReader_, drumGizmoSampleLoader_),
+      kitPublisher_(kitBuilder_, sampleEngine_, &drumGizmoLoader_),
       playbackRenderer_(sequencer_, sampleEngine_, metronome_, backingTrackPlayer_),
       audioCallback_(testTone_, playbackRenderer_, snapshots_),
       deviceSupervisor_(deviceManager_, deviceSettings_, audioCallback_, kNumOutputChannels),
       projectFactory_(idGenerator_), project_(projectFactory_.createDefault()),
       snapshotPublisher_(project_, globalKit_.tree(), snapshots_, kitPublisher_),
-      kitPresenter_(project_, globalKit_.tree(), undoManager_, kitPublisher_, sampleEngine_),
+      kitPresenter_(
+          project_, globalKit_.tree(), undoManager_, kitPublisher_, sampleEngine_, drumGizmoReader_),
       takeRecorder_(project_, globalKit_.tree(), undoManager_),
       songTakeRecorder_(project_, globalKit_.tree(), undoManager_, idGenerator_),
       transportPresenter_(
@@ -153,6 +155,7 @@ AppComposition::AppComposition(theme::LookAndFeel& lookAndFeel)
           midiActions(),
           {.showKit = [this] { showKit(); },
            .resetToDefault = [this] { resetKitToDefault(); },
+           .loadDrumGizmoKit = [this] { chooseDrumGizmoKit(); },
            .copyGlobalKitToProject = [this] { kitPresenter_.copyGlobalKitToProject(); },
            .useGlobalKit = [this] { kitPresenter_.useGlobalKit(); },
            .copyProjectKitToGlobal = [this] { kitPresenter_.copyProjectKitToGlobal(); },
@@ -238,6 +241,9 @@ void AppComposition::changeListenerCallback(juce::ChangeBroadcaster* /*source*/)
 void AppComposition::timerCallback()
 {
     globalKit_.saveIfChanged();
+    // Frees replaced kits and publishes a DrumGizmo kit loaded in the background, also while the kit
+    // dialog (which ticks faster) is closed.
+    kitPresenter_.tick();
     autosave_.tick(juce::Time::getMillisecondCounterHiRes() / 1000.0);
 }
 
@@ -348,6 +354,30 @@ void AppComposition::resetKitToDefault()
 {
     defaultKit_.install();
     kitPresenter_.resetToDefaultKit(defaultKit_.createKit());
+}
+
+void AppComposition::chooseDrumGizmoKit()
+{
+    drumGizmoChooser_ = std::make_unique<juce::FileChooser>(
+        i18n::trJuce("Load DrumGizmo kit"), juce::File{}, "drumkit.xml;*.xml");
+    drumGizmoChooser_->launchAsync(
+        juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        [this](const juce::FileChooser& chooser)
+        {
+            const auto file = chooser.getResult();
+            if (file == juce::File{})
+                return;
+            const auto utf8 = file.getFullPathName().toStdString();
+            const std::filesystem::path path{std::u8string{utf8.begin(), utf8.end()}};
+            const auto error = kitPresenter_.loadDrumGizmoKit(path);
+            if (error != engine::DrumGizmoError::none)
+                juce::AlertWindow::showMessageBoxAsync(
+                    juce::MessageBoxIconType::WarningIcon,
+                    i18n::trJuce("Load DrumGizmo kit"),
+                    juce::String::fromUTF8(ui::KitPresenter::drumGizmoErrorMessage(error, path).c_str()));
+            else
+                showKit();
+        });
 }
 
 void AppComposition::chooseLanguage(const std::string& setting)

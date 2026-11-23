@@ -155,5 +155,33 @@ TEST_F(GlobalKitTest, Q10_AFailedSaveKeepsTheChangesUnsaved)
     EXPECT_TRUE(kit.hasUnsavedChanges());
 }
 
+TEST_F(GlobalKitTest, Q09_AMissingDrumGizmoKitIsReportedAndMarked)
+{
+    auto kit = model::ProjectFactory::createDefaultKit();
+    kit.setProperty(
+        model::ids::drumkitFile, juce::String{kKickFile.parent_path().string() + "/drumkit.xml"}, nullptr);
+    givenSavedKit(kit.toXmlString().toStdString());
+
+    GlobalKit global{store, fileSystem, defaultKit};
+
+    ASSERT_EQ(global.missingSamples().size(), 1U);
+    EXPECT_EQ(global.missingSamples()[0].slotName, "DrumGizmo");
+    EXPECT_TRUE(Kit(global.tree(), nullptr).isDrumkitMissing());
+    EXPECT_THAT(GlobalKit::toXml(global.tree()), Not(HasSubstr("sampleMissing")));
+}
+
+TEST_F(GlobalKitTest, FDG04_AnExistingDrumGizmoKitIsNotMissing)
+{
+    auto kit = model::ProjectFactory::createDefaultKit();
+    kit.setProperty(model::ids::drumkitFile, "/kits/drumkit.xml", nullptr);
+    givenSavedKit(kit.toXmlString().toStdString());
+    ON_CALL(fileSystem, exists(fs::path{"/kits/drumkit.xml"})).WillByDefault(Return(true));
+
+    const GlobalKit global{store, fileSystem, defaultKit};
+
+    EXPECT_TRUE(global.missingSamples().empty());
+    EXPECT_FALSE(Kit(global.tree(), nullptr).isDrumkitMissing());
+}
+
 } // namespace
 } // namespace drumprog::io

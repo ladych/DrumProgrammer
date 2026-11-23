@@ -1,5 +1,6 @@
 #include "io/StdFileSystem.h"
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <system_error>
@@ -50,6 +51,18 @@ bool StdFileSystem::remove(const std::filesystem::path& file)
     std::error_code error;
     std::filesystem::remove(file, error);
     return !error;
+}
+
+std::vector<std::filesystem::path> StdFileSystem::listFiles(const std::filesystem::path& directory) const
+{
+    std::vector<std::filesystem::path> files;
+    std::error_code error;
+    for (std::filesystem::directory_iterator entry{directory, error}, end; !error && entry != end;
+         entry.increment(error))
+        if (entry->is_regular_file(error))
+            files.push_back(entry->path());
+    std::ranges::sort(files);
+    return files;
 }
 
 } // namespace drumprog::io

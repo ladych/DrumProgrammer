@@ -48,4 +48,20 @@ juce::ValueTree ProjectFactory::createDefaultKit()
     return kit;
 }
 
+juce::ValueTree ProjectFactory::createDrumGizmoKit(const std::string& drumkitFile,
+                                                   const std::map<int, engine::DrumGizmoSlotMapping>& mapping)
+{
+    auto kit = createDefaultKit();
+    kit.setProperty(ids::drumkitFile, juce::String::fromUTF8(drumkitFile.c_str()), nullptr);
+    for (auto slot : kit)
+    {
+        const auto found = mapping.find(static_cast<int>(slot[ids::gmNote]));
+        if (found == mapping.end())
+            continue;
+        slot.setProperty(ids::instrument, juce::String::fromUTF8(found->second.instrument.c_str()), nullptr);
+        slot.setProperty(ids::chokeGroup, found->second.chokeGroup, nullptr);
+    }
+    return kit;
+}
+
 } // namespace drumprog::model

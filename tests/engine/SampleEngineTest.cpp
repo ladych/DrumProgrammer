@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <cmath>
 #include <memory>
 #include <thread>
 
@@ -311,6 +312,54 @@ TEST_F(SampleEngineTest, Q04_FIN03_PublishingKitsAndMidiHitsWhileRenderingIsThre
     audio.join();
     engine.collectGarbage();
     SUCCEED();
+}
+
+std::unique_ptr<EngineKit> makeLayeredKit(int slotIndex)
+{
+    // Four one-frame hits from soft to hard, so every render shows only the hit just played.
+    std::vector<LayerSample> layers;
+    for (int index = 0; index < 4; ++index)
+        layers.push_back({.sample = constantSample(0.1F * static_cast<float>(index + 1), 1),
+                          .power = static_cast<float>(index) / 3.0F});
+    return std::make_unique<EngineKit>(std::vector<EngineSlot>{
+        EngineSlot{.slotIndex = slotIndex, .midiNote = 36, .layers = std::move(layers), .gain = 0.5F}});
+}
+
+TEST_F(SampleEngineTest, FDG02_VelocityChoosesTheHitWithoutTheVelocityCurve)
+{
+    engine.setKit(makeLayeredKit(0));
+    render(1);
+    for (int repeat = 0; repeat < 8; ++repeat)
+    {
+        engine.trigger(36, 1, 0);
+        const float soft = render(1)[0];
+        EXPECT_TRUE(std::abs(soft - 0.05F) < 1e-6F || std::abs(soft - 0.1F) < 1e-6F) << soft;
+        engine.trigger(36, 127, 0);
+        const float hard = render(1)[0];
+        EXPECT_TRUE(std::abs(hard - 0.15F) < 1e-6F || std::abs(hard - 0.2F) < 1e-6F) << hard;
+    }
+}
+
+TEST_F(SampleEngineTest, FDG02_TheSameHitIsNeverPlayedTwiceInARow)
+{
+    engine.setKit(makeLayeredKit(0));
+    render(1);
+    float previous = -1.0F;
+    for (int repeat = 0; repeat < 16; ++repeat)
+    {
+        engine.trigger(36, 64, 0);
+        const float played = render(1)[0];
+        EXPECT_NE(played, previous);
+        previous = played;
+    }
+}
+
+TEST_F(SampleEngineTest, FDG02_SlotsBeyondTheTrackedRangeStillPlayTheirHits)
+{
+    engine.setKit(makeLayeredKit(TriggerIndicators::kMaxSlots));
+    render(1);
+    engine.trigger(36, 127, 0);
+    EXPECT_GT(render(1)[0], 0.0F);
 }
 
 } // namespace

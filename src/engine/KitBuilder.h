@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/DrumGizmoLoader.h"
 #include "engine/EngineKit.h"
 #include "engine/ISampleLoader.h"
 #include "engine/KitDescription.h"
@@ -29,7 +30,10 @@ public:
 
     explicit KitBuilder(ISampleLoader& loader);
 
-    [[nodiscard]] KitBuildResult build(const KitDescription& kit, double deviceSampleRate);
+    /// Slots with a DrumGizmo instrument take its hits from drumGizmo, which is already at the device rate;
+    /// without it (still loading) they play nothing.
+    [[nodiscard]] KitBuildResult
+    build(const KitDescription& kit, double deviceSampleRate, const LoadedDrumGizmoKit* drumGizmo = nullptr);
     /// Loads a file into the cache before it is assigned; false if it cannot be loaded.
     [[nodiscard]] bool preload(const std::filesystem::path& file);
 

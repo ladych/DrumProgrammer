@@ -5,11 +5,16 @@ add_library(drumprog_core STATIC
     engine/BackingTrackPlayer.cpp
     engine/Clock.cpp
     engine/Downmix.cpp
+    engine/DrumGizmoKit.cpp
+    engine/DrumGizmoLoader.cpp
+    engine/DrumGizmoMapping.cpp
     engine/EngineKit.cpp
     engine/KitBuilder.cpp
     engine/KitDescription.cpp
     engine/KitPublisher.cpp
+    engine/LayerSelection.cpp
     engine/Metronome.cpp
+    engine/MicMix.cpp
     engine/PlaybackRenderer.cpp
     engine/Resampler.cpp
     engine/SampleBuffer.cpp
@@ -30,6 +35,7 @@ add_library(drumprog_core STATIC
     input/MidiInputHandler.cpp
     input/Scancode.cpp
     io/DefaultKit.cpp
+    io/DrumGizmoReader.cpp
     io/GlobalKit.cpp
     io/MidiFileReader.cpp
     io/MidiFileWriter.cpp
@@ -78,7 +84,8 @@ add_library(drumprog_core STATIC
     ui/TransportPresenter.cpp
 )
 target_include_directories(drumprog_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(drumprog_core PUBLIC drumprog_juce)
+find_package(Threads REQUIRED)
+target_link_libraries(drumprog_core PUBLIC drumprog_juce Threads::Threads)
 drumprog_enable_warnings(drumprog_core)
 
 if(NOT DRUMPROG_BUILD_APP)

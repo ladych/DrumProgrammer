@@ -11,6 +11,7 @@
 #include "app/MidiInputCallback.h"
 #include "app/Theme.h"
 #include "engine/BackingTrackPlayer.h"
+#include "engine/DrumGizmoLoader.h"
 #include "engine/KitBuilder.h"
 #include "engine/KitPublisher.h"
 #include "engine/Metronome.h"
@@ -25,6 +26,7 @@
 #include "input/Keymap.h"
 #include "input/MidiInputHandler.h"
 #include "io/DefaultKit.h"
+#include "io/DrumGizmoReader.h"
 #include "io/GlobalKit.h"
 #include "io/ProjectRepository.h"
 #include "io/SettingsStore.h"
@@ -107,6 +109,8 @@ private:
     void showKit();
     /// Copies the default kit's samples again if they were deleted, then resets the shown kit.
     void resetKitToDefault();
+    /// File dialog of "DrumGizmo-Kit laden" (F-DG-04).
+    void chooseDrumGizmoKit();
     /// Saves the language of "Hilfe > Sprache"; it shows after a restart.
     void chooseLanguage(const std::string& setting);
     [[nodiscard]] EditActions editActions();
@@ -133,6 +137,11 @@ private:
     JuceSampleLoader sampleLoader_;
     engine::KitBuilder kitBuilder_;
     engine::SampleEngine sampleEngine_;
+    // DrumGizmo kits (AP12): read and loaded on the loader's own thread with its own sample loader, so a
+    // large kit neither blocks the start nor the GUI (Q-08). The publisher refers to the loader.
+    io::DrumGizmoReader drumGizmoReader_;
+    JuceSampleLoader drumGizmoSampleLoader_;
+    engine::DrumGizmoBackgroundLoader drumGizmoLoader_;
     engine::KitPublisher kitPublisher_;
     // Backing track (AP8): streamed from the disk on the loader's thread; the player keeps the streams, so
     // it is destroyed before the loader and its thread.
@@ -186,6 +195,7 @@ private:
     ui::BackingTrackPresenter backingTrackPresenter_;
     ui::MixPresenter mixPresenter_;
     std::unique_ptr<juce::FileChooser> backingTrackChooser_;
+    std::unique_ptr<juce::FileChooser> drumGizmoChooser_;
 
     // MIDI export of the active pattern or the song (AP6, AP9) and import as a new pattern (AP9).
     JuceMidiDialogs midiDialogs_;

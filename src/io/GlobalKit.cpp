@@ -27,6 +27,7 @@ bool GlobalKit::saveIfChanged()
 std::string GlobalKit::toXml(const juce::ValueTree& kit)
 {
     auto copy = kit.createCopy();
+    copy.removeProperty(model::ids::sampleMissing, nullptr);
     for (auto slot : copy)
         slot.removeProperty(model::ids::sampleMissing, nullptr);
     return copy.toXmlString().toStdString();

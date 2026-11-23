@@ -4,12 +4,16 @@ add_executable(drumprog_tests
     engine/BackingTrackPlayerTest.cpp
     engine/ClockTest.cpp
     engine/DownmixTest.cpp
+    engine/DrumGizmoLoaderTest.cpp
+    engine/DrumGizmoMappingTest.cpp
     engine/EngineKitTest.cpp
     engine/KitBuilderTest.cpp
     engine/KitDescriptionTest.cpp
     engine/KitPublisherTest.cpp
+    engine/LayerSelectionTest.cpp
     engine/LongRunTest.cpp
     engine/MetronomeTest.cpp
+    engine/MicMixTest.cpp
     engine/PlaybackRendererTest.cpp
     engine/SampleBufferTest.cpp
     engine/SampleEngineTest.cpp
@@ -33,6 +37,7 @@ add_executable(drumprog_tests
     input/MidiInputHandlerTest.cpp
     input/ScancodeTest.cpp
     io/DefaultKitTest.cpp
+    io/DrumGizmoReaderTest.cpp
     io/GlobalKitTest.cpp
     io/MidiFileReaderTest.cpp
     io/MidiFileWriterTest.cpp

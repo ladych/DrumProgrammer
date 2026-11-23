@@ -1,7 +1,10 @@
 #include "ui/KitPresenter.h"
 
+#include "engine/DrumGizmoMapping.h"
 #include "i18n/Translate.h"
 #include "io/Utf8Path.h"
+#include "model/ModelIds.h"
+#include "model/ProjectFactory.h"
 
 #include <algorithm>
 #include <cmath>
@@ -14,6 +17,18 @@ namespace
 {
 
 constexpr int kMaxMidiNote = 127;
+constexpr std::uint64_t kBytesPerMb = 1'000'000ULL;
+constexpr std::uint64_t kBytesPerGb = 1'000'000'000ULL;
+
+/// "350 MB" below one GB, otherwise "1,2 GB" with the decimal separator of the language.
+std::string formatBytes(std::uint64_t bytes)
+{
+    if (bytes < kBytesPerGb)
+        return i18n::tr("%1 MB", std::to_string((bytes + kBytesPerMb / 2) / kBytesPerMb));
+    const auto tenths = (bytes + kBytesPerGb / 20) / (kBytesPerGb / 10);
+    return i18n::tr("%1 GB",
+                    std::to_string(tenths / 10) + i18n::decimalSeparator() + std::to_string(tenths % 10));
+}
 
 } // namespace
 
@@ -21,9 +36,11 @@ KitPresenter::KitPresenter(juce::ValueTree project,
                            juce::ValueTree globalKit,
                            juce::UndoManager& undoManager,
                            engine::KitPublisher& kits,
-                           engine::SampleEngine& engine)
+                           engine::SampleEngine& engine,
+                           const engine::IDrumGizmoReader& drumGizmoReader)
     : project_(std::move(project)), globalKit_(std::move(globalKit)), undoManager_(undoManager), kits_(kits),
-      engine_(engine), projectListener_(project_, [this] { ++changeCount_; }),
+      engine_(engine), drumGizmoReader_(drumGizmoReader),
+      projectListener_(project_, [this] { ++changeCount_; }),
       globalKitListener_(globalKit_, [this] { ++changeCount_; })
 {
 }
@@ -63,6 +80,8 @@ std::string KitPresenter::sampleLabel(int slotIndex) const
     const auto slot = slotAt(slotIndex);
     if (!slot)
         return {};
+    if (isDrumGizmoKit())
+        return slot->instrument().empty() ? i18n::tr("no instrument") : slot->instrument();
     if (!slot->hasSample())
         return i18n::tr("no sample");
     return io::utf8FromPath(io::pathFromUtf8(slot->filePath()).filename());
@@ -196,9 +215,130 @@ void KitPresenter::resetToDefaultKit(const juce::ValueTree& defaultKit)
     kit.copyPropertiesAndChildrenFrom(defaultKit, &undoManager_);
 }
 
+engine::DrumGizmoError KitPresenter::loadDrumGizmoKit(const std::filesystem::path& drumkitFile)
+{
+    auto read = drumGizmoReader_.read(drumkitFile, false);
+    if (!read.kit)
+        return read.error;
+    undoManager_.beginNewTransaction(i18n::trJuce("Load DrumGizmo kit"));
+    const auto file = io::utf8FromPath(drumkitFile);
+    const bool sameKit = activeKit().drumkitFile() == file;
+    const auto newKit = model::ProjectFactory::createDrumGizmoKit(file, engine::mapToGmSlots(*read.kit));
+    // Slots first, then the kit file, so the background load starts once, with the new slots.
+    auto kit = activeKit().tree();
+    kit.removeAllChildren(&undoManager_);
+    for (const auto& slot : newKit)
+        kit.appendChild(slot.createCopy(), &undoManager_);
+    kit.removeProperty(model::ids::sampleMissing, &undoManager_);
+    kit.setProperty(model::ids::drumkitFile, newKit[model::ids::drumkitFile], &undoManager_);
+    readFile_ = drumkitFile;
+    readKit_ = std::move(read);
+    // A new kit starts loading with the change of the tree; the same kit is read again, e.g. after its
+    // files were fixed.
+    if (sameKit)
+        kits_.reloadDrumGizmoKit();
+    return engine::DrumGizmoError::none;
+}
+
+bool KitPresenter::isDrumGizmoKit() const
+{
+    return activeKit().isDrumGizmo();
+}
+
+std::vector<std::string> KitPresenter::instrumentNames() const
+{
+    std::vector<std::string> names;
+    if (!isDrumGizmoKit())
+        return names;
+    if (const auto& read = drumGizmoKit(); read.kit)
+        for (const auto& instrument : read.kit->instruments)
+            names.push_back(instrument.name);
+    return names;
+}
+
+std::string KitPresenter::instrument() const
+{
+    const auto slot = selected();
+    return slot ? slot->instrument() : std::string{};
+}
+
+void KitPresenter::setInstrument(const std::string& instrument)
+{
+    if (auto slot = selected())
+    {
+        beginEdit(*slot, i18n::marked("Instrument %1"));
+        slot->setInstrument(instrument);
+    }
+}
+
+std::string KitPresenter::drumGizmoStatus() const
+{
+    if (!isDrumGizmoKit())
+        return {};
+    return describeDrumGizmoKit(drumGizmoKitName(), kits_.drumGizmoStatus(), kits_.drumGizmoProgress());
+}
+
+std::string KitPresenter::describeDrumGizmoKit(const std::string& name,
+                                               const engine::DrumGizmoStatus& status,
+                                               float progress)
+{
+    switch (status.state)
+    {
+    case engine::DrumGizmoStatus::State::loading:
+        return i18n::tr(
+            "DrumGizmo kit \"%1\" is loading... %2 %", name, std::to_string(std::lround(progress * 100.0F)));
+    case engine::DrumGizmoStatus::State::failed:
+        return drumGizmoErrorMessage(status.error, status.errorFile);
+    case engine::DrumGizmoStatus::State::none:
+        return i18n::tr("DrumGizmo kit \"%1\"", name);
+    default:
+        break;
+    }
+    auto text = i18n::tr("DrumGizmo kit \"%1\": %2 in RAM", name, formatBytes(status.bytes));
+    if (status.missingFiles > 0)
+        text += " | " + i18n::tr("%1 audio files missing", std::to_string(status.missingFiles));
+    if (status.bytes > kLargeKitBytes)
+        text += " | " + i18n::tr("more than 5 GB, the computer may run out of memory");
+    return text;
+}
+
+bool KitPresenter::isDrumGizmoWarning(const engine::DrumGizmoStatus& status) noexcept
+{
+    return status.state == engine::DrumGizmoStatus::State::failed || status.missingFiles > 0 ||
+           status.bytes > kLargeKitBytes;
+}
+
+bool KitPresenter::hasDrumGizmoWarning() const
+{
+    return isDrumGizmoKit() && isDrumGizmoWarning(kits_.drumGizmoStatus());
+}
+
+std::string KitPresenter::drumGizmoErrorMessage(engine::DrumGizmoError error,
+                                                const std::filesystem::path& file)
+{
+    const auto path = io::utf8FromPath(file);
+    switch (error)
+    {
+    case engine::DrumGizmoError::fileMissing:
+        return i18n::tr("The DrumGizmo kit file cannot be read: %1", path);
+    case engine::DrumGizmoError::notADrumkit:
+        return i18n::tr("The file is not a DrumGizmo kit (drumkit.xml): %1", path);
+    case engine::DrumGizmoError::instrumentMissing:
+        return i18n::tr("An instrument file of the DrumGizmo kit is missing: %1", path);
+    case engine::DrumGizmoError::instrumentBroken:
+        return i18n::tr("An instrument file of the DrumGizmo kit cannot be read: %1", path);
+    case engine::DrumGizmoError::outOfMemory:
+        return i18n::tr("The DrumGizmo kit does not fit into RAM: %1", path);
+    default:
+        return {};
+    }
+}
+
 void KitPresenter::tick()
 {
     engine_.collectGarbage();
+    if (kits_.poll())
+        ++changeCount_;
     const auto& indicators = engine_.indicators();
     for (std::size_t index = 0; index < leds_.size(); ++index)
         leds_.at(index).update(indicators.hitCount(static_cast<int>(index)));
@@ -232,6 +372,26 @@ std::optional<model::SampleSlot> KitPresenter::slotAt(int slotIndex) const
 std::optional<model::SampleSlot> KitPresenter::selected() const
 {
     return selected_ ? slotAt(*selected_) : std::nullopt;
+}
+
+std::string KitPresenter::drumGizmoKitName() const
+{
+    // Kits without a name in drumkit.xml are named by their folder.
+    if (const auto& read = drumGizmoKit(); read.kit && !read.kit->name.empty())
+        return read.kit->name;
+    const auto file = io::pathFromUtf8(activeKit().drumkitFile());
+    return io::utf8FromPath(file.parent_path().filename());
+}
+
+const engine::DrumGizmoReadResult& KitPresenter::drumGizmoKit() const
+{
+    const auto file = io::pathFromUtf8(activeKit().drumkitFile());
+    if (file != readFile_)
+    {
+        readFile_ = file;
+        readKit_ = drumGizmoReader_.read(file, false);
+    }
+    return readKit_;
 }
 
 void KitPresenter::beginEdit(const model::SampleSlot& slot, const char* what)

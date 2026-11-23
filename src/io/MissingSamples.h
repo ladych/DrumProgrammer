@@ -10,7 +10,8 @@ namespace drumprog::io
 {
 
 /// Marks the slots of the kit whose sample file does not exist (F-PJ-03), so they show "kein Sample"
-/// until a file is assigned, and returns them in kit order.
+/// until a file is assigned, and returns them in kit order. A DrumGizmo kit whose drumkit.xml is missing is
+/// marked as a whole and comes first, named "DrumGizmo" (Q-09).
 [[nodiscard]] std::vector<MissingSample> markMissingSamples(const model::Kit& kit,
                                                             const IFileSystem& fileSystem);
 

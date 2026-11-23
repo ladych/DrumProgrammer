@@ -16,9 +16,23 @@ double pitchToPlaybackRate(int semitones) noexcept
     return std::exp2(static_cast<double>(clamped) / 12.0);
 }
 
+namespace
+{
+
+std::vector<LayerSample> layersFor(const std::string& instrument, const LoadedDrumGizmoKit* drumGizmo)
+{
+    if (drumGizmo == nullptr)
+        return {};
+    const auto found = drumGizmo->instruments.find(instrument);
+    return found != drumGizmo->instruments.end() ? found->second : std::vector<LayerSample>{};
+}
+
+} // namespace
+
 KitBuilder::KitBuilder(ISampleLoader& loader) : loader_(loader) {}
 
-KitBuildResult KitBuilder::build(const KitDescription& kit, double deviceSampleRate)
+KitBuildResult
+KitBuilder::build(const KitDescription& kit, double deviceSampleRate, const LoadedDrumGizmoKit* drumGizmo)
 {
     if (deviceSampleRate != cachedRate_)
     {
@@ -36,7 +50,9 @@ KitBuildResult KitBuilder::build(const KitDescription& kit, double deviceSampleR
                         .gain = description.gain,
                         .playbackRate = pitchToPlaybackRate(description.pitchSemitones),
                         .chokeGroup = description.chokeGroup};
-        if (!description.sampleFile.empty())
+        if (!description.instrument.empty())
+            slot.layers = layersFor(description.instrument, drumGizmo);
+        else if (!description.sampleFile.empty())
         {
             slot.sample = sampleFor(description.sampleFile);
             if (slot.sample == nullptr)

@@ -1,5 +1,6 @@
 #include "ui/KeyRouter.h"
 
+#include "engine/MockDrumGizmoReader.h"
 #include "engine/MockSampleLoader.h"
 #include "input/FakeNoteSink.h"
 #include "input/Scancode.h"
@@ -45,7 +46,8 @@ protected:
     engine::KitBuilder builder{loader};
     engine::SampleEngine engine;
     engine::KitPublisher kits{builder, engine};
-    KitPresenter kit{tree, globalKit, undoManager, kits, engine};
+    NiceMock<engine::MockDrumGizmoReader> drumGizmoReader;
+    KitPresenter kit{tree, globalKit, undoManager, kits, engine, drumGizmoReader};
     NiceMock<io::MockFileSystem> fileSystem;
     io::SettingsStore store{fileSystem, "keymap.txt"};
     input::UsKeyNames keyNames;

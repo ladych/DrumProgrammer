@@ -19,6 +19,10 @@ struct KitSlotDescription
     int pitchSemitones = 0;           ///< -12..+12 (F-SE-07)
     int chokeGroup = 0;               ///< 0: none (F-SE-08)
     bool coreSlot = true;             ///< shown without expanding the kit panel (F-SE-04)
+    /// DrumGizmo kit (drumkit.xml) of the slot's instrument; empty for a sample kit (F-DG-04).
+    std::filesystem::path drumkitFile;
+    /// DrumGizmo instrument the slot plays instead of sampleFile; empty: none (F-DG-05).
+    std::string instrument;
 
     /// True while the MIDI note was not overridden, shown as "(GM-Default)".
     [[nodiscard]] bool usesGmNote() const noexcept;
